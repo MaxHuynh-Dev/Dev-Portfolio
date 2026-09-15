@@ -24,8 +24,8 @@ const CODE_LINES: readonly (readonly string[])[] = [
 
 const CODE_W = 1024;
 const CODE_H = 576;
-const ENV_W = 1024;
-const ENV_H = 512;
+const ENV_W = 2048;
+const ENV_H = 1024;
 
 /**
  * The code panel only reaches the chrome through a PMREM convolution, so a
@@ -35,10 +35,46 @@ const ENV_H = 512;
 const ENV_INTERVAL = 1 / 12;
 
 /** Where the code panel lands inside the equirect strip (~the reflection hot spot). */
-const PANEL_X = 590;
-const PANEL_Y = 170;
-const PANEL_W = 380;
-const PANEL_H = 214;
+const PANEL_W = 660;
+const PANEL_H = 372;
+/** Centred on the front-reflection hot spot: u = 0.75, v = 0.5. */
+const PANEL_X = ENV_W * 0.75 - PANEL_W / 2;
+const PANEL_Y = ENV_H * 0.5 - PANEL_H / 2;
+
+/**
+ * Studio softboxes, in equirectangular UV.
+ *
+ * Chrome shows nothing but its environment, so "make it look like metal" is
+ * a lighting problem, not a material one: what reads as polish is the
+ * contrast between bright sources and a black field, not overall brightness.
+ * The old strip put a flat mid-grey where the front faces sample, which is
+ * exactly why the glyph rendered as dark plastic.
+ *
+ * u is azimuth (0.75 faces the camera), v is elevation (0 up, 1 down).
+ */
+const SOFTBOXES: readonly {
+  u: number;
+  v: number;
+  w: number;
+  h: number;
+  tint: string;
+  power: number;
+}[] = [
+  // Key: high and camera-left, the broad sweep down the outer bevels.
+  { u: 0.58, v: 0.24, w: 0.16, h: 0.13, tint: '255,252,244', power: 1.6 },
+  // The right chevron's front face reflects just past u = 0.75; the previous
+  // rim sat at 0.95, which is side-on, so that face stayed dull grey.
+  { u: 0.86, v: 0.33, w: 0.1, h: 0.17, tint: '232,242,255', power: 1.45 },
+  // Twin horizon bands. A single band gives one streak; a pair reads as a
+  // reflected room and is most of what separates chrome from brushed alloy.
+  { u: 0.72, v: 0.47, w: 0.5, h: 0.016, tint: '255,255,255', power: 1.8 },
+  { u: 0.78, v: 0.56, w: 0.34, h: 0.01, tint: '214,228,255', power: 1.2 },
+  // Silhouette guard: keeps the upper-right arm's bevel off pure black so the
+  // glyph does not lose its top-right corner against a #0A0A0A page.
+  { u: 0.92, v: 0.14, w: 0.22, h: 0.13, tint: '198,212,236', power: 0.5 },
+  // Low kicker, lifting the underside off pure black.
+  { u: 0.3, v: 0.74, w: 0.13, h: 0.08, tint: '180,196,220', power: 0.5 }
+];
 
 /**
  * r149 rendered with legacy lights, which multiplied every light intensity by
@@ -123,6 +159,10 @@ export default function Stage({ accent = '#F2EFE9', className }: StageProps) {
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // The studio sources push specular highlights well above 1.0; without a
+    // filmic roll-off they clip to flat white and the polish reads as paper.
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.95;
 
     const canvas = renderer.domElement;
     canvas.style.display = 'block';
@@ -163,27 +203,76 @@ export default function Stage({ accent = '#F2EFE9', className }: StageProps) {
       }
     };
 
+    /** A softbox with a soft edge. Hard-edged rectangles reflect as hard-edged
+     *  rectangles, which is most of what makes cheap chrome look cheap. */
+    const softbox = (box: (typeof SOFTBOXES)[number]) => {
+      const cx = box.u * ENV_W;
+      const cy = box.v * ENV_H;
+      const w = box.w * ENV_W;
+      const h = box.h * ENV_H;
+
+      // Drawn in a unit-circle gradient scaled to the box, so the falloff
+      // follows the box's aspect instead of being circular.
+      env.save();
+      env.translate(cx, cy);
+      env.scale(w, h);
+      const glow = env.createRadialGradient(0, 0, 0, 0, 0, 1);
+      glow.addColorStop(0, `rgba(${box.tint},${String(box.power)})`);
+      glow.addColorStop(0.55, `rgba(${box.tint},${String(box.power * 0.5)})`);
+      glow.addColorStop(1, `rgba(${box.tint},0)`);
+      env.fillStyle = glow;
+      env.fillRect(-1, -1, 2, 2);
+      env.restore();
+
+      // A small solid core keeps a crisp specular hit inside the soft falloff.
+      env.fillStyle = `rgba(${box.tint},${String(Math.min(box.power, 1))})`;
+      env.fillRect(cx - w * 0.26, cy - h * 0.26, w * 0.52, h * 0.52);
+    };
+
     const paintEnv = (t: number) => {
-      const gradient = env.createLinearGradient(0, 0, 0, ENV_H);
-      gradient.addColorStop(0, '#F4F1EB');
-      gradient.addColorStop(0.38, '#75756E');
-      gradient.addColorStop(0.52, '#101011');
-      gradient.addColorStop(1, '#2C2C29');
-      env.fillStyle = gradient;
+      // Near-black field. The page is #0A0A0A and the vignette deliberately
+      // sinks the stage — the authored darkness stays; only the sources get
+      // brighter, which is what separates polished metal from matte.
+      env.fillStyle = '#050506';
       env.fillRect(0, 0, ENV_W, ENV_H);
 
-      // The live code panel sits on the horizon, where the front faces of the
-      // glyphs take their reflection from.
-      drawCode(t);
-      env.globalAlpha = 0.85;
-      env.drawImage(codeCanvas, 0, 0, CODE_W, CODE_H, PANEL_X, PANEL_Y, PANEL_W, PANEL_H);
-      env.globalAlpha = 1;
+      // Faint zenith lift so the top bevels are not perfectly dead.
+      const sky = env.createLinearGradient(0, 0, 0, ENV_H * 0.5);
+      sky.addColorStop(0, 'rgba(150,158,172,0.16)');
+      sky.addColorStop(1, 'rgba(150,158,172,0)');
+      env.fillStyle = sky;
+      env.fillRect(0, 0, ENV_W, ENV_H * 0.5);
 
-      env.fillStyle = 'rgba(244,241,235,0.92)';
-      env.fillRect(70, 40, 300, 46);
-      env.fillRect(640, 150, 220, 22);
+      env.globalCompositeOperation = 'lighter';
+      for (const box of SOFTBOXES) softbox(box);
+      env.globalCompositeOperation = 'source-over';
+
+      // The live code panel, now actually centred on the reflection the front
+      // faces sample. Screen-blended so it reads as emitted light rather than
+      // a grey rectangle punched into the field.
+      drawCode(t);
+      env.globalCompositeOperation = 'lighter';
+      env.globalAlpha = 0.34;
+      env.drawImage(
+        codeCanvas,
+        CODE_W * 0.02,
+        CODE_H * 0.18,
+        CODE_W * 0.62,
+        CODE_H * 0.54,
+        PANEL_X,
+        PANEL_Y,
+        PANEL_W,
+        PANEL_H
+      );
+      env.globalAlpha = 1;
+      env.globalCompositeOperation = 'source-over';
+
+      // Accent bar, low and camera-left: a single coloured streak that tells
+      // you the metal is reflecting something with a colour in it.
       env.fillStyle = accentStyle;
-      env.fillRect(120, 330, 260, 12);
+      env.globalAlpha = 0.5;
+      env.fillRect(ENV_W * 0.34, ENV_H * 0.6, ENV_W * 0.1, ENV_H * 0.012);
+      env.globalAlpha = 1;
     };
 
     paintEnv(0);
@@ -212,16 +301,24 @@ export default function Stage({ accent = '#F2EFE9', className }: StageProps) {
     const chrome = new THREE.MeshStandardMaterial({
       color: 0xf2efe9,
       metalness: 1,
-      roughness: 0.13,
+      // Tighter than 0.13: the environment now has detail worth resolving.
+      roughness: 0.075,
       envMap,
-      envMapIntensity: 1.65
+      envMapIntensity: 1.9
     });
-    const chromeAccent = new THREE.MeshStandardMaterial({
+
+    // The slash is the accent, but the default accent is the same off-white as
+    // the chrome — so it is separated by finish instead of colour. Anisotropic
+    // roughness stretches the highlight along one axis, reading as brushed
+    // steel next to the mirror-polished chevrons even in monochrome.
+    const chromeAccent = new THREE.MeshPhysicalMaterial({
       color: accentColor,
-      metalness: 0.95,
-      roughness: 0.34,
+      metalness: 1,
+      roughness: 0.28,
+      anisotropy: 0.85,
+      anisotropyRotation: Math.PI / 2,
       envMap,
-      envMapIntensity: 1
+      envMapIntensity: 1.5
     });
 
     const world = new THREE.Group();
