@@ -1,0 +1,37 @@
+HTTP Status Codes
+
+1xx Informational
+100 Continue - Server received request headers and client should proceed with request
+101 Switching Protocols - Server switching protocols as requested by client
+102 Processing - Server processing request but no response available yet
+
+2xx Success
+200 OK - Request succeeded
+201 Created - Request fulfilled and new resource created
+202 Accepted - Request accepted for processing but not completed
+204 No Content - Server fulfilled request but no content to return
+206 Partial Content - Server delivering partial content as requested
+
+3xx Redirection
+300 Multiple Choices - Multiple options for client redirect
+301 Moved Permanently - Resource permanently moved to new URL
+302 Found - Resource temporarily moved to different URL
+304 Not Modified - Resource has not been modified since last request
+307 Temporary Redirect - Resource temporarily moved, preserve request method
+308 Permanent Redirect - Resource permanently moved, preserve request method
+
+4xx Client Error
+400 Bad Request - Server cannot process request due to client error
+401 Unauthorized - Authentication required to access resource
+403 Forbidden - Server refuses to fulfill request
+404 Not Found - Requested resource could not be found
+405 Method Not Allowed - Request method not supported for resource
+409 Conflict - Request conflicts with current state of server
+429 Too Many Requests - User has sent too many requests in given time
+
+5xx Server Error
+500 Internal Server Error - Generic server error message
+501 Not Implemented - Server does not recognize method or cannot fulfill
+502 Bad Gateway - Server received invalid response from upstream server
+503 Service Unavailable - Server temporarily unavailable
+504 Gateway Timeout - Upstream server failed to respond in time

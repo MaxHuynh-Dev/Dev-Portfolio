@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "source": {
+    "repo": "msitarzewski/agency-agents",
+    "url": "https://github.com/msitarzewski/agency-agents",
+    "commit": "ad9264e309bd5e5422c04784372d7841b1e5d604",
+    "license": "MIT"
+  },
+  "note": "Frontmatter normalized for Claude Code: name set to filename stem (kebab-case), color mapped to a supported value, non-standard keys (emoji, vibe) dropped. Agent body is byte-identical to upstream.",
+  "agents": {
+    "design-ui-designer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "design/design-ui-designer.md",
+      "upstreamName": "UI Designer",
+      "computedHash": "3130768958d3b3d38178aaec91cf789e01ecca4984c8674d4aaea446b6cba240"
+    },
+    "design-ux-architect": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "design/design-ux-architect.md",
+      "upstreamName": "UX Architect",
+      "computedHash": "151f7386682b77a6c1455374d427237a3d46eadfa1248964466b0412848f7117"
+    },
+    "engineering-api-platform-engineer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-api-platform-engineer.md",
+      "upstreamName": "API Platform Engineer",
+      "computedHash": "278798c42d7a7cf4f42d3973795765403105ce60d518d647abfdaa522d862d8e"
+    },
+    "engineering-backend-architect": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-backend-architect.md",
+      "upstreamName": "Backend Architect",
+      "computedHash": "18f237d054fa91f72a5dcda46a52ddcf7354ea3a3e39e0247629f4ea0f446917"
+    },
+    "engineering-code-reviewer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-code-reviewer.md",
+      "upstreamName": "Code Reviewer",
+      "computedHash": "7509fcc3ea1dda46511b2801996305bf3d4a125576f9655ff0b63df25602f446"
+    },
+    "engineering-database-optimizer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-database-optimizer.md",
+      "upstreamName": "Database Optimizer",
+      "computedHash": "a58860b44590ed643ca02b6faf738b889c99bd889df78c695f519b5288ea018d"
+    },
+    "engineering-devops-automator": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-devops-automator.md",
+      "upstreamName": "DevOps Automator",
+      "computedHash": "5d3c3d12c605a8c07fadfd109697249f98bc8e3d1901247c390641ef9fb013e8"
+    },
+    "engineering-frontend-developer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-frontend-developer.md",
+      "upstreamName": "Frontend Developer",
+      "computedHash": "35961da50f408e00eb6189c87825ac5e62e6b1bf9de3dee198a95536c6d2619e"
+    },
+    "engineering-git-workflow-master": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-git-workflow-master.md",
+      "upstreamName": "Git Workflow Master",
+      "computedHash": "b2ab151fa5dc31035ba5f40f9b104f61cc8ef45dab8a8249ad15675141550d77"
+    },
+    "engineering-rapid-prototyper": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-rapid-prototyper.md",
+      "upstreamName": "Rapid Prototyper",
+      "computedHash": "327598e2cee41b78866720e20ee76d84e674b4a95ed92773b40c942153cba88a"
+    },
+    "engineering-senior-developer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-senior-developer.md",
+      "upstreamName": "Senior Developer",
+      "computedHash": "63b8da6c12b95f54bbdbcd0666abeb9519a98b35395233e1b1d8e5c102c82599"
+    },
+    "engineering-software-architect": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "engineering/engineering-software-architect.md",
+      "upstreamName": "Software Architect",
+      "computedHash": "b85121691776147bacde26673e68fbbacd6a7f0816d1ca8e203c264d25ce1d30"
+    },
+    "security-appsec-engineer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "security/security-appsec-engineer.md",
+      "upstreamName": "Application Security Engineer",
+      "computedHash": "f3ee22350c9e0e7289d2d4747e7c1a8fe196d70340feec7b176b13bacc3deb77"
+    },
+    "security-secrets-credential-engineer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "security/security-secrets-credential-engineer.md",
+      "upstreamName": "Secrets & Credential Hygiene Engineer",
+      "computedHash": "5a52e4c1045d8805c74414cfb334bb80da429fd191b987bdd8889ee60ca7561b"
+    },
+    "testing-accessibility-auditor": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "testing/testing-accessibility-auditor.md",
+      "upstreamName": "Accessibility Auditor",
+      "computedHash": "982a14c0d0a9b30834ecd6e04811e4f900baf7950e18c68cc97142354cc803e7"
+    },
+    "testing-api-tester": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "testing/testing-api-tester.md",
+      "upstreamName": "API Tester",
+      "computedHash": "c89d7ae592523f4799426a8b09700ec4b9d99bf2fcae2d1b0dd2900d5f770127"
+    },
+    "testing-performance-benchmarker": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "testing/testing-performance-benchmarker.md",
+      "upstreamName": "Performance Benchmarker",
+      "computedHash": "24dbd3a55cf6ca36c5f8af4081e87859914131199d87b6f90d129643fcfba43e"
+    },
+    "testing-test-automation-engineer": {
+      "source": "msitarzewski/agency-agents",
+      "sourceType": "github",
+      "agentPath": "testing/testing-test-automation-engineer.md",
+      "upstreamName": "Test Automation Engineer",
+      "computedHash": "479ba12efa5c19e87b60e3b154170c124ac38c46b95c342f0e3b62537113c0a7"
+    }
+  }
+}
