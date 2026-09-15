@@ -1,14 +1,19 @@
 import '@Styles/global.css';
 
-import { inter, raleway } from '@Constants/fonts';
+import { jetbrainsMono, schibstedGrotesk } from '@Constants/fonts';
 import { DEFAULT_METADATA } from '@Constants/metadata';
 import MainLayout from '@Layout/MainLayout';
 import { uiHelper } from '@Utils/uiHelper';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import type React from 'react';
 
 export const metadata: Metadata = DEFAULT_METADATA;
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0a',
+  colorScheme: 'dark'
+};
 
 export default function RootLayout({
   children
@@ -28,7 +33,7 @@ export default function RootLayout({
           <Script src="https://unpkg.com/react-scan/dist/auto.global.js" />
         )}
       </head>
-      <body className={`${inter.variable} ${raleway.variable}`}>
+      <body className={`${schibstedGrotesk.variable} ${jetbrainsMono.variable}`}>
         <MainLayout>{children}</MainLayout>
       </body>
     </html>

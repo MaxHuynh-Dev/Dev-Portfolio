@@ -42,3 +42,6 @@ next-env.d.ts
 
 # payload
 /media
+
+# Playwright MCP scratch output
+/.playwright-mcp/

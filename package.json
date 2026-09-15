@@ -43,6 +43,7 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7",
+    "three": "^0.186.0",
     "usehooks-ts": "^3.1.1",
     "zod-validation-error": "^4.0.0"
   },
@@ -52,6 +53,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
     "baseline-browser-mapping": "^2.9.19",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",

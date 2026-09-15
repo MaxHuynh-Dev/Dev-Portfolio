@@ -17,6 +17,12 @@ export default function SmoothScroll({
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
+    // Lenis was the one motion source ignoring this, and 1.2s of eased
+    // inertia on every wheel tick is the largest piece of vestibular motion
+    // on the page. useAnchorNav already falls back to native scrolling when
+    // window.lenis is absent, so opting out here is safe end to end.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     // Initialize Lenis
     const lenis = new Lenis({
       duration: 1.2,
@@ -27,8 +33,7 @@ export default function SmoothScroll({
     });
 
     lenisRef.current = lenis;
-    // biome-ignore lint/suspicious/noExplicitAny: global assignment for section scroll controls
-    window.lenis = lenis as any;
+    window.lenis = lenis;
 
     // Connect Lenis to GSAP ScrollTrigger
     lenis.on('scroll', () => {
@@ -43,8 +48,17 @@ export default function SmoothScroll({
 
     gsap.ticker.lagSmoothing(0);
 
+    // Webfonts swap in after first paint and reflow the page, which
+    // invalidates every start/end position ScrollTrigger has already cached.
+    // Without this, reveals below the fold fire at the wrong scroll offset.
+    let cancelled = false;
+    void document.fonts.ready.then(() => {
+      if (!cancelled) ScrollTrigger.refresh();
+    });
+
     // Clean up
     return () => {
+      cancelled = true;
       lenis.destroy();
       gsap.ticker.remove(updateTicker);
       window.lenis = undefined;
