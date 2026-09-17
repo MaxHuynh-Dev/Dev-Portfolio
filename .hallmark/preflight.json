@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-17",
+  "fonts": "Schibsted Grotesk + JetBrains Mono (next/font, src/constants/fonts.ts:1)",
+  "palette": "60 custom properties in :root (src/styles/global.css) — converted hex -> OKLCH by this run",
+  "motion": "gsap 3.13 + @gsap/react + lenis 1.3 + framer-motion 12 (motion-on)",
+  "spacing": "--gut token + Tailwind arbitrary clamps; no --space-* scale",
+  "framework": "Next.js 16.3.5 app router, React 19.2.8",
+  "routes": 1,
+  "preserved": [
+    "font stack",
+    "GSAP/Lenis motion stack",
+    "section IA",
+    "brand palette (hue-preserved)"
+  ],
+  "introduced": [
+    "Index-First macrostructure",
+    "N8 nav",
+    "Ft4 colophon",
+    "OKLCH tokens",
+    "tokens.css"
+  ]
+}

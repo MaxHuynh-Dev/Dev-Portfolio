@@ -1,4 +1,4 @@
-import { PROFILE } from '@Modules/EditorialHome/constants';
+import { PROFILE } from '@/content/site';
 
 // Derived from the single content file so the site name, description and
 // contact address can never drift out of sync with the page itself.

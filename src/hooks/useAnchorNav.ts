@@ -31,7 +31,13 @@ export function useAnchorNav(): (event: React.MouseEvent<HTMLAnchorElement>, hre
     target.focus({ preventScroll: true });
 
     if (window.lenis) {
-      window.lenis.scrollTo(target);
+      // Lenis does not honour scroll-padding-top — that property only
+      // applies to the browser's own scroll-into-view. Without this the
+      // fixed corner marks land on top of the section heading every time
+      // the nav is used. Read the declared value rather than repeating it,
+      // so the two can never drift.
+      const padding = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+      window.lenis.scrollTo(target, { offset: -padding });
       return;
     }
 

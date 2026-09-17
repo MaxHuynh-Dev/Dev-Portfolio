@@ -1,0 +1,58 @@
+import type React from 'react';
+import { COLOPHON, CONTACT_LINKS, PROFILE } from '@/content/site';
+
+/**
+ * Contact.
+ *
+ * The email is the largest thing at the foot of the page because it is the
+ * only action here. Bottom padding clears the fixed corner marks — those
+ * are sized by two lines of metadata plus the gutter plus the gradient, so
+ * the floor is in rem and not purely in vh; a vh-only value lets the band
+ * swallow the last row on a short viewport.
+ */
+export default function Contact(): React.ReactElement {
+  return (
+    <section
+      id="contact"
+      aria-labelledby="contact-heading"
+      className="px-[var(--gut)] pt-[clamp(5rem,12vh,8rem)] pb-[clamp(8rem,17vh,11rem)]"
+    >
+      <h2 id="contact-heading" className="st-meta m-0 font-[500] text-[var(--ink)]">
+        contact
+      </h2>
+
+      <div className="mt-[clamp(1.25rem,3vh,2rem)] flex flex-wrap items-end justify-between gap-[clamp(1.5rem,5vw,4rem)]">
+        <a
+          href={`mailto:${PROFILE.email}`}
+          className="st-display text-[clamp(1.9rem,7vw,5.2rem)] text-[var(--ink)]"
+        >
+          {PROFILE.email}
+        </a>
+
+        <div className="flex flex-wrap gap-[clamp(1.75rem,4vw,3.5rem)]">
+          {CONTACT_LINKS.map((column) => (
+            <div key={column.label}>
+              <p className="st-meta m-0">{column.label}</p>
+              <ul className="m-0 mt-[0.35rem] list-none p-0">
+                {column.links.map((link) => (
+                  <li key={link.label} className="text-[0.95rem] leading-[1.6]">
+                    <a
+                      className="st-link"
+                      href={link.href}
+                      rel="noreferrer noopener"
+                      target="_blank"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className="st-measure st-meta mt-[clamp(3rem,9vh,6rem)] mb-0">{COLOPHON}</p>
+    </section>
+  );
+}
