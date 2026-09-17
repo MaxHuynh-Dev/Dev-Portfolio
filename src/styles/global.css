@@ -1,3 +1,17 @@
+/* ── Tokens ─────────────────────────────────────────────────────────────
+ * Warm paper, true ink, and no accent colour at all. The page has no brand
+ * hue on purpose: the work is shown as imagery, and an accent would be one
+ * more thing competing with it. Emphasis is carried by size, weight and
+ * position, hover and focus by an underline.
+ *
+ * Measured, not eyeballed. Against --paper:
+ *   --ink    16.10:1     --ink-2   5.05:1     --ink-3   3.88:1
+ * --ink-3 dims the unfocused rows of the work list, which are large
+ * display text (3:1 bar). It is far closer to --ink than a dark-ground
+ * dim would be, because on a light ground dimming pulls text *toward*
+ * the ground — the mechanism inverts with the ground and the value does
+ * not survive being carried over. See CLAUDE.md.
+ * ─────────────────────────────────────────────────────────────────── */
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -29,96 +43,108 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* ── Editorial palette ── */
-  --color-ed-bg: var(--ed-bg);
-  --color-ed-fg: var(--ed-fg);
-  --color-ed-muted: var(--ed-muted);
-  --color-ed-body: var(--ed-body);
-  --color-ed-well: var(--ed-well);
-  --color-ed-accent: var(--ed-accent);
+  /* ── Studio palette ── */
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-edge: var(--edge);
+  --color-well: var(--well);
 }
 
 :root {
-  /* ── Editorial design tokens ──
-     Single source of truth. Every surface below maps onto these. */
-  --ed-bg: #0a0a0a;
-  --ed-fg: #f2efe9;
-  --ed-muted: #8c8c88;
-  --ed-body: #b6b3ac;
-  --ed-well: #141414;
-  --ed-rule: rgba(242, 239, 233, 0.14);
-  --ed-rule-strong: rgba(242, 239, 233, 0.35);
-  --ed-grid: rgba(242, 239, 233, 0.05);
+  /* Four ink values and no accent. */
+  --paper: #efedea;
+  --ink: #14110f;
+  --ink-2: #6b635b;
+  --ink-3: #7d756d;
+  /* Two surface tones, and neither of them is a card.
+     --edge is the faint one the shadcn token block maps onto.
+     --well is the field an image has not arrived in yet: deliberately
+     darker than paper (1.25:1) so it reads as a blocked-out area rather
+     than a wash, which also lets its label be --ink at 12.87:1 instead of
+     --ink-2 at a marginal 4.03:1. */
+  --edge: #e4e1dc;
+  --well: #d9d5cf;
 
-  /* Accent. Alternates: #d7ff3e lime, #ff5a2b orange, #7ba7ff blue. */
-  --ed-accent: #f2efe9;
+  /* Page gutter — every band pads to this. */
+  --gut: clamp(1.15rem, 3.4vw, 3rem);
 
-  /* Page gutter — every section pads to this. */
-  --gut: clamp(1rem, 3.4vw, 2.5rem);
+  /* How much of the top of the viewport the fixed corner marks own.
+     Derived from the three things that actually size them — the gutter
+     above the text, two lines of .st-meta (0.78rem at 1.45), and the
+     gradient below it — so it cannot drift out of step the way a
+     hand-tuned number does. Anything that sticks or scrolls into view
+     near the top offsets by this. */
+  --chrome-top: calc(var(--gut) + 2.3rem + 2.5rem);
 
-  /* shadcn surface tokens remapped onto editorial so ui/* stays coherent */
+  /* shadcn surface tokens remapped so components/ui/* stays coherent. */
   --radius: 0;
-  --background: var(--ed-bg);
-  --foreground: var(--ed-fg);
-  --card: var(--ed-well);
-  --card-foreground: var(--ed-fg);
-  --popover: var(--ed-well);
-  --popover-foreground: var(--ed-fg);
-  --primary: var(--ed-fg);
-  --primary-foreground: var(--ed-bg);
-  --secondary: var(--ed-well);
-  --secondary-foreground: var(--ed-fg);
-  --muted: var(--ed-well);
-  --muted-foreground: var(--ed-muted);
-  --accent: var(--ed-accent);
-  --accent-foreground: var(--ed-bg);
-  --destructive: #ff5a2b;
-  --border: var(--ed-rule);
-  --input: var(--ed-rule);
-  --ring: var(--ed-accent);
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--edge);
+  --card-foreground: var(--ink);
+  --popover: var(--edge);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--edge);
+  --secondary-foreground: var(--ink);
+  --muted: var(--edge);
+  --muted-foreground: var(--ink-2);
+  --accent: var(--ink);
+  --accent-foreground: var(--paper);
+  --destructive: #a3341c;
+  --border: var(--edge);
+  --input: var(--edge);
+  --ring: var(--ink);
 }
 
 /* ── Fluid root ──
-   The entire design scales from this one value: every rem in the page,
-   including Tailwind's spacing scale, resolves against it. */
+   The whole design scales from this one value: every rem in the page,
+   Tailwind's spacing scale included, resolves against it. rem and never
+   px — a px root overrides the reader's own font-size preference. */
 html {
-  /* rem, not px: an absolute px root overrides the reader's own font-size
-     preference outright. At the 16px default these are the same 15/21px. */
   font-size: clamp(0.9375rem, 0.5vw + 0.525rem, 1.3125rem);
   /* NOTE: no `scroll-behavior: smooth` — it fights Lenis. Anchor
      navigation routes through window.lenis.scrollTo instead. */
 
-  /* Keep anchor targets and tab-focused elements clear of the fixed header
-     and HUD. Without this, tabbing lands rows flush against the bottom edge
-     with the focus ring clipped off-screen. */
-  scroll-padding-top: 7rem;
-  scroll-padding-bottom: 5.5rem;
+  /* Keeps anchor targets and tab-focused elements clear of the corner
+     marks, which are fixed. */
+  scroll-padding-top: calc(var(--chrome-top) + 1rem);
+  scroll-padding-bottom: 5rem;
+
+  /* `clip` on BOTH html and body, never `hidden`: hidden turns the element
+     into a scroll container, which breaks position: fixed on descendants,
+     and the corner marks are fixed. */
+  overflow-x: clip;
+
+  /* The preloader locks scrolling with overflow: hidden. On platforms with
+     classic scrollbars that would shift the layout sideways when the lock
+     lifts; reserving the gutter means the page never moves. */
+  scrollbar-gutter: stable;
 }
 
 body {
   margin: 0;
-  background: var(--ed-bg);
-  color: var(--ed-fg);
+  background: var(--paper);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 ::selection {
-  background: var(--ed-fg);
-  color: var(--ed-bg);
+  background: var(--ink);
+  color: var(--paper);
 }
 
-/* ── Keyframes ── */
-@keyframes ed-marquee {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-@keyframes ed-rise {
+/* ── Keyframes ──
+   Two. st-rise and st-fade belong to the one orchestrated load moment;
+   st-fade is also borrowed by .st-swap, which answers the reader's own
+   scrolling. There is no scroll-triggered reveal anywhere on this site: a
+   fade-and-slide-up on every section is the single most recognisable
+   generated-page tell, and this build removed all seven of them. */
+@keyframes st-rise {
   from {
     transform: translateY(110%);
   }
@@ -127,7 +153,7 @@ body {
   }
 }
 
-@keyframes ed-fade {
+@keyframes st-fade {
   from {
     opacity: 0;
   }
@@ -136,118 +162,128 @@ body {
   }
 }
 
-@keyframes ed-blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  99% {
-    opacity: 0;
-  }
-}
-
-@keyframes ed-stage-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* ── Editorial primitives ──
-   These patterns repeat a dozen-plus times across the page; as classes they
-   stay readable where an arbitrary-value Tailwind chain would not.
-
-   They MUST stay inside @layer components. Unlayered rules win over every
-   layered rule regardless of specificity, so outside a layer these would
-   silently beat any Tailwind utility set on the same element — `normal-case`
-   and `tracking-*` next to `.ed-label` would simply do nothing. */
+/* ── Primitives ──
+   These MUST stay inside @layer components. Tailwind v4 puts utilities in
+   @layer utilities, and an unlayered rule beats every layered rule
+   regardless of specificity — outside a layer these would silently defeat
+   any utility set beside them on the same element. */
 @layer components {
-  .ed-label {
-    font-family: var(--font-mono), ui-monospace, monospace;
-    /* 0.66rem bottomed out at ~9.9px on small screens, and these labels
-       carry every piece of metadata on the page. */
-    font-size: 0.72rem;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    line-height: 1.2;
+  /* Display. Nippo, tight, never uppercased by default: an all-caps
+     default is what produced the tracked-out label look this rebuild
+     exists to remove. Where a line IS set in caps it says so locally. */
+  .st-display {
+    font-family: var(--font-display), system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 0.9;
+    /* A long unbroken name has no break opportunity and would otherwise
+       push the viewport sideways. */
+    overflow-wrap: anywhere;
+    min-width: 0;
   }
 
-  .ed-label-wide {
-    letter-spacing: 0.16em;
+  .st-display-reg {
+    font-weight: 400;
+    letter-spacing: -0.02em;
   }
 
-  .ed-display {
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: -0.045em;
-    line-height: 0.86;
+  /* The fitted line. --fit-size is written by useFittedText once it has
+     measured the real string; the clamp is only the server-rendered
+     fallback, sized close enough that the correction is not a visible
+     jump. */
+  .st-fit {
+    font-size: var(--fit-size, clamp(2.6rem, 11.2vw, 12rem));
+    line-height: 0.9;
   }
 
-  /* Hero type: capped against viewport height so the name never collides
-     with the fixed bottom HUD on short screens. */
-  .ed-hero-type {
-    font-size: min(clamp(3.2rem, 16vw, 17rem), 19vh);
+  /* Metadata. Lowercase, unspaced, small — the opposite of the
+     letter-spaced all-caps eyebrow it replaces. */
+  .st-meta {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    letter-spacing: 0;
+    color: var(--ink-2);
   }
 
-  .ed-rule-t {
-    border-top: 1px solid var(--ed-rule);
+  /* Body copy sits under 70 characters; the measure is set here rather
+     than at each call site so it cannot drift. */
+  .st-measure {
+    max-width: 62ch;
   }
 
-  .ed-rule-b {
-    border-bottom: 1px solid var(--ed-rule);
+  /* Links are underlined, because there is no accent colour to carry
+     them. The offset keeps the rule off the descenders. */
+  .st-link {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    text-decoration-color: var(--ink-3);
+    transition: text-decoration-color 160ms ease;
   }
 
-  /* Fixed chrome sits over the WebGL stage and the page.
-     `difference` renders a glyph as |text - backdrop|, so it hits a null
-     point — invisible — wherever the backdrop is half the text value. Over
-     the #141414 image wells that is a real failure, not a theoretical one.
-     The blend is therefore applied to an inner wrapper, while the fixed
-     parent paints an opaque scrim (.ed-chrome-scrim) that pins the backdrop
-     to the page colour behind the glyph rows. */
-  .ed-chrome {
-    mix-blend-mode: difference;
+  .st-link:hover,
+  .st-link:focus-visible {
+    text-decoration-color: var(--ink);
   }
 
-  .ed-chrome-scrim-top {
-    background: linear-gradient(
-      to bottom,
-      var(--ed-bg) 0%,
-      var(--ed-bg) 62%,
-      rgb(10 10 10 / 0%) 100%
-    );
+  /* The load gesture. A mask clipping a line that travels up into place;
+     the preloader hands off to it mid-wipe. */
+  .st-rise-mask {
+    display: block;
+    overflow: hidden;
   }
 
-  .ed-chrome-scrim-bottom {
-    background: linear-gradient(to top, var(--ed-bg) 0%, var(--ed-bg) 62%, rgb(10 10 10 / 0%) 100%);
+  .st-rise {
+    display: block;
+    animation: st-rise 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  /* Landmark targets get tabindex="-1" for focus management; they should not
-     draw a ring of their own. */
+  .st-fade {
+    animation: st-fade 0.9s ease both;
+  }
+
+  /* The work list's preview, when the live row changes. A hard cut reads
+     as a glitch while scrolling drives the change; 180ms is short enough
+     that the preview never lags behind the names. Triggered by the
+     reader's own scroll or pointer — the one on load is below the fold. */
+  .st-swap {
+    animation: st-fade 180ms ease both;
+  }
+
+  /* Landmark targets carry tabindex="-1" for focus management and should
+     not draw a ring of their own. */
   [tabindex="-1"]:focus {
     outline: none;
   }
+
+  /* ── Preloader ──
+     Hidden by default so a repeat visitor — whose session flag suppresses
+     the attribute — never paints a frame of curtain. `--running` is added
+     by the component once it owns the panel, because the exit removes the
+     attribute halfway through the wipe and must not yank the curtain out
+     from under its own animation.
+
+     Keep no display utility on the root element: these rules are layered,
+     so a Tailwind `block`/`grid` there would beat them and every visitor
+     would see the curtain. */
+  .st-preloader {
+    display: none;
+  }
+
+  html[data-preloading] .st-preloader,
+  .st-preloader--running {
+    display: block;
+  }
 }
 
-/* ── Focus ──
-   The source design had no focus styles at all. Every interactive element
-   gets a visible ring; `:focus-visible` keeps it off mouse clicks. */
+/* ── Focus ── */
 :focus-visible {
-  outline: 2px solid var(--ed-accent);
+  outline: 2px solid var(--ink);
   outline-offset: 3px;
 }
 
-/* Inside the chrome the ring is blended along with everything else. The
-   scrim above pins that backdrop to --ed-bg, so |accent - bg| stays bright.
-   This rule only diverges from the default once a coloured accent is chosen. */
-.ed-chrome :focus-visible {
-  outline-color: var(--ed-fg);
-}
-
 /* Skip link: off-screen until focused. */
-.ed-skip:focus-visible {
+.st-skip:focus-visible {
   position: fixed;
   top: 1rem;
   left: 1rem;
@@ -256,19 +292,20 @@ body {
   height: auto;
   padding: 0.6rem 1rem;
   clip-path: none;
-  background: var(--ed-fg);
-  color: var(--ed-bg);
+  background: var(--ink);
+  color: var(--paper);
 }
 
 /* ── Reduced motion ──
-   Kills the CSS animations. The WebGL stage and GSAP honour the same query
-   independently. */
+   One of four sources that honour the query. The others are gsap.matchMedia
+   in the studies, Lenis in SmoothScroll, and the preloader, which drops the
+   wipe for a plain fade. Add a fifth motion source and cover it here too. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     /* biome-ignore-start lint/complexity/noImportantStyles: !important is
-       required here — this guard must override utility and inline animation
+       required — this guard must override utility and inline animation
        declarations. Removing it silently breaks the accessibility promise. */
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -285,10 +322,44 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-display), system-ui, sans-serif;
+    font-family: var(--font-text), system-ui, sans-serif;
   }
   a {
     color: inherit;
     text-decoration: none;
   }
+}
+
+/* ── Held load animations ──
+   The hero's mask-rise and the corner marks' fade all start on load.
+   Behind a 1.2s curtain they would finish unseen and lift onto a page that
+   had already settled, losing the best moment on it. Pausing them is what
+   lets the preloader hand the hero off mid-wipe.
+
+   `both` fill means a paused animation shows its `from` state, which is
+   exactly the held pose: st-rise sits at translateY(110%) behind its mask,
+   st-fade at opacity 0.
+
+   Deliberately UNLAYERED. Tailwind's `animate-[...]` utilities live in
+   @layer utilities and set the `animation` shorthand, which resets
+   play-state to `running`; an unlayered rule beats every layered one
+   regardless of specificity, so this wins without !important.
+
+   The preloader drives itself with GSAP rather than CSS animation, so it
+   is not caught by its own guard. Keep it that way.
+
+   It sits last in the file only to keep biome's noDescendingSpecificity
+   quiet — being unlayered it beats everything above whatever the order. */
+html[data-preloading] *,
+html[data-preloading] *::before,
+html[data-preloading] *::after {
+  animation-play-state: paused;
+}
+
+/* Scroll is locked from the first frame — earlier than any effect could
+   manage it, since SmoothScroll creates Lenis only after the preloader has
+   mounted. The component also stops Lenis once it exists; this covers the
+   frames before that, and the reduced-motion path where Lenis never runs. */
+html[data-preloading] {
+  overflow: hidden;
 }

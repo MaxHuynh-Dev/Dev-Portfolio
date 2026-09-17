@@ -2,13 +2,49 @@
 
 # Dev-Portfolio
 
-A single-page editorial portfolio. Swiss/brutalist: near-black ground, warm
-off-white type, mono metadata, hairline rules, and a WebGL `</>` glyph behind
-the hero. Ported from a Claude Design file (`Portfolio Editorial.dc.html`).
+A portfolio for a front-end engineer, on warm paper (`#efedea`) with true
+ink type and **no accent colour at all**. Emphasis is carried by size,
+weight and position; hover and focus by an underline. The only colour the
+site will ever have is the project imagery.
 
-The repo began as a generic Next.js template. **Most of that template is gone** —
-if you find advice about a neon/glassmorphism "Alex Nguyen" portfolio, it is
-stale. That build was deleted; it survives only in commit `c1859b8`.
+Two kinds of page:
+
+- **`/`** — the index. Masthead, work list, about, contact. The work list
+  is the way in: one row is live at a time and its cover, summary and
+  position sit beside it at eye level.
+- **`/work/<slug>`** — one page per project. A sticky spec sheet on the
+  left, a stack of shots down the middle, a rail of thumbnails on the
+  right, and the next project at the foot.
+
+## Things that have been rejected here
+
+Three directions were built and thrown out. Do not walk back into them.
+
+**WebGL, twice.** First a full-bleed `Stage.tsx` backdrop (a fixed canvas
+behind every line of body copy — a permanent contrast liability), then a
+`DeskScene.tsx` seated figure in the hero. three.js is not a dependency.
+
+**The broadsheet look, once.** Swiss-editorial on a tinted near-black
+(`#0d1117`) with one bright cyan accent, hairline rules everywhere,
+tracked-out ALL-CAPS eyebrows over every section, monospace for every small
+label, `→` after links. That is close to a complete checklist of the
+anti-patterns in the `frontend-design` skill, which is why the owner kept
+reading it as unchanged. Still banned:
+
+- no rules or hairline dividers anywhere
+- no ALL-CAPS labels, no letter-spaced micro-type — labels are lowercase
+- no `·`-joined meta strings, no `→` appended to link text
+- no cards, no border radius, no drop shadows
+- no monospace
+- no per-item ordinals unless the content really is a sequence
+
+**Live "studies", once.** A section of running interface demos — an easing
+editor, an OKLCH contrast meter, a container-query resizer — stood in for
+project imagery while there was none. The owner found them meaningless, and
+they were: clever about the medium, silent about the work. The lesson is
+narrower than "no interaction" — **a portfolio has to show the work, and
+for this one that means pictures of it.** The fitting engine survives
+because it does a job (see trap 8); nothing else from that build does.
 
 ## Commands
 
@@ -24,108 +60,246 @@ Biome, not ESLint/Prettier. 2-space, single quotes, semicolons, width 100.
 ## Where things live
 
 ```
-app/(frontend)/(withoutFooter)/page.tsx   the homepage (server component)
-src/modules/EditorialHome/
-  Shell.tsx        THE client boundary — reveals, WebGL gate, backdrop layers
-  index.tsx        server component; composes Shell + sections
-  constants.ts     ALL site content
-  Stage.tsx        three.js hero backdrop
-  Hero|Work|Marquee|ProjectIndex|About|Contact.tsx
-src/components/editorial/  MonoLabel, SectionHead, MetaColumns, ImageWell
-src/layout/EditorialHeader|EditorialHud/   fixed top/bottom chrome
-src/styles/global.css      design tokens + .ed-* primitives
+app/(frontend)/(withoutFooter)/page.tsx          the index
+app/(frontend)/(withoutFooter)/work/[slug]/      one page per project
+src/content/site.ts        ALL site content. Plain data, no imports.
+src/modules/Studio/
+  index.tsx        composes the four bands of the index
+  Open.tsx         the masthead
+  Work.tsx | About.tsx | Contact.tsx
+  Corners.tsx      the fixed chrome at the four edges
+src/modules/Project/
+  index.tsx        the three-column project view
+  SpecSheet.tsx | ShotStack.tsx | NextProject.tsx
+src/components/Shot.tsx    one image, or the field it will go in
+src/components/Preloader/  curtain (index.tsx) + pre-paint boot script (boot.ts)
+src/hooks/useFittedText.ts the fitting engine
+src/styles/global.css      design tokens + .st-* primitives
+public/fonts/              Nippo + Switzer, self-hosted
+public/images/work/        project imagery goes here
 ```
 
 Path aliases: `@Components @Modules @Layout @Hooks @Constants @Utils @Styles @/*`.
 
+There is no header band and no footer band. `Corners.tsx` holds all the
+chrome at the four edges of the viewport.
+
+## Type
+
+**Nippo** (display) and **Switzer** (text), both from Fontshare, both
+self-hosted via `next/font/local`. Nippo has only 400/500/700.
+
+Nippo was chosen by rendering four candidates at the sizes this site
+actually uses. That step is not optional — **Array** was the first pick and
+had to be thrown out on sight: it is a halftone-dot face that turns to
+unreadable noise below about 40px. Cabinet Grotesk and Excon were both too
+close to a default geometric sans. Render before you commit.
+
 ## Content
 
-**All copy, projects and links live in `src/modules/EditorialHome/constants.ts`.**
-Nothing else hardcodes content; `src/constants/common.ts` derives site metadata
-from it. Change content there and nowhere else.
+**All copy, projects and links live in `src/content/site.ts`.** Nothing else
+hardcodes content; `src/constants/common.ts` and `app/sitemap.ts` both read
+it. Current values are placeholders marked `TODO`.
 
-Current values are placeholders marked `TODO`. Two standing rules:
+Imagery goes in `public/images/work/`. A `null` `src` is not a broken
+state: `Shot` renders a sized, labelled field, so the layout, the scroll
+length and the thumbnail rail are all correct before a single screenshot
+exists. Set `cover` for the index preview and fill `shots` for the project
+page.
+
+Three standing rules:
 
 - **Never invent biographical facts** — name, location, employers, clients.
 - **Never invent awards, metrics or credentials.** The source design shipped
-  fake Awwwards/CSSDA/FWA claims; they were deliberately removed. Do not
-  reintroduce that kind of claim unless the owner states it is genuine.
+  fake Awwwards/CSSDA/FWA claims and a "Numbers" column of em-dash
+  placeholders. There is deliberately no `recognition` field on `Project`,
+  which is exactly where the reference design puts its award list.
+- **Every `Shot` needs a real `alt`** describing what the image shows, not
+  "screenshot of the homepage". It is the only description a screen reader
+  gets.
 
 ## Traps
 
 These are not style preferences. Each one was a real bug here.
 
-**1. `.ed-*` primitives must stay inside `@layer components`.**
+**1. `.st-*` primitives must stay inside `@layer components`.**
 Tailwind v4 puts utilities in `@layer utilities`, and unlayered rules beat
-layered ones regardless of specificity. Outside a layer, `.ed-label` silently
-defeats any `normal-case` or `tracking-*` set beside it — the email rendered
-uppercase for exactly this reason. Keep `html`, `body`, `::selection`,
-`:focus-visible` and the reduced-motion block unlayered; they rely on it.
+layered ones regardless of specificity. Outside a layer, `.st-display`
+would silently defeat any `leading-*` or `tracking-*` set beside it. Keep
+`html`, `body`, `::selection`, `:focus-visible` and the reduced-motion
+block unlayered; they rely on it.
 
 **2. The root font-size is fluid, and it redefines every rem.**
-`html { font-size: clamp(0.9375rem, 0.5vw + 0.525rem, 1.3125rem) }`. Tailwind's
-whole spacing scale resolves against it, so `p-4` is not 16px. Keep it in `rem`,
-never `px` — a px root overrides the reader's own font-size preference
-(WCAG 1.4.4).
+`html { font-size: clamp(0.9375rem, 0.5vw + 0.525rem, 1.3125rem) }`.
+Tailwind's whole spacing scale resolves against it, so `p-4` is not 16px.
+Keep it in `rem`, never `px` — a px root overrides the reader's own
+font-size preference (WCAG 1.4.4).
 
-**3. Lenis owns scrolling.**
-`window.scrollTo` is a no-op and fires no scroll events. Use `window.lenis`.
-Never add `scroll-behavior: smooth` — it fights Lenis. ScrollTrigger is wired to
-Lenis in `SmoothScroll`, which also refreshes on `document.fonts.ready` because
-webfont swap invalidates cached trigger positions.
+**3. Lenis owns scrolling — with two consequences.**
+`window.scrollTo` is a no-op; use `window.lenis.scrollTo`. Never add
+`scroll-behavior: smooth`. But:
 
-**4. In-page links must go through `useAnchorNav`.**
-`preventDefault()` cancels the whole navigate-to-fragment step — not just the
-jump, but the hash update *and* the focus move. The hook restores both. A bare
-`<a href="#x">` with a scroll handler leaves keyboard and screen-reader users
-stranded on the link.
+- Lenis scrolls the real document, so a plain
+  `window.addEventListener('scroll', …)` **does** fire — measured at 28
+  events across one 400ms programmatic scroll. `Work` and `ShotStack` rely
+  on that rather than taking a dependency on Lenis's own emitter.
+- Lenis does **not** honour `scroll-padding-top`; that property only
+  applies to the browser's own scroll-into-view. Every `lenis.scrollTo`
+  that targets an element must pass `offset: -scrollPaddingTop`, read from
+  the computed style so the two cannot drift. Without it the fixed corner
+  marks land on top of whatever you scrolled to.
 
-**5. `Shell.tsx` is the only client boundary for page sections.**
-Sections are static JSX over frozen data and must stay server components. If you
-add `'use client'` to `EditorialHome/index.tsx` or a section, you pull all of
-them plus `constants.ts` into the bundle. `ProjectIndex` is client because it
-owns hover/focus state — that is the exception, not the pattern.
+**4. In-page links must go through `useAnchorNav`, and only on the index.**
+`preventDefault()` cancels the whole navigate-to-fragment step — not just
+the jump, but the hash update *and* the focus move. The hook restores both.
+`Corners` switches to real `/#work` links off the index, because there the
+target elements do not exist and the hook would silently do nothing.
 
-**6. `constants.ts` is on the server metadata path.**
-`src/constants/common.ts` imports it. It must stay plain data with no imports —
-a single `import ... from 'three'` there breaks `next build`.
+**5. Client boundaries are leaves, not wrappers.**
+There is no page-wide client boundary. The old `Shell.tsx` existed only to
+run a GSAP scroll-reveal over every block; the reveals were identical at
+all seven call sites, which is the universal fade-up tell. The client
+leaves are `Open`, `Work`, `Corners` and `ShotStack` — each owns real
+state. Do not add `'use client'` to either module's `index.tsx`.
 
-**7. `Stage.tsx` targets three 0.186, not the prototype's 0.149.**
-`outputEncoding`/`sRGBEncoding` are gone (`outputColorSpace`/`SRGBColorSpace`),
-legacy light intensities need a `Math.PI` factor, and an animated equirect
-`CanvasTexture` environment must be convolved through `PMREMGenerator` by hand —
-three only auto-refreshes PMREM for render-target textures. It is mounted behind
-a `matchMedia('(min-width: 900px)')` gate: CSS-hiding alone still downloads the
-chunk and allocates a GPU context on phones.
+**6. `src/content/site.ts` is on the server metadata path.**
+`src/constants/common.ts` imports it. It must stay plain data with no
+imports — a single `import` of anything browser-only breaks `next build`.
 
-**8. Hydration.** The HUD clock renders `--:--` on the server and starts in an
-effect; `stageEnabled` starts `false` on both sides. Keep any new time-, random-
-or `window`-dependent value out of render.
+**7. Palette values do not survive a change of ground — re-derive, don't nudge.**
+The ground has moved three times (`#0a0a0a` → `#ececec` → `#0d1117` →
+`#efedea`). Dimming pulls text *toward* the ground, so the dim used for the
+unfocused rows of the work list inverts with it: it was 0.42 opacity on
+dark, and on this paper it is a solid `--ink-3` of `#7d756d`, only 3.88:1.
+
+Same reasoning gave `--well` (`#d9d5cf`, the empty-image field) its value.
+It is *darker* than paper so it reads as a blocked-out area rather than a
+wash, which is also what lets its label be `--ink` at 12.87:1 instead of
+`--ink-2` at a marginal 4.03:1.
+
+**8. `useFittedText` measures; it never computes from a coefficient.**
+It sizes the masthead and each project's title to fill their column
+exactly. Three things make that harder than it looks:
+
+- **A per-character coefficient does not exist.** At display tracking,
+  `IIII` is about 0.35em per character and `MMMM` about 0.85em — a 2.4x
+  spread. Any `chars x ratio` formula is wrong for most strings.
+- **Measure the container's content box, never the element's own.** The
+  fitted element is `white-space: nowrap`, so when the text is wider than
+  the column its box grows to the text and the next fit reads its own
+  previous output. That fed back as 131px, then 185px, then 242px from
+  identical input.
+- **Measure on a detached probe,** and re-express `letter-spacing` as an em
+  ratio first — its computed value is px against the element's *current*
+  size, so carrying it onto a 100px probe applies the wrong tracking.
+
+Also: the ResizeObserver reacts to **width only**. Its observed box's
+height changes as a direct result of the font-size the callback writes, so
+reacting to height is a loop that never settles. And never skip the final
+write as "unchanged" — the whole masthead once rendered at exactly the
+probe size because a guard returned early.
+
+**9. Hydration.** The corner clock renders `--:--` on the server and starts
+in an effect. Keep any time-, random- or `window`-dependent value out of
+render.
+
+**10. The preloader owns `data-preloading`, and owns it defensively.**
+A blocking `<head>` script sets the attribute before first paint;
+`global.css` keys three things off it — the curtain's display,
+`animation-play-state: paused` on everything, and the scroll lock.
+
+- The pause rule is **deliberately unlayered**, which is how it beats
+  Tailwind's `animate-[...]` utilities (the `animation` shorthand resets
+  play-state) without `!important`. Do not move it into a layer.
+- The component must never treat the attribute as its input. StrictMode
+  runs effects twice and pass one's cleanup releases it — read it once at
+  module scope (`shouldRun`) and **re-assert** it in the effect.
+
+`<html>` carries `suppressHydrationWarning` because of that pre-paint
+mutation. The curtain drives itself with GSAP, not CSS animation, so its
+own guard cannot freeze it.
+
+**11. `--chrome-top` is derived; do not replace it with a number.**
+The fixed corner marks own the top of the viewport, and their height is
+`var(--gut) + 2.3rem + 2.5rem` — the gutter, two lines of `.st-meta`, the
+gradient. Every sticky offset and `scroll-padding-top` is expressed against
+it. A hand-tuned `7rem` was 12px short at desktop and clipped the project
+page's spec sheet under the band; the gutter is fluid, so any fixed value
+is wrong at some width.
+
+**12. Do not put an ARIA role on a shape or a div — use the element.**
+Biome's `useSemanticElements` has been right every time it has fired here.
+
+**13. Next's dynamic `params` is a Promise.** `app/work/[slug]/page.tsx`
+takes `params: Promise<{ slug: string }>` and awaits it, in both the page
+and `generateMetadata`. Read `node_modules/next/dist/docs/` before writing
+route code; this version differs from older App Router conventions.
 
 ## Accessibility invariants
 
-The design is stark by intent — do not "fix" the dark palette. The base tokens
-pass AA comfortably (`#8C8C88` 5.87:1, `#B6B3AC` 9.46:1, `#F2EFE9` 17.25:1 on
-`#0A0A0A`). Failures come from *state*, so:
+Measured in the browser, not computed from the tokens alone: `--ink`
+16.09:1, `--ink-2` 5.05:1, `--ink-3` 3.88:1, and `--ink` on `--well`
+12.87:1. A full sweep of every text node returns zero failures against the
+size-appropriate bar on both page types.
 
-- **Do not dim whole rows.** At 0.42 opacity over `#0A0A0A` nothing reaches
-  4.5:1 — even pure white caps at 4.17. `ProjectIndex` dims only the large
-  title, which passes the 3:1 large-text bar; metadata stays at full opacity.
-- **`mix-blend-mode: difference` needs a constrained backdrop.** It renders a
-  glyph as |text − backdrop| and hits zero contrast where the backdrop is half
-  the text value. The fixed chrome paints an opaque scrim; only an inner wrapper
-  carries `.ed-chrome`. Never blend directly over arbitrary content.
-- **Keep decorative things out of the AX tree**: marquee, stage, vignette, grid
-  overlay, cursor preview, the painted hero name halves, and `ImageWell`'s
-  placeholder caption (it lands in the link name otherwise).
-- Hover states need a focus equivalent. Sections keep their `aria-labelledby`.
-- Four things honour `prefers-reduced-motion` — the CSS block, `gsap.matchMedia`
-  in `Shell`, `Stage.tsx`, and Lenis. Add a fifth motion source, cover it too.
+**Always run the control.** A sweep that reports zero failures is worthless
+until you have made it report one: paint a single small label at a failing
+value, confirm the count goes 0 → 1, then restore it.
+
+**Two measurement traps, both of which produced wrong answers here:**
+
+- **Counting `getClientRects()` to detect a two-line clickable is wrong.**
+  A single-line inline element returns one rect *per text node*, so
+  `{first} {last}` in JSX yields three rects on one line and every run
+  flagged the masthead link. Count **distinct rounded `y` values** instead.
+  (The version before that compared height to line-height, which counted
+  padding as a second line. Both were false positives at every width.)
+- Do not filter screenshot pixels by luminance to find a backdrop. Text
+  antialiasing covers every intermediate value, so "the brightest mid-tone"
+  is a letter edge and the number comes back identical everywhere.
+
+Other invariants:
+
+- **Do not dim whole rows.** `Work` dims only the large title; the readout
+  beside it stays at full ink.
+- **The fixed corner marks must stay opaque behind their own text.** The
+  paper gradient behind each row is what stops body copy sliding under
+  them; `pointer-events` is off on the gradient and back on for the text,
+  or the bands swallow clicks across the full width.
+- **Visual echoes are `aria-hidden`, and what they echo must exist
+  elsewhere.** The index's preview aside is hidden, so each row's summary,
+  category and year live in the link's own accessible name. The empty
+  `Shot` field is hidden, so its label never leaks into a link's name —
+  that is the trap the old `ImageWell` hit.
+- **State is never carried by appearance alone.** The thumbnail rail's
+  current shot has `aria-current` as well as an outline.
+- Three things honour `prefers-reduced-motion` — the CSS block, Lenis
+  (which is not constructed at all under `reduce`), and the preloader
+  (which drops the wipe for a plain fade). Add a fourth motion source,
+  cover it too.
+- Motion answers actions. The only non-user-triggered motion is the single
+  load gesture: the preloader handing off to the masthead's mask-rise
+  mid-wipe.
 
 ## Verify before claiming
 
-Run `yarn build` and `npx tsc --noEmit`. For UI, inspect the DOM rather than
-trusting a screenshot: **if the Browser pane is hidden, screenshots come back
-solid black** even though the page renders fine. Programmatic `.focus()` and
-synthetic `mouseover` also do not reliably fire React handlers without system
-focus — use real key/wheel input, or assert on the rendered style attributes.
+Run `yarn build` and `npx tsc --noEmit`. For UI, inspect the DOM rather
+than trusting a screenshot: **if the Browser pane is hidden, screenshots
+come back solid black** even though the page renders fine. A hidden pane
+also reports `document.hidden === true` and fires **zero rAF callbacks**, so
+the preloader counter looks frozen at its initial value. That is the
+harness, not a bug. Drive those through Playwright, which composites for
+real.
+
+The dev server has served stale CSS twice after a rewrite of
+`global.css`. If a token or a new rule appears not to apply, restart it
+before debugging anything else.
+
+Responsive is checked at **320 / 375 / 414 / 768 / 1440**, on the index
+*and* on a project page: no horizontal scroll, `overflow-x: clip` on both
+`html` and `body` (`clip`, never `hidden` — `hidden` makes the element a
+scroll container and breaks `position: fixed` on descendants), no clickable
+wrapping to two lines, and nothing extending past the viewport edge.
+
+Run the 3dviz-pro-max skill's scripts with `/opt/homebrew/bin/python3.12`;
+the system `python3` is the Xcode stub and needs a sudo license agreement.

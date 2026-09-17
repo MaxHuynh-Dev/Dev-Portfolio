@@ -1,0 +1,37 @@
+[
+  {
+    "date": "2026-09-17",
+    "macrostructure": "Index-First",
+    "theme": "custom",
+    "theme_axes": "dark paper / grotesk-sans display / cool accent",
+    "vibe": "technical developer index",
+    "nav": "N8 Terminal command",
+    "footer": "Ft4 Dense colophon",
+    "enrichment": "none",
+    "brief": "Dev-Portfolio · single-page front-end engineer portfolio, placeholder content",
+    "superseded_by": "2026-09-17 rebuild",
+    "note": "Torn down the same day. This was a brand-preserving `redesign`, so it kept the near-black ground, the single cyan accent, the hairline rules, the tracked-out all-caps eyebrows and the monospace labels — close to a complete list of the frontend-design skill's named tells. The owner read the result as unchanged, and was right to."
+  },
+  {
+    "date": "2026-09-17",
+    "macrostructure": "custom · Open / Studies / Work / About / Contact",
+    "theme": "custom",
+    "theme_axes": "warm paper #efedea / Nippo squared-grotesk display / NO accent — colour comes only from the studies",
+    "vibe": "the portfolio is its own demo",
+    "nav": "corner marks, four edges, lowercase, no header or footer band",
+    "footer": "none — contact section carries it, one-line colophon",
+    "enrichment": "four live interface studies; no photography, no screenshots, no image slots",
+    "brief": "Full rebuild. Every section, token and primitive replaced; Preloader, SmoothScroll and the content file kept.",
+    "banned_here": [
+      "hairline rules and dividers",
+      "all-caps or letter-spaced labels",
+      "monospace",
+      "a single bright accent on a tinted near-black",
+      "cards, radius, drop shadows",
+      "arrows appended to link text",
+      "middot-joined meta strings",
+      "scroll-triggered fade-up reveals",
+      "per-item ordinals on a set that is not a sequence"
+    ]
+  }
+]
