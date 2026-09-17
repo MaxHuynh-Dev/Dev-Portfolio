@@ -20,7 +20,11 @@ export default function NextProject({ project }: { project: Project }): React.Re
         next project
       </h2>
 
-      <Link href={`/work/${project.slug}`} className="mt-[0.5rem] block">
+      <Link
+        href={`/work/${project.slug}`}
+        data-transition-label={project.name}
+        className="mt-[0.5rem] block"
+      >
         <span className="st-display block text-[clamp(2.2rem,10vw,7.5rem)] text-[var(--ink)] leading-[0.95]">
           {project.name}
         </span>

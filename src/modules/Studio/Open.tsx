@@ -32,17 +32,19 @@ export default function Open(): React.ReactElement {
       aria-labelledby="open-heading"
       className="flex min-h-[100svh] flex-col justify-center px-[var(--gut)] pt-[clamp(7rem,13vh,9.5rem)] pb-[clamp(7rem,13vh,9.5rem)]"
     >
-      <div className="st-rise-mask pb-[0.12em]">
-        <div className="st-rise">
-          <h1
-            ref={ref as React.RefObject<HTMLHeadingElement>}
-            id="open-heading"
-            className="st-display st-fit m-0 whitespace-nowrap text-[var(--ink)]"
-          >
-            {FULL_NAME}
-          </h1>
-        </div>
-      </div>
+      {/* No mask, and nothing rises. The preloader flies this exact element
+          up from the foot of its curtain into this slot, so the line is
+          already here and already sized — there is nothing left to reveal.
+          It finds the element by this id and only hands over when the text
+          matches, which is why the name is built from PROFILE in both
+          places. See Preloader/index.tsx. */}
+      <h1
+        ref={ref as React.RefObject<HTMLHeadingElement>}
+        id="open-heading"
+        className="st-display st-fit m-0 whitespace-nowrap text-[var(--ink)]"
+      >
+        {FULL_NAME}
+      </h1>
 
       <p className="mt-[clamp(1.4rem,3.5vh,2.6rem)] max-w-[42ch] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.35] md:ml-auto">
         {PROFILE.intro}

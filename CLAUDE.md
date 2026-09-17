@@ -16,6 +16,57 @@ Two kinds of page:
   left, a stack of shots down the middle, a rail of thumbnails on the
   right, and the next project at the foot.
 
+## Motion
+
+Two moments, and both are a sheet of one colour moving in one direction
+while something asynchronous resolves behind it.
+
+**Arriving** (`Preloader`). A sheet of paper, and the name assembling
+itself on it. Every letter waits just outside the line — odd ones above,
+even ones below — and slides into place left to right, 70ms apart, out of
+a mask cut to the ink.
+
+Nothing flies anywhere afterwards. The line is built at the masthead's own
+size, tracking and position, read off the real `<h1>`, so when the paper
+dissolves the line underneath is already the one that was there — left,
+top, run and size all matching to the pixel, at every width and under
+`reduce`. There is no bar and no percentage: a second account of the load
+would only be a weaker one than the letters already give.
+
+It runs on **every document load, reloads included**. There was a
+`sessionStorage` flag that showed it once per session; the owner asked for
+it on every reload and it is gone. The division that matters is not
+first-visit versus repeat, it is document load versus route change: this is
+a module evaluated once per document, so an in-app navigation never
+re-runs it, and the two curtains can never be on screen together.
+Reloading `/work/<slug>` still gets the curtain, but the letters have no
+masthead to land on there, so they solve against the column and simply
+clear (see trap 10).
+
+The cost is honest: the hold is 1.2s and the whole gesture about 1.8s, on
+every refresh. `MIN_HOLD_MS` in `Preloader/index.tsx` is the knob.
+
+**Moving between pages** (`PageTransition`). An ink panel rises to cover
+the page, the next route is fetched and committed behind it, the scroll is
+put back to the top, and the panel carries on upward to uncover. One
+direction throughout — it never comes back down the way it came. The
+destination's name sits on the panel in paper while you wait, which is the
+same foot-left position the preloader puts its name in.
+
+The inversion is not a new colour. `::selection` has always drawn this
+site's type paper-on-ink, so the curtain is the page's own palette turned
+over for a second rather than a second palette.
+
+**The route is only pushed once the panel is closed.** Push during the rise
+and React commits the new page while the top of the screen still shows the
+old one — a visible jump, which is the whole thing this exists to remove.
+`router.prefetch` at click time is what keeps that ordering cheap.
+
+Durations live in `global.css` as `--t-quick`, `--t-cover`, `--t-reveal`
+and `--t-handoff`. Only the first is used by CSS; the other three are read
+off the computed style by the two components, because a CSS animation
+cannot wait for a webfont or a route. Do not invent a fifth at a call site.
+
 ## Things that have been rejected here
 
 Three directions were built and thrown out. Do not walk back into them.
@@ -37,6 +88,28 @@ reading it as unchanged. Still banned:
 - no cards, no border radius, no drop shadows
 - no monospace
 - no per-item ordinals unless the content really is a sequence
+
+**A crossfade route transition, once.** The View Transitions API, with the
+project's name as a shared element morphing from the work list into the
+project page's `<h1>`. It looked good in a frozen frame and felt broken in
+motion, and the reason is worth keeping: **it snapshot the outgoing page at
+the reader's scroll offset and the incoming one at zero, then cross-faded
+between the two.** No easing reconciles two pictures of different places —
+the page visibly jumps. It was not dropped frames; measured at a 13.4ms
+median with no long tasks. Covering the swap is the only way to move the
+scroll without anyone seeing it. Everything that build added — `<ViewTransition>`,
+`view-transition-name`, `::view-transition-*` rules — is gone.
+
+**The measure, once.** The curtain drew a dimension line opening from the
+left margin to the right one, with a tick at each end, and two live
+readouts — `available`, the width being solved for, and `fit`, the size it
+produced — while the name grew to fill it. The idea was that the one piece
+of machinery this site really runs is `useFittedText`, so the load moment
+should be that measurement happening. It measured perfectly and it looked
+like a CAD screenshot: a technical drawing is a cold thing to open a
+portfolio with, and the numbers explained the mechanism to someone who had
+not asked. Landing the name exactly on the masthead was the part worth
+keeping, and the letters kept it.
 
 **Live "studies", once.** A section of running interface demos — an easing
 editor, an OKLCH contrast meter, a container-query resizer — stood in for
@@ -72,7 +145,9 @@ src/modules/Project/
   index.tsx        the three-column project view
   SpecSheet.tsx | ShotStack.tsx | NextProject.tsx
 src/components/Shot.tsx    one image, or the field it will go in
-src/components/Preloader/  curtain (index.tsx) + pre-paint boot script (boot.ts)
+src/components/Preloader/  entry curtain + pre-paint boot script (boot.ts)
+src/components/PageTransition/  the route curtain, and the only place
+                           internal navigation is handled
 src/hooks/useFittedText.ts the fitting engine
 src/styles/global.css      design tokens + .st-* primitives
 public/fonts/              Nippo + Switzer, self-hosted
@@ -219,6 +294,70 @@ A blocking `<head>` script sets the attribute before first paint;
 mutation. The curtain drives itself with GSAP, not CSS animation, so its
 own guard cannot freeze it.
 
+Four more things about the assembling line specifically:
+
+- **Read `--fit-size`, never the computed `font-size` — and not on its own
+  either.** They are only the same once `useFittedText` has run: `.st-fit`
+  falls back to a clamp until then, and the clamp is nowhere near the
+  solved value, measured at 160px against a real 257px. But the property
+  being *present* only means a value has been written, not the last one —
+  it is set on the way through the search too. Two consecutive frames
+  agreeing on both the size and the run is the test that it has stopped
+  moving; one read caught it mid-solve and dressed the line to a run the
+  masthead had already left.
+- **Size settling is not position settling.** `--fit-size` says the line is
+  solved; it says nothing about where it sits, which depends on the
+  section's centring and therefore on the intro paragraph below it
+  reflowing when the text face arrives. Read the box once and the curtain
+  lands 44px off. The stage re-reads the heading every frame instead — one
+  rect, and the coincidence becomes true by construction rather than by
+  timing.
+- **Splitting a string into one box per character loses its kerning, and
+  you cannot put that back as tracking.** CSS adds letter-spacing after
+  every character, inside whichever box that character is in, so the total
+  advance survives the split; the kerning pairs do not, because there are
+  no longer two adjacent characters for them to apply to. Correcting it by
+  spreading the difference over the line is wrong in a way that a
+  measurement of the total run cannot see: **both ends land and the middle
+  does not** — measured at 0 for the first letter, 1.2px for the last and
+  6.6px for the `o` in between, which is what the owner saw. So nothing is
+  spread and nothing is divided by a character count. A hidden `ref` holds
+  the same string unsplit at the same size, which is the masthead's layout
+  by construction, and a range over each of its characters says where that
+  character goes; the letters are placed there absolutely. Every letter
+  then matches to the last bit of a double — `dx` is exactly 0, not
+  rounded to 0.
+- **Hand the letters back to normal rendering before the dissolve.** A
+  transform, including the identity one a finished tween leaves behind, and
+  a `will-change` hint each put an element on its own raster path, where
+  the same glyph at the same position antialiases differently. Clearing
+  both takes the handover from "a thin outline around every letter" to
+  pixel-identical at 320 and 768, and to 25 device pixels out of 1.5M at
+  1440 on a 2x screen — one glyph edge, a sub-pixel rasterisation
+  difference with the layout positions bit-identical.
+- **`columnWidth` is a knowably wrong estimate.** It is taken while the
+  curtain holds `overflow: hidden` on `<html>`, so there is no scrollbar
+  and the viewport reads one scrollbar too wide for the page that is about
+  to exist. Measure the difference with a probe rather than assume it: zero
+  on overlay scrollbars, ~15px on classic ones. It only carries the reload
+  of a project page, where there is no masthead to read.
+- **The mask is measured, not an em guess.** `.st-display` sets
+  `line-height: 0.9`, tighter than the face's ascent plus descent, so the
+  glyphs hang out of their own box and a mask cut to the box shaves the
+  caps and the descenders. `measureText` gives the real overhang for the
+  real string: 2px for a name with no descenders, 33px once there are
+  descenders or Vietnamese diacritics. A guessed 0.22em was 56px, which
+  left the letters floating in full view instead of arriving out of an
+  edge.
+- **Nothing reveals the masthead any more**, so there is no masthead
+  animation left for `data-preloading` to hold. `st-fade` on the corner
+  marks is the only held animation, and it is why `release()` still happens
+  mid-dissolve rather than at the end: the frame comes up around the name
+  while the paper is still going. `st-rise` is gone, and so is the version
+  after it that kept the name small in the corner and flew the real `<h1>`
+  up into place — assembling a copy in position says the same thing without
+  the journey, and without one component transforming another's element.
+
 **11. `--chrome-top` is derived; do not replace it with a number.**
 The fixed corner marks own the top of the viewport, and their height is
 `var(--gut) + 2.3rem + 2.5rem` — the gutter, two lines of `.st-meta`, the
@@ -235,12 +374,92 @@ takes `params: Promise<{ slug: string }>` and awaits it, in both the page
 and `generateMetadata`. Read `node_modules/next/dist/docs/` before writing
 route code; this version differs from older App Router conventions.
 
+**14. Internal links are intercepted in the CAPTURE phase.**
+`next/link` calls `preventDefault()` on every internal href so it can route
+on the client, and React's listener sits on the root container *inside*
+`document`. A bubble-phase listener on `document` therefore finds
+`defaultPrevented` already true on exactly the links it exists to catch,
+and silently never fires — measured: the curtain stayed hidden and the
+route changed in 73ms. `PageTransition` listens with `capture: true`, and
+calls `stopPropagation()` so next/link does not navigate a second time
+underneath the panel.
+
+Running first costs it the one thing bubbling gave for free: it no longer
+knows what `useAnchorNav` decided. The `url.pathname === location.pathname`
+test is what keeps the curtain off the index's own `#work` / `#about` /
+`#contact` links now. On that path the event is left completely alone — no
+`preventDefault`, no `stopPropagation` — so the hook still gets it intact.
+
+**15. GSAP's `yPercent` composes with the transform it finds.**
+It does not replace it. The curtain also carried Tailwind's
+`translate-y-full` for a while, and the two stacked to 200%: "covered" left
+the panel a full viewport *below* the screen and the route changed behind a
+curtain nobody ever saw. Measured at 1800px on a 900px viewport. One owner
+per transform — here that is GSAP, and the parked position is a `gsap.set`
+on mount, not a class.
+
+**16. A full-bleed fixed panel cannot cover the scrollbar. Stop trying.**
+On a platform with classic scrollbars the route curtain stops short of the
+right edge and a pale strip shows. That strip is the scrollbar, which is
+browser chrome and paints above every element. `w-screen` does not reach
+it: `scrollbar-gutter: stable` on `<html>` takes the gutter out of the
+viewport-percentage units as well, so `100vw` measured 1425px on a 1440px
+window — identical to `inset-0`. It is invisible on macOS, where scrollbars
+overlay. Leave it alone.
+
+**17. Check the built CSS, not the source.**
+Lightning CSS, which Tailwind v4 runs the stylesheet through, rewrites more
+than whitespace: it minified `blur(0)` to `blur()`, which is not valid, so
+the browser dropped the declaration and the source looked right for an
+hour. `curl` the chunk out of `/_next/static/chunks/` and read it when a
+rule appears not to apply.
+
+**18. `Range.getBoundingClientRect()` does not flush layout.**
+`Element.getBoundingClientRect()` does; the Range version returns whatever
+the last layout said. Every measurement here is taken in the same turn as
+a style write, so every one of them came back a frame stale. A correction
+solved against a stale run and then checked against another one oscillated
+for 400ms and settled 70px short, and the same staleness reads a heading
+mid-webfont-swap as still being in the fallback face — which looks exactly
+like `document.fonts.ready` having resolved too early. Touch
+`el.getBoundingClientRect()` first, then take the range.
+
+(`document.fonts.ready` resolving early is a real hazard too, just not that
+one: it answers "nothing is pending", which includes the window before the
+first layout that needs the face has asked for it. `document.fonts.check`
+with the family name is the question that was meant.)
+
+**19. Under `reduce`, every property on every element is transitioned.**
+The reduced-motion block sets `transition-duration`, and
+`transition-property` defaults to `all` — so it does not shorten existing
+transitions, it creates one for everything. A transitioned property does
+not take its new value synchronously, which turns any write-then-measure
+into a read of the value *before* the write. That is what made the fit
+solve against its own previous output under `reduce` alone, 61 passes of a
+damped oscillation, while ordinary motion was exact on the first try.
+
+`Preloader` opts its own elements out with inline
+`transition: none !important` — inline important, because an `!important`
+is what created the transition. The letters are in that list as well as the
+line: `letter-spacing` is inherited, so each span transitions its own copy
+and its box is a frame behind even when the line's is not. Exempting the
+line alone took the error from 70px to 3px and no further. Nothing in
+either curtain is CSS-animated in the first place, so this costs the
+promise nothing.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
 16.09:1, `--ink-2` 5.05:1, `--ink-3` 3.88:1, and `--ink` on `--well`
 12.87:1. A full sweep of every text node returns zero failures against the
 size-appropriate bar on both page types.
+
+**`--ink-3` is only safe as LARGE text, and "large" for bold type starts
+at 18.66px.** It dims the work list's rows, which are never that small.
+The preloader's pending name is not display-sized: at 320px it computes to
+about 17px, where the bar is 4.5:1 and `--ink-3` fails. It uses `--ink-2`
+instead. Check the computed `font-size` at 320, not the one you designed
+at 1440.
 
 **Always run the control.** A sweep that reports zero failures is worthless
 until you have made it report one: paint a single small label at a failing
@@ -273,13 +492,31 @@ Other invariants:
   that is the trap the old `ImageWell` hit.
 - **State is never carried by appearance alone.** The thumbnail rail's
   current shot has `aria-current` as well as an outline.
-- Three things honour `prefers-reduced-motion` — the CSS block, Lenis
-  (which is not constructed at all under `reduce`), and the preloader
-  (which drops the wipe for a plain fade). Add a fourth motion source,
-  cover it too.
+- The line is shown **assembled rather than assembling** under
+  `prefers-reduced-motion`: nine letters each travelling more than their
+  own height is a large movement, which is the query's central case. The
+  hold still runs and the status line still announces; the plate is simply
+  static, and it still lands on the masthead to the pixel. The paper itself
+  still fades in, because an opacity change is not the movement the query
+  is about — the same call `PageTransition` makes.
+- Four things honour `prefers-reduced-motion` — the CSS block, Lenis
+  (which is not constructed at all under `reduce`), the preloader (which
+  shows the line assembled instead of assembling) and `PageTransition` (which
+  drops the
+  wipe for one). The last two read the query in JavaScript, because the CSS
+  block cannot reach a GSAP tween; add a fifth motion source and it will
+  need its own check too. Verified under `reduce`: the panel never
+  translates, only fades, and the navigation still lands at the top.
 - Motion answers actions. The only non-user-triggered motion is the single
-  load gesture: the preloader handing off to the masthead's mask-rise
-  mid-wipe.
+  load gesture: the letters assembling into the masthead's own line, and
+  the page being let go mid-dissolve. The route curtain answers a click.
+- **The route curtain must always let go.** `PageTransition` caps the hold
+  at 3s and reveals anyway; its cleanup calls `lenis.start()` even if the
+  component unmounts mid-transition. A reader stuck behind a panel with
+  scrolling switched off is the worst failure this file can produce.
+- **A navigation moves focus.** `preventDefault()` cancels the browser's
+  own focus move along with the jump, so the curtain puts focus on
+  `#content` (which carries `tabindex="-1"`) before it lifts.
 
 ## Verify before claiming
 
@@ -287,13 +524,41 @@ Run `yarn build` and `npx tsc --noEmit`. For UI, inspect the DOM rather
 than trusting a screenshot: **if the Browser pane is hidden, screenshots
 come back solid black** even though the page renders fine. A hidden pane
 also reports `document.hidden === true` and fires **zero rAF callbacks**, so
-the preloader counter looks frozen at its initial value. That is the
-harness, not a bug. Drive those through Playwright, which composites for
+the preloader never places its line and the curtain looks stuck on blank
+paper. That is the harness, not a bug. Drive those through Playwright, which composites for
 real.
 
 The dev server has served stale CSS twice after a rewrite of
 `global.css`. If a token or a new rule appears not to apply, restart it
-before debugging anything else.
+before debugging anything else — and read the built chunk (trap 17) before
+concluding the source is wrong.
+
+**Both curtains are too short to watch across a tool round-trip.** They are
+gone before a second call can look at them, so drive each one from inside a
+single Playwright snippet.
+
+- *The route curtain* (~1.15s): `page.route()` the destination with a delay
+  — `'**/work/project-five**'` held for 1800ms — and the covered wait
+  becomes long enough to photograph. That is also the honest test of "wait
+  for the new page", because the panel has to sit closed until it arrives.
+  Scroll a long way down first, or "always starts at the top" is not being
+  tested at all.
+- *The entry curtain* (~1.8s including the dissolve): nothing to hook. Raise
+  `MIN_HOLD_MS` to 6000, observe, then put it back — and check that the
+  dev server actually rebuilt, because a stale bundle will hold for 1.2s
+  and quietly make the test meaningless.
+
+  Raising it is not optional for a pixel comparison against the masthead.
+  The letters finish at about the same moment the exit begins, so the last
+  frame the curtain is *visible* on is already a third of the way through
+  the dissolve: comparing there compares a blend of the two pictures, not
+  the two pictures. The measured "differences" are then the cross-fade.
+
+**Smoothness is a number, not an impression.** Sample
+`requestAnimationFrame` deltas across the whole transition and count the
+frames over 20ms. The crossfade version scored a 13.4ms median with zero
+long tasks and still looked broken — which is how it was established that
+the problem was the scroll offset, not the frame budget.
 
 Responsive is checked at **320 / 375 / 414 / 768 / 1440**, on the index
 *and* on a project page: no horizontal scroll, `overflow-x: clip` on both

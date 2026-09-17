@@ -1,4 +1,5 @@
 import GridDebug from '@Components/GridDebug';
+import PageTransition from '@Components/PageTransition';
 import Preloader from '@Components/Preloader';
 import SmoothScroll from '@Components/SmoothScroll';
 import Corners from '@Modules/Studio/Corners';
@@ -20,11 +21,20 @@ export default function MainLayout({ children }: PropsWithChildren): React.React
           those normally would. */}
       <Corners />
 
-      <main id="content">{children}</main>
+      {/* tabindex so PageTransition can move focus here after a
+          navigation, and so the skip link above lands somewhere. */}
+      <main id="content" tabIndex={-1}>
+        {children}
+      </main>
 
       {/* Dev-only: it registers a global keydown listener and writes to
           localStorage — no reason to ship either. */}
       {uiHelper.isDevelopment() && <GridDebug />}
+
+      {/* The route curtain. Below the preloader in the DOM and in z-index,
+          because the two never run at the same time and the preloader must
+          win if they ever do. */}
+      <PageTransition />
 
       {/* Last in the DOM so it sits above the chrome without fighting it,
           and so it stays out of the tab order ahead of the skip link. It

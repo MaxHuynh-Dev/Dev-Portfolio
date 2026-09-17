@@ -70,6 +70,21 @@
   /* Page gutter — every band pads to this. */
   --gut: clamp(1.15rem, 3.4vw, 3rem);
 
+  /* ── Motion ──
+     Four durations, and only one of them belongs to CSS. The other three
+     are read by JavaScript, because both of this site's real gestures are
+     GSAP timelines that have to rendezvous with something asynchronous —
+     a webfont, a route — which a CSS animation cannot wait for.
+
+     They live here anyway so there is one list to change, and so nobody
+     invents a fifth at a call site. PageTransition and Preloader read them
+     off the computed style at run time; if you rename one, they will find
+     nothing and fall back to their own constants. */
+  --t-quick: 160ms; /* hover and focus on a link */
+  --t-cover: 500ms; /* the route curtain rising to cover the page */
+  --t-reveal: 560ms; /* and carrying on up to uncover the next one */
+  --t-handoff: 620ms; /* the entry curtain dissolving off the masthead */
+
   /* How much of the top of the viewport the fixed corner marks own.
      Derived from the three things that actually size them — the gutter
      above the text, two lines of .st-meta (0.78rem at 1.45), and the
@@ -139,20 +154,16 @@ body {
 }
 
 /* ── Keyframes ──
-   Two. st-rise and st-fade belong to the one orchestrated load moment;
-   st-fade is also borrowed by .st-swap, which answers the reader's own
-   scrolling. There is no scroll-triggered reveal anywhere on this site: a
-   fade-and-slide-up on every section is the single most recognisable
-   generated-page tell, and this build removed all seven of them. */
-@keyframes st-rise {
-  from {
-    transform: translateY(110%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
+   One, shared. st-fade is the corner marks' half of the load moment, and
+   .st-swap borrows it for the work list's preview, which answers the
+   reader's own scrolling. There is no scroll-triggered reveal anywhere on
+   this site: a fade-and-slide-up on every section is the single most
+   recognisable generated-page tell, and this build removed all seven.
 
+   There used to be a second, st-rise, which lifted the masthead's name out
+   of a mask on load. The name is not revealed any more — the preloader
+   hands that same line over to its place, so there is nothing left to
+   reveal. See Preloader/index.tsx. */
 @keyframes st-fade {
   from {
     opacity: 0;
@@ -218,24 +229,12 @@ body {
     text-decoration-thickness: 1px;
     text-underline-offset: 0.22em;
     text-decoration-color: var(--ink-3);
-    transition: text-decoration-color 160ms ease;
+    transition: text-decoration-color var(--t-quick) ease;
   }
 
   .st-link:hover,
   .st-link:focus-visible {
     text-decoration-color: var(--ink);
-  }
-
-  /* The load gesture. A mask clipping a line that travels up into place;
-     the preloader hands off to it mid-wipe. */
-  .st-rise-mask {
-    display: block;
-    overflow: hidden;
-  }
-
-  .st-rise {
-    display: block;
-    animation: st-rise 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .st-fade {
@@ -250,6 +249,16 @@ body {
     animation: st-fade 180ms ease both;
   }
 
+  /* The route curtain. Parked and inert until PageTransition wakes it —
+     hidden rather than merely translated off-screen, so it cannot take a
+     click or stretch the page while it is doing nothing. The component
+     sets `visibility` and `pointer-events` inline, which beat these. */
+  .st-curtain {
+    visibility: hidden;
+    pointer-events: none;
+    will-change: transform;
+  }
+
   /* Landmark targets carry tabindex="-1" for focus management and should
      not draw a ring of their own. */
   [tabindex="-1"]:focus {
@@ -257,11 +266,12 @@ body {
   }
 
   /* ── Preloader ──
-     Hidden by default so a repeat visitor — whose session flag suppresses
-     the attribute — never paints a frame of curtain. `--running` is added
-     by the component once it owns the panel, because the exit removes the
-     attribute halfway through the wipe and must not yank the curtain out
-     from under its own animation.
+     Hidden by default, and shown only while `<html>` carries the
+     attribute the boot script sets before first paint — so the panel is
+     never painted a frame early or a frame late. `--running` is added by
+     the component once it owns the panel, because the handoff removes the
+     attribute halfway through and must not yank the curtain out from under
+     its own animation.
 
      Keep no display utility on the root element: these rules are layered,
      so a Tailwind `block`/`grid` there would beat them and every visitor
@@ -297,9 +307,14 @@ body {
 }
 
 /* ── Reduced motion ──
-   One of four sources that honour the query. The others are gsap.matchMedia
-   in the studies, Lenis in SmoothScroll, and the preloader, which drops the
-   wipe for a plain fade. Add a fifth motion source and cover it here too. */
+   One of three sources that honour the query. The others are Lenis in
+   SmoothScroll, which is not constructed at all under `reduce`, and the
+   preloader, which drops the handoff and simply clears. Add a fourth motion
+   source and cover it here too.
+
+   Navigation is not in here. The route curtain is driven by GSAP, which
+   this block cannot reach — PageTransition reads the query itself and drops
+   the wipe for a plain fade. Same arrangement as the preloader. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -331,14 +346,18 @@ body {
 }
 
 /* ── Held load animations ──
-   The hero's mask-rise and the corner marks' fade all start on load.
-   Behind a 1.2s curtain they would finish unseen and lift onto a page that
-   had already settled, losing the best moment on it. Pausing them is what
-   lets the preloader hand the hero off mid-wipe.
+   The corner marks' fade starts on load. Behind a 1.2s curtain it would
+   finish unseen and the frame would be lifted off a page that had already
+   settled, losing the best moment on it. Pausing it is what lets the
+   preloader let go mid-flight, so the frame fades up around the name while
+   the name is still travelling.
 
    `both` fill means a paused animation shows its `from` state, which is
-   exactly the held pose: st-rise sits at translateY(110%) behind its mask,
-   st-fade at opacity 0.
+   exactly the held pose: st-fade at opacity 0.
+
+   The masthead's line is not in here. It does not animate on load at all
+   any more — the curtain assembles its own copy of it, at the masthead's
+   measured size and position, and dissolves off the real one.
 
    Deliberately UNLAYERED. Tailwind's `animate-[...]` utilities live in
    @layer utilities and set the `animation` shorthand, which resets

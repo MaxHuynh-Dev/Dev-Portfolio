@@ -100,6 +100,9 @@ export default function Work(): React.ReactElement {
                 onFocus={() => {
                   setActive(index);
                 }}
+                // PageTransition reads this and writes it on the curtain, so
+                // the covered moment says where you are going.
+                data-transition-label={project.name}
                 className="block py-[clamp(0.2rem,1vh,0.55rem)]"
               >
                 <span
