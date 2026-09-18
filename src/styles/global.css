@@ -250,16 +250,20 @@ body {
   }
 
   /* The rolling readout on /works.
-     Every project's version of a line is stacked in the same one-line mask;
-     the one at the middle of the ring sits at zero and the rest are parked
-     a mask-height away, above or below according to which way round the
-     ring they are. So changing which project is current IS the whole
-     animation — there is no timeline to start and none to interrupt, and
-     the reduced-motion block above already flattens the transition to
-     nothing without this file knowing about it.
+     Every project's version of a line is stacked in the same one-line mask,
+     and each one is placed a mask-height per project away from the middle
+     of the ring — so at rest one line is at zero and the rest are off the
+     mask, and mid-turn they are all part of the way across.
+
+     There is deliberately NO transition here. The lines are written every
+     frame from the ring's own continuous position, so a transition would
+     be a second opinion about where each one should be, always a few
+     frames behind the first. That also means the reduced-motion block has
+     nothing to flatten: under `reduce` the position is assigned rather
+     than eased, so the lines simply arrive.
 
      The children stretch to the mask rather than to their own text on
-     purpose. A one-line name parked at 110% of ITS OWN height, inside a
+     purpose. A one-line name placed at 110% of ITS OWN height, inside a
      mask sized by a two-line one, is still half on screen.
 
      `clip`, not `hidden`, for the same reason as html and body.
@@ -280,7 +284,6 @@ body {
   .st-roll-line {
     grid-area: 1 / 1;
     line-height: normal;
-    transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* The route curtain. Parked and inert until PageTransition wakes it —

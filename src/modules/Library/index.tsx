@@ -132,11 +132,28 @@ export default function Library(): React.ReactElement {
   // dependency it can actually see.
   const [surface, setSurface] = useState<HTMLDivElement | null>(null);
   const [links, setLinks] = useState<HTMLOListElement | null>(null);
+  const [readout, setReadout] = useState<HTMLDivElement | null>(null);
   const covers = useRef<(HTMLLIElement | null)[]>([]);
+  /** Each mask in the readout, and its eight stacked lines in list order. */
+  const rolls = useRef<HTMLElement[][]>([]);
   /** Centre-to-centre spacing in px, derived from the measured cover width. */
   const pitch = useRef(0);
 
   const draw = useCallback((position: number): void => {
+    // The readout rolls WITH the ring, not after it. Every line is placed
+    // from the same continuous position the covers are, so half a turn of
+    // the wheel leaves the name half out of its mask — where parking each
+    // line on the nearest whole project and transitioning between the two
+    // poses could only ever start moving once the ring had already
+    // arrived. One number drives both, and there is no timeline to fall
+    // behind.
+    for (const roll of rolls.current) {
+      for (let index = 0; index < roll.length; index += 1) {
+        const away = shortest(index - position, roll.length);
+        roll[index].style.transform = `translateY(${(away * 110).toFixed(2)}%)`;
+      }
+    }
+
     if (pitch.current === 0) return;
     const radius = pitch.current / Math.sin(STEP_DEG * RAD);
     const fade = fadeFor(PROJECTS.length);
@@ -196,6 +213,19 @@ export default function Library(): React.ReactElement {
     pitch.current = width * PITCH_RATIO;
     redraw();
   }, [surface, redraw]);
+
+  // The readout is mounted in both views and never re-renders, so its lines
+  // are collected once and written to directly from `draw`.
+  useEffect(() => {
+    if (readout === null) {
+      rolls.current = [];
+      return;
+    }
+    rolls.current = Array.from(readout.querySelectorAll<HTMLElement>('.st-roll')).map(
+      (roll) => Array.from(roll.children) as HTMLElement[]
+    );
+    redraw();
+  }, [readout, redraw]);
 
   useEffect(() => {
     if (surface === null) return;
@@ -257,8 +287,8 @@ export default function Library(): React.ReactElement {
         {mode === 'wheel' ? <p className="st-meta">drag or scroll</p> : null}
       </div>
 
-      <div className="mt-[clamp(1.2rem,4vh,2.8rem)]">
-        <Readout active={carousel.active} />
+      <div ref={setReadout} className="mt-[clamp(1.2rem,4vh,2.8rem)]">
+        <Readout />
       </div>
 
       {mode === 'wheel' ? (

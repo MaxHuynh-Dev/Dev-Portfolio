@@ -14,8 +14,9 @@ Three kinds of page:
   position sit beside it at eye level.
 - **`/works`** — all of it, on a ring. The covers hang on the rim of a
   circle whose centre is far below the page; the wheel, a drag or the
-  arrow keys turn it, and a readout above says which project is at the
-  middle. A `list` view beside it shows the same projects as a plain,
+  arrow keys turn it, and a readout above rolls with it — number, name,
+  one line and year, all placed from the same continuous position the
+  covers are, so half a turn leaves the name half out of its mask. A `list` view beside it shows the same projects as a plain,
   ordinary-scrolling page. Reached from the corner marks as `all work`.
 - **`/work/<slug>`** — one page per project. A sticky spec sheet on the
   left, a stack of shots down the middle, a rail of thumbnails on the
@@ -489,7 +490,28 @@ The drag listeners are on `window`, not the surface, for the same reason:
 the gesture has to keep running while its own anchors are out of the hit
 test.
 
-**21. Three things on the ring are measured, not chosen.**
+**21. The readout is placed, not transitioned.**
+It used to park each line on the nearest whole project and CSS-transition
+between the two poses. That is always a step behind: the text could not
+start moving until the ring had already arrived, which is exactly what the
+owner saw. Now every line is written each frame from the ring's own
+continuous position — `shortest(index - position) * 110%` — so the two
+cannot disagree.
+
+A transition on `.st-roll-line` would now be a second opinion about where
+each line belongs, always a few frames behind the first, so there is
+deliberately none. Verified by comparing the *computed* transform against
+the inline one that was written: worst disagreement **0.01px** across 137
+frames of a turn. If someone puts a transition back, that number is how it
+shows up.
+
+`Readout` therefore takes no props and is wrapped in `memo` — it renders
+the pose at position 0 once, for the server and the first paint, and never
+again. Its lines are collected from the DOM once and written to directly.
+That costs 32 style writes a frame on top of the covers' and changes
+nothing: 13.4ms median, zero frames over 20ms.
+
+**22. Three things on the ring are measured, not chosen.**
 
 - **The mask's line-height is `normal`.** `.st-roll` clips, and `.st-display`
   sets `line-height: 0.9`, which is tighter than Nippo's ascent plus
@@ -578,8 +600,9 @@ Other invariants:
   the navigation still lands at the top; and the ring never eases — 245
   sampled frames across a gesture, **zero** of them between two projects,
   because every gesture is quantised to whole steps and the position is
-  assigned rather than tweened. The readout's slide is a CSS transition, so
-  the block already flattens it to 0.01ms without the component asking.
+  assigned rather than tweened — and since the readout is placed from that
+  same position, its lines simply arrive too: 213 sampled frames, every one
+  of them on a whole step (0, ±110, ±220, ±330).
 - Motion answers actions. The only non-user-triggered motion is the single
   load gesture: the letters assembling into the masthead's own line, and
   the page being let go mid-dissolve. The route curtain answers a click,
