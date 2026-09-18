@@ -7,19 +7,25 @@ ink type and **no accent colour at all**. Emphasis is carried by size,
 weight and position; hover and focus by an underline. The only colour the
 site will ever have is the project imagery.
 
-Two kinds of page:
+Three kinds of page:
 
 - **`/`** — the index. Masthead, work list, about, contact. The work list
   is the way in: one row is live at a time and its cover, summary and
   position sit beside it at eye level.
+- **`/works`** — all of it, on a ring. The covers hang on the rim of a
+  circle whose centre is far below the page; the wheel, a drag or the
+  arrow keys turn it, and a readout above says which project is at the
+  middle. A `list` view beside it shows the same projects as a plain,
+  ordinary-scrolling page. Reached from the corner marks as `all work`.
 - **`/work/<slug>`** — one page per project. A sticky spec sheet on the
   left, a stack of shots down the middle, a rail of thumbnails on the
   right, and the next project at the foot.
 
 ## Motion
 
-Two moments, and both are a sheet of one colour moving in one direction
-while something asynchronous resolves behind it.
+Two of the three moments are a sheet of one colour moving in one direction
+while something asynchronous resolves behind it. The third is the ring on
+`/works`, and it is the only motion here that the reader steers directly.
 
 **Arriving** (`Preloader`). A sheet of paper, and the name assembling
 itself on it. Every letter waits just outside the line — odd ones above,
@@ -45,6 +51,18 @@ clear (see trap 10).
 
 The cost is honest: the hold is 1.2s and the whole gesture about 1.8s, on
 every refresh. `MIN_HOLD_MS` in `Preloader/index.tsx` is the knob.
+
+**Turning the ring** (`/works`). The third motion source, and the only one
+that is not a curtain. It answers the reader's own wheel or drag, eases
+toward a target and settles on a whole project; it wraps, so the last leads
+back to the first. The curve is eight CSS transforms — a point on a circle
+and the tangent at that point. There is no canvas, and there is no easing
+at all under `reduce` (see the a11y invariants).
+
+It costs the reader the wheel for as long as they are on that page, which is
+the one thing a scroll-driven carousel can never give back. The `list` view
+is not a nicety, it is the answer to that: same projects, ordinary page,
+ordinary scrolling, and a keyboard path that does not go through the ring.
 
 **Moving between pages** (`PageTransition`). An ink panel rises to cover
 the page, the next route is fetched and committed behind it, the scroll is
@@ -141,6 +159,10 @@ src/modules/Studio/
   Open.tsx         the masthead
   Work.tsx | About.tsx | Contact.tsx
   Corners.tsx      the fixed chrome at the four edges
+src/modules/Library/
+  index.tsx        /works — the ring, its geometry, and the view switch
+  Readout.tsx      the rolling number / name / year above it
+  Roll.tsx         the same projects as a plain list
 src/modules/Project/
   index.tsx        the three-column project view
   SpecSheet.tsx | ShotStack.tsx | NextProject.tsx
@@ -149,6 +171,7 @@ src/components/Preloader/  entry curtain + pre-paint boot script (boot.ts)
 src/components/PageTransition/  the route curtain, and the only place
                            internal navigation is handled
 src/hooks/useFittedText.ts the fitting engine
+src/hooks/useCarousel.ts   the ring's position engine
 src/styles/global.css      design tokens + .st-* primitives
 public/fonts/              Nippo + Switzer, self-hosted
 public/images/work/        project imagery goes here
@@ -447,12 +470,58 @@ line alone took the error from 70px to 3px and no further. Nothing in
 either curtain is CSS-animated in the first place, so this costs the
 promise nothing.
 
+**20. A drag that ends on a link cannot be un-clicked afterwards.**
+`PageTransition` listens for clicks on `document` in the capture phase
+(trap 14), which means it sees the click before any listener the ring could
+register — there is no `preventDefault` late enough to stop it, and
+`stopPropagation` from inside the ring is later still. Dragging the ring
+therefore navigated to whichever project happened to be under the pointer
+when the finger came up.
+
+The fix is upstream of the event: once the pointer has moved past the slop
+threshold, `pointer-events: none` goes on the `<ol>` holding the covers, so
+the click's hit test lands on the surface and `closest('a')` finds nothing.
+next/link never sees it either. It is restored **two frames** after
+`pointerup` — the click is dispatched before the next frame, so one frame is
+not enough and anything longer starts eating real clicks.
+
+The drag listeners are on `window`, not the surface, for the same reason:
+the gesture has to keep running while its own anchors are out of the hit
+test.
+
+**21. Three things on the ring are measured, not chosen.**
+
+- **The mask's line-height is `normal`.** `.st-roll` clips, and `.st-display`
+  sets `line-height: 0.9`, which is tighter than Nippo's ascent plus
+  descent — the same overhang the preloader had to measure (trap 10). Here
+  there is no need to measure it: `normal` *is* the face's own box, 1.269em
+  for Nippo, so no glyph can reach past the clip and no number in this repo
+  has to be kept in step with the font. A call site that wants a looser
+  line still wins, because utilities are layered after components.
+- **The cover width is climbed, not a fraction of anything.** The ring only
+  has to leave room below itself for the covers actually on screen, and how
+  many those are depends on the cover width being solved for. So the solver
+  starts one step deep and goes deeper only while the next cover out would
+  still be on screen at the answer that produced. A fraction tuned at 1440
+  gave a phone a row of stamps with half the screen empty under it; a
+  fraction tuned at 375 gave a desktop three covers the size of posters.
+  The width cap is derived the same way, from how much of the next cover
+  has to stay visible (`PEEK`) — one promise that holds at every width.
+- **A cover off the side of the screen stays focusable.** It is faded and
+  has `pointer-events: none`, never `visibility: hidden` — hidden would
+  take it out of the tab order and make five of the eight projects
+  unreachable by keyboard. Focus on one calls `goTo`, so tabbing turns the
+  ring to whatever the keyboard has reached. Verified: tabbing to the sixth
+  cover leaves it fully on screen with the readout on `06`.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
 16.09:1, `--ink-2` 5.05:1, `--ink-3` 3.88:1, and `--ink` on `--well`
 12.87:1. A full sweep of every text node returns zero failures against the
-size-appropriate bar on both page types.
+size-appropriate bar on all three page types — 60 nodes on the ring, 91 on
+the list, at 320 and at 1440, with the control confirming the sweep can
+still fail.
 
 **`--ink-3` is only safe as LARGE text, and "large" for bold type starts
 at 18.66px.** It dims the work list's rows, which are never that small.
@@ -499,17 +568,36 @@ Other invariants:
   static, and it still lands on the masthead to the pixel. The paper itself
   still fades in, because an opacity change is not the movement the query
   is about — the same call `PageTransition` makes.
-- Four things honour `prefers-reduced-motion` — the CSS block, Lenis
+- Five things honour `prefers-reduced-motion` — the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
-  shows the line assembled instead of assembling) and `PageTransition` (which
-  drops the
-  wipe for one). The last two read the query in JavaScript, because the CSS
-  block cannot reach a GSAP tween; add a fifth motion source and it will
-  need its own check too. Verified under `reduce`: the panel never
-  translates, only fades, and the navigation still lands at the top.
+  shows the line assembled instead of assembling), `PageTransition` (which
+  drops the wipe for a fade) and the ring on `/works`. The last three read
+  the query in JavaScript, because the CSS block cannot reach a GSAP tween
+  or a rAF loop; add a sixth motion source and it will need its own check
+  too. Verified under `reduce`: the panel never translates, only fades, and
+  the navigation still lands at the top; and the ring never eases — 245
+  sampled frames across a gesture, **zero** of them between two projects,
+  because every gesture is quantised to whole steps and the position is
+  assigned rather than tweened. The readout's slide is a CSS transition, so
+  the block already flattens it to 0.01ms without the component asking.
 - Motion answers actions. The only non-user-triggered motion is the single
   load gesture: the letters assembling into the masthead's own line, and
-  the page being let go mid-dissolve. The route curtain answers a click.
+  the page being let go mid-dissolve. The route curtain answers a click,
+  and the ring answers a wheel, a drag or an arrow key.
+- **A page that takes the wheel owes the reader a way out.** `/works` is
+  exactly one screen tall and the document does not scroll while the ring
+  is up. That is defensible only because the `list` view is one click away,
+  is reachable by keyboard before the ring is (it sits earlier in the tab
+  order), scrolls like every other page, and carries the same links. The
+  two buttons say which is on with `aria-pressed`, not with the underline
+  alone.
+- **The ring's readout is `aria-hidden`,** so the name, the one-line
+  summary, the category and the year all live in each cover link's own
+  accessible name — the same rule the index's preview aside follows.
+- The list's rows dim to `--ink-2`, not `--ink-3`. At 320 the name computes
+  to about 17px, under the 18.66px where bold type counts as large, so the
+  bar is 4.5:1 and `--ink-3` (3.88:1) fails it. Only the name dims; the
+  number and the metadata beside it stay put.
 - **The route curtain must always let go.** `PageTransition` caps the hold
   at 3s and reveals anyway; its cleanup calls `lenis.start()` even if the
   component unmounts mid-transition. A reader stuck behind a panel with
@@ -560,11 +648,21 @@ frames over 20ms. The crossfade version scored a 13.4ms median with zero
 long tasks and still looked broken — which is how it was established that
 the problem was the scroll offset, not the frame budget.
 
-Responsive is checked at **320 / 375 / 414 / 768 / 1440**, on the index
-*and* on a project page: no horizontal scroll, `overflow-x: clip` on both
-`html` and `body` (`clip`, never `hidden` — `hidden` makes the element a
-scroll container and breaks `position: fixed` on descendants), no clickable
-wrapping to two lines, and nothing extending past the viewport edge.
+Responsive is checked at **320 / 375 / 414 / 768 / 1440**, on the index,
+on a project page *and* on `/works` in both of its views: no horizontal
+scroll, `overflow-x: clip` on both `html` and `body` (`clip`, never
+`hidden` — `hidden` makes the element a scroll container and breaks
+`position: fixed` on descendants), no clickable wrapping to two lines, and
+nothing extending past the viewport edge.
+
+The ring is the one exception to that last item, and it is a deliberate
+one: the outer covers are *meant* to run off the sides. They cannot make
+the page scroll, because the surface they sit on is full-bleed and carries
+`overflow: clip` — which also stops the ones that have dropped below the
+ring from lengthening the page. Check `scrollWidth - clientWidth`, not
+whether a box crosses the viewport edge. Measured at every width: no
+horizontal scroll, `docScroll` 0 with the ring up, and nothing cut off at
+the bottom of the stage.
 
 Run the 3dviz-pro-max skill's scripts with `/opt/homebrew/bin/python3.12`;
 the system `python3` is the Xcode stub and needs a sudo license agreement.
