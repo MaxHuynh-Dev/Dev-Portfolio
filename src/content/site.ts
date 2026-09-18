@@ -25,12 +25,12 @@ export interface Profile {
 }
 
 export const PROFILE: Profile = {
-  firstName: 'Your', // TODO
-  lastName: 'Name', // TODO
-  role: 'Front-end engineer', // TODO
-  location: 'Hanoi', // TODO
+  firstName: 'Max', // TODO
+  lastName: 'Huynh', // TODO
+  role: 'Front-end Engineer', // TODO
+  location: 'Ho Chi Minh', // TODO
   timeZone: 'Asia/Ho_Chi_Minh', // TODO — must be a valid IANA zone
-  email: 'you@example.com', // TODO
+  email: 'maxhuynh.work@gmail.com', // TODO
   availability: 'Open to work', // TODO
   intro: 'I build the interactive half of websites, and I build it to hold up.', // TODO
   bio: 'Replace this with a short paragraph about how you work, who you work with, and what you are open to.' // TODO
@@ -88,19 +88,19 @@ export interface Project {
  */
 export const PROJECTS: Project[] = [
   {
-    slug: 'project-one', // TODO
-    name: 'Project One', // TODO
+    slug: 'hylix', // TODO
+    name: 'Hylix', // TODO
     kind: 'Category', // TODO
-    year: '2026', // TODO
+    year: '2025', // TODO
     summary: 'One line on what it is.', // TODO
     about:
       'Replace this with a short paragraph: what the project was, what you were asked to solve, and what you actually built. Two or three sentences is plenty.', // TODO
     role: ['Front-end build'], // TODO
     stack: ['React / Next', 'TypeScript'], // TODO
     url: null, // TODO — the live site
-    cover: null, // TODO — e.g. '/images/work/project-one/cover.jpg'
+    cover: '/images/work/hylix-1.png', // TODO — e.g. '/images/work/project-one/cover.jpg'
     shots: [
-      { src: null, alt: 'TODO — describe this shot' },
+      { src: '/images/work/hylix-1.png', alt: 'TODO — describe this shot' },
       { src: null, alt: 'TODO — describe this shot', tall: true },
       { src: null, alt: 'TODO — describe this shot' }
     ]
@@ -258,15 +258,17 @@ export const CONTACT_LINKS: LinkColumn[] = [
   {
     label: 'code',
     links: [
-      { label: 'GitHub', href: 'https://github.com' }, // TODO
+      { label: 'GitHub', href: 'https://github.com/MaxHuynh-Dev' }, // TODO
       { label: 'CodePen', href: 'https://codepen.io' } // TODO
     ]
   },
   {
     label: 'elsewhere',
     links: [
-      { label: 'LinkedIn', href: 'https://linkedin.com' }, // TODO
-      { label: 'X', href: 'https://x.com' } // TODO
+      { label: 'LinkedIn', href: 'www.linkedin.com/in/maxhuynh-dev' }, // TODO
+      { label: 'Facebook', href: 'https://www.facebook.com/maxhuynh1204/' }, // TODO
+      { label: 'X', href: 'https://x.com/LeeDev0805' }, // TODO
+      { label: 'Instagram', href: 'https://www.instagram.com/maxhuynh__/' } // TODO
     ]
   }
 ];
