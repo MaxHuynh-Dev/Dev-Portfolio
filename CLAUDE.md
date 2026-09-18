@@ -252,16 +252,30 @@ yarn dev          # dev server
 yarn build        # production build — run before claiming anything works
 yarn lint:fix     # biome check --write
 npx tsc --noEmit  # typecheck (strict)
+
+yarn seed                 # mock content into an EMPTY database (--reset to replace)
+yarn generate:types       # src/payload/payload-types.ts, after any field change
+yarn generate:importmap   # app/(payload)/admin/importMap.js, after a config change
 ```
 
 Biome, not ESLint/Prettier. 2-space, single quotes, semicolons, width 100.
+The two generated files are excluded from it in `biome.json`, because both are
+rewritten by their generator and formatting them lasts until the next run.
 
 ## Where things live
 
 ```
 app/(frontend)/(withoutFooter)/page.tsx          the index
 app/(frontend)/(withoutFooter)/work/[slug]/      one page per project
-src/content/site.ts        ALL site content. Plain data, no imports.
+app/(payload)/             the admin, and Payload's REST + GraphQL routes.
+                           A SECOND root layout — see trap 37.
+payload.config.ts          collections, globals, the Mongo adapter
+src/payload/collections/   Projects | Media | Users
+src/payload/globals/       Profile | SiteSettings
+src/payload/seed.ts        mock content for an empty database
+src/payload/payload-types.ts   GENERATED. Do not edit.
+src/content/site.ts        the SHAPES the site reads. Types only, no imports.
+src/content/source.ts      the only thing that talks to the CMS. SERVER ONLY.
 src/modules/Studio/
   index.tsx        composes the four bands of the index
   Open.tsx         the masthead
@@ -275,7 +289,6 @@ src/modules/Project/
   index.tsx        the three-column project view
   SpecSheet.tsx | ShotStack.tsx | NextProject.tsx
 src/components/Shot.tsx    one image, or the field it will go in
-src/utils/imageSize.ts     a file's real dimensions. SERVER ONLY.
 src/components/Lines.tsx   prose split into its own measured lines, masked
 src/components/Reveal.tsx  the same mask for what is already one line
 src/components/Headline.tsx  the mask for display type, inside the heading
@@ -308,26 +321,62 @@ close to a default geometric sans. Render before you commit.
 
 ## Content
 
-**All copy, projects and links live in `src/content/site.ts`.** Nothing else
-hardcodes content; `src/constants/common.ts` and `app/sitemap.ts` both read
-it. Current values are placeholders marked `TODO`.
+**All copy, projects and links live in Payload**, at `/admin`, in three
+collections and two globals. Nothing else hardcodes content. Current values
+are the placeholders `yarn seed` writes.
 
-Imagery goes in `public/images/work/`. A `null` `src` is not a broken
-state: `Shot` renders a sized, labelled field, so the layout, the scroll
-length and the thumbnail rail are all correct before a single screenshot
-exists. Set `cover` for the index preview and fill `shots` for the project
-page.
+`src/content/site.ts` still exists and is still the thing every component
+reads, but it holds only the SHAPES now — `Profile`, `Project`, `Shot`,
+`MetaColumn`, `LinkColumn`, `SiteSettings`. `src/content/source.ts` is the
+only module that talks to the CMS, and it hands back exactly those types.
+That split is why the fitting engine, the ring, the masks and the thumbnail
+rail did not have to learn a second shape when the content moved out of a
+file and into a database: nothing above the read layer knows Payload
+exists.
+
+**Server-only, and the client leaves take props.** `source.ts` pulls in the
+Payload config, the Mongo adapter and sharp, so it cannot be imported from
+`'use client'`. The server components read once and hand down — `MainLayout`
+for the profile, `Studio` for the whole index, the two pages for the rest.
+That is the same rule trap 5 already states for state.
+
+Imagery is uploaded through the admin and stored under `public/media`, so
+Next serves it directly at `/media/<file>` and an image never travels
+through a Payload route to reach the page. The originals in
+`public/images/work/` are kept as the seed's source, not as what the site
+reads. A `null` `src` is not a broken state: `Shot` renders a sized,
+labelled field, so the layout, the scroll length and the thumbnail rail are
+all correct before a single screenshot exists — a shot row with no image
+attached is exactly that.
+
+**`alt` lives on the Media document, not on a shot.** One file, one
+description. The shape it replaced let the same image be given two
+different alts in two places, which is one more than can be true.
+
+**The site is statically generated from the database.** `next build` reads
+Mongo — `DATABASE_URI` has to be present in the build environment, not just
+at runtime — and a CMS edit appears on the next build. If edits should go
+live without one, that is `export const revalidate = <seconds>` on the
+pages; it is deliberately not set, rather than set to a number nobody
+chose.
 
 Three standing rules:
 
 - **Never invent biographical facts** — name, location, employers, clients.
 - **Never invent awards, metrics or credentials.** The source design shipped
   fake Awwwards/CSSDA/FWA claims and a "Numbers" column of em-dash
-  placeholders. There is deliberately no `recognition` field on `Project`,
-  which is exactly where the reference design puts its award list.
-- **Every `Shot` needs a real `alt`** describing what the image shows, not
+  placeholders. There is deliberately no `recognition` field on the
+  `projects` collection, which is exactly where the reference design puts
+  its award list, and `aboutMeta` is a free list of columns rather than a
+  fixed `awards` field sitting empty asking to be filled.
+- **Every image needs a real `alt`** describing what it shows, not
   "screenshot of the homepage". It is the only description a screen reader
-  gets.
+  gets, and it is `required` on the Media collection rather than left to
+  good intentions.
+
+The first two are not enforceable by a schema — the third is, and was made
+so. That asymmetry is the point: where a rule CAN be a field constraint, it
+should be one.
 
 ## Traps
 
@@ -373,9 +422,22 @@ all seven call sites, which is the universal fade-up tell. The client
 leaves are `Open`, `Work`, `Corners` and `ShotStack` — each owns real
 state. Do not add `'use client'` to either module's `index.tsx`.
 
-**6. `src/content/site.ts` is on the server metadata path.**
-`src/constants/common.ts` imports it. It must stay plain data with no
-imports — a single `import` of anything browser-only breaks `next build`.
+**6. The metadata path is async now, and that is a chain of three files.**
+`src/content/site.ts` must stay imports-free — it is types only, and a
+single `import` of anything browser-only there breaks `next build`.
+
+What changed with the CMS is upstream of it. The site's name, role,
+description and contact address are content, so they cannot be module-scope
+constants any more: `src/constants/common.ts` keeps only what is a property
+of the DEPLOYMENT (`DOMAIN_URL`, the keywords, the OG image) and stays
+synchronous, because `app/robots.ts` and `app/sitemap.ts` read it at module
+scope. `src/constants/metadata.ts` became `buildDefaultMetadata()`, and
+`app/(frontend)/layout.tsx` calls it from `generateMetadata`.
+
+**A root layout supports `generateMetadata` exactly as a page does**, which
+is the whole reason this works. The alternative was a module-scope `await`
+on the server metadata path, and that is the one place in this app that
+cannot have one.
 
 **7. Palette values do not survive a change of ground — re-derive, don't nudge.**
 The ground has moved three times (`#0a0a0a` → `#ececec` → `#0d1117` →
@@ -766,8 +828,8 @@ positions across the scroll, where ordinary motion gives 21.
   ring to whatever the keyboard has reached. Verified: tabbing to the sixth
   cover leaves it fully on screen with the readout on `06`.
 
-**27. A shot is shown at its own shape, and the shape is read on the
-server.**
+**27. A shot is shown at its own shape, and the shape arrives with the
+file.**
 Every shot used to be cropped to a declared `16 / 10` with `object-cover`.
 The real files are nothing like it — the two on `/work/soluis` are 1.749
 and 1.743 — so `cover` matched their height and threw away **8.5% of the
@@ -779,24 +841,28 @@ and 1.7442 — the files' own shapes, at every width from 320 up.
 
 Three things that decides, and one it does not:
 
-- **The ratio has to be known before the image arrives, so it is measured
-  on the server.** `ShotStack` places the rail's marker from where each
-  shot's centre falls (trap 25), so a column that grew as each file landed
-  would move every one of those centres under the reader. `width`/`height`
-  on the `<img>` are the intrinsic pixels — not a rendered size, but the
-  reservation — and `sizeOf` reads them off the file with `sharp`, which is
-  already a dependency and is in Next's own `serverExternalPackages`, so it
-  is required rather than bundled. The project pages are `dynamicParams =
-  false`, which makes this a build-time read of four files. Verified by
-  holding `/_next/image` for 2.5s: the boxes stood at 533.02 and 534.91
-  before a byte arrived and at 533.28 and 534.52 after — **0.26px and
-  -0.39px**, one pixel of document height across the whole page. That
-  residue is the optimizer rounding a resize to whole pixels, and
-  `object-fit: fill` absorbs it.
-- **Not in `src/content/site.ts`.** That file's promise is "drop a file in,
-  set `src`, and nothing else has to change", and a hand-typed height goes
-  stale the first time an image is re-exported. A static `import` would
-  carry the dimensions for free and is exactly what trap 6 forbids there.
+- **The ratio has to be known before the image arrives, so it is recorded
+  at upload.** `ShotStack` places the rail's marker from where each shot's
+  centre falls (trap 25), so a column that grew as each file landed would
+  move every one of those centres under the reader. `width`/`height` on the
+  `<img>` are the intrinsic pixels — not a rendered size, but the
+  reservation — and they come off the Media document, which Payload fills
+  in with `sharp` the moment the file is uploaded. Verified by holding
+  `/_next/image` for 2.5s: the boxes stood at 533.02 and 534.91 before a
+  byte arrived and at 533.28 and 534.52 after — **0.26px and -0.39px**, one
+  pixel of document height across the whole page. That residue is the
+  optimizer rounding a resize to whole pixels, and `object-fit: fill`
+  absorbs it. Re-verified against the CMS at 1440: 1.7487 and 1.7430 from
+  intrinsics of 3012x1722 and 3017x1731.
+- **This used to be a build-time `sharp` read of `public/<src>`, in
+  `src/utils/imageSize.ts`, and that file is gone.** Not because it was
+  wrong — it was correct and measured — but because the dimension is now
+  known by whoever holds the file, which is strictly earlier and one fewer
+  thing to keep in step. It also removed an assumption nobody had noticed
+  making: that every image is a path under `public/`, which stops being
+  true the first time uploads move to S3 or Vercel Blob. A hand-typed
+  height in the content was rejected for the same reason it always was — it
+  goes stale the first time an image is re-exported.
 - **`tall` now shapes the EMPTY field and nothing else.** There is nothing
   to measure on a field with no image in it, so it still needs a declared
   ratio, and `tall` still breaks the rhythm of a stack of them. Verified on
@@ -888,8 +954,16 @@ So the big type moves now, and `.st-mast` is how it can:
   13.0/4.0px at 320, 15.5/4.9 at 375, 17.3/5.5 at 414, 34.0/10.2 at 768 and
   64.3/19.7 at 1440 (top/bottom). All positive, and the tightest is the
   descender at 320. A longer name, a deeper descender or Vietnamese
-  diacritics will move those numbers — re-read them before changing
-  `PROFILE`, the way the computed font-size has to be re-read at 320.
+  diacritics will move those numbers — re-read them after changing the name
+  in the Profile global, the way the computed font-size has to be re-read
+  at 320.
+
+  **That used to be a code change and is now a text field in `/admin`**,
+  which makes it the one place the CMS genuinely loosened a guarantee: the
+  headroom above is a measurement of `Max Huynh` at Nippo's metrics, and
+  nothing stops someone typing a name with a deeper descender into a form.
+  It fails visibly rather than silently — the mask shaves the tail — but it
+  fails without anyone running a build.
 - **The padding is real box and it hangs over what is below.** 49px of it
   at 1440, across the top of the paragraph under the masthead. Nothing
   there is clickable — verified, the only overlapped element with a
@@ -1241,6 +1315,46 @@ conclude they never move.
 exactly 0, and was rejected: it needs Nippo's ascent ratio hard-coded, and
 trap 26 already records the preference for arrangements where no number in
 this repo has to be kept in step with the face.)
+
+**37. Payload needs this package to be ESM, and two bundlers have to agree
+about one import.**
+`package.json` carries `"type": "module"`. That is not a preference; the
+`payload` CLI transpiles the config with its own bundled tsx, and in CJS
+mode tsx registers a `.js` transformer but never hooks resolution, so
+`./src/payload/collections/Media` and `./…/Media.js` both fail with
+MODULE_NOT_FOUND. Before that it failed earlier still, on
+`ERR_REQUIRE_ASYNC_MODULE` from `@payloadcms/richtext-lexical`'s top-level
+await. The repo converted cleanly because there was nothing to convert:
+`postcss.config.mjs` was already explicit and there is no `.js` or `.cjs`
+anywhere in `src` or `app`.
+
+- **The config's own imports are extensionless, and both halves had to be
+  tried to find that out.** With `.js` the Payload CLI is happy and
+  Turbopack is not — `next build` fails on all five with "Can't resolve
+  './src/payload/globals/SiteSettings.js'", because `moduleResolution:
+  bundler` does not rewrite `.js` to `.ts`. Extensionless satisfies both.
+  A change here that is only checked with `yarn generate:types` is a change
+  that has been tested on one of the two bundlers that have to load it.
+- **`lexicalEditor` is not configured, and that is a decision.** `editor`
+  is optional in the config type, no field here is `richText`, and the
+  three textareas are read by `Lines`, which measures PLAIN text — a rich
+  text field would hand it markup to break on.
+- **`withPayload` goes outermost in `next.config.ts`**, around the PWA
+  wrapper rather than inside it, so the admin's server-only packages are
+  externalised after the plugin has finished rewriting the config.
+- **Two root layouts, no `app/layout.tsx`.** `app/(frontend)` and
+  `app/(payload)` each render their own `<html>`, which Next supports as
+  long as the home route lives inside one of the groups — it does. The cost
+  is that moving between the site and `/admin` is a full page load, which
+  is the right answer anyway: the admin has no business inheriting the
+  preloader, Lenis or the route curtain.
+- **The seed creates no user.** Payload serves its own create-first-user
+  screen at `/admin` against an empty `users` collection, and that is where
+  the password belongs. A credential invented by the script that seeds the
+  database is not a credential.
+- **The seed refuses a database that already has content** unless `--reset`
+  is passed, and says what it found. A fixture that silently overwrites is
+  a fixture that eventually overwrites the real thing.
 
 ## Accessibility invariants
 

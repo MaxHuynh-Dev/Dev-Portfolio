@@ -2,14 +2,16 @@ import '@Styles/global.css';
 
 import { PRELOADER_BOOT_SCRIPT } from '@Components/Preloader/boot';
 import { nippo, switzer } from '@Constants/fonts';
-import { DEFAULT_METADATA } from '@Constants/metadata';
+import { buildDefaultMetadata } from '@Constants/metadata';
 import MainLayout from '@Layout/MainLayout';
 import { uiHelper } from '@Utils/uiHelper';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import type React from 'react';
 
-export const metadata: Metadata = DEFAULT_METADATA;
+export function generateMetadata(): Promise<Metadata> {
+  return buildDefaultMetadata();
+}
 
 export const viewport: Viewport = {
   themeColor: '#efedea',

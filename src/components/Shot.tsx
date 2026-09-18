@@ -1,6 +1,6 @@
-import type { Size } from '@Utils/imageSize';
 import Image from 'next/image';
 import type React from 'react';
+import type { Size } from '@/content/site';
 
 export interface ShotProps {
   src: string | null;
@@ -14,7 +14,7 @@ export interface ShotProps {
   sizes: string;
   priority?: boolean;
   /**
-   * The file's own dimensions, measured on the server.
+   * The file's own dimensions, as recorded by the CMS on upload.
    *
    * With them the image is laid out at its own shape — full width, height
    * auto — and nothing is cropped. Without them it is cropped to `ratio`,

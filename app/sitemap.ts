@@ -1,10 +1,11 @@
 import { DOMAIN_URL } from '@Constants/common';
 import { uiHelper } from '@Utils/uiHelper';
 import type { MetadataRoute } from 'next';
-import { PROJECTS } from '@/content/site';
+import { getProjects } from '@/content/source';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!uiHelper.isProduction()) return [];
+  const projects = await getProjects();
   return [
     {
       url: DOMAIN_URL,
@@ -20,7 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     // Every project is its own page now. Leaving them out of the sitemap
     // would mean the only indexable thing on the site is the index.
-    ...PROJECTS.map((project) => ({
+    ...projects.map((project) => ({
       url: `${DOMAIN_URL}/work/${project.slug}`,
       lastModified: new Date(),
       changeFrequency: 'yearly' as const,

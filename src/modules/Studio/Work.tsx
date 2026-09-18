@@ -5,7 +5,7 @@ import Shot from '@Components/Shot';
 import Link from 'next/link';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { PROJECTS, WORK_RANGE } from '@/content/site';
+import type { Project } from '@/content/site';
 
 /**
  * How much of the gap to a POINTED-AT row is closed per frame.
@@ -50,7 +50,13 @@ const ROW_RISE_MS = 620;
  * called. Without that this band was a column of names against an empty
  * half-measure.
  */
-export default function Work(): React.ReactElement {
+export default function Work({
+  projects,
+  workRange
+}: {
+  projects: Project[];
+  workRange: string;
+}): React.ReactElement {
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLOListElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -233,7 +239,7 @@ export default function Work(): React.ReactElement {
         <h2 id="work-heading" className="st-meta m-0 font-[500] text-[var(--ink)]">
           selected work
         </h2>
-        <p className="st-meta tabular-nums">{WORK_RANGE}</p>
+        <p className="st-meta tabular-nums">{workRange}</p>
       </div>
 
       <div className="mt-[clamp(1.5rem,5vh,3rem)] flex flex-wrap gap-[clamp(1.5rem,5vw,4rem)]">
@@ -246,7 +252,7 @@ export default function Work(): React.ReactElement {
           }}
           className="m-0 min-w-0 flex-1 list-none p-0"
         >
-          {PROJECTS.map((project, index) => (
+          {projects.map((project, index) => (
             <li key={project.slug} data-row={index}>
               <Link
                 href={`/work/${project.slug}`}
@@ -324,7 +330,7 @@ export default function Work(): React.ReactElement {
           className="w-full shrink-0 md:sticky md:top-[24vh] md:h-fit md:w-[clamp(15rem,24vw,21rem)]"
         >
           <div ref={frameRef} className="st-cover-stack">
-            {PROJECTS.map((project, index) => (
+            {projects.map((project, index) => (
               <div
                 key={project.slug}
                 data-cover=""
@@ -341,7 +347,7 @@ export default function Work(): React.ReactElement {
                   />
                   <p className="st-display st-display-reg mt-[0.7rem] mb-0 text-[clamp(1.3rem,3vw,2rem)] tabular-nums">
                     {String(index + 1).padStart(2, '0')} /{' '}
-                    {String(PROJECTS.length).padStart(2, '0')}
+                    {String(projects.length).padStart(2, '0')}
                   </p>
                   <p className="st-meta mt-[0.2rem] mb-0">
                     {project.summary}

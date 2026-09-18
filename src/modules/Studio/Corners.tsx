@@ -5,7 +5,7 @@ import { useLocalClock } from '@Hooks/useLocalClock';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type React from 'react';
-import { PROFILE } from '@/content/site';
+import type { Profile } from '@/content/site';
 
 /**
  * A mark is either a band of the index, reached by fragment, or a page of
@@ -37,8 +37,8 @@ const SECTIONS: Mark[] = [
  * `pointer-events` is off on the gradient and back on for the text, or the
  * bands would swallow clicks across the full width of the page.
  */
-export default function Corners(): React.ReactElement {
-  const time = useLocalClock(PROFILE.timeZone);
+export default function Corners({ profile }: { profile: Profile }): React.ReactElement {
+  const time = useLocalClock(profile.timeZone);
   const onNav = useAnchorNav();
   const pathname = usePathname();
   const atHome = pathname === '/';
@@ -49,19 +49,19 @@ export default function Corners(): React.ReactElement {
         <div className="pointer-events-auto flex items-start justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pt-[var(--gut)]">
           <p className="st-meta">
             <Link className="text-[var(--ink)]" href="/">
-              {PROFILE.firstName} {PROFILE.lastName}
+              {profile.firstName} {profile.lastName}
             </Link>
             <br />
-            {PROFILE.role.toLowerCase()}
+            {profile.role.toLowerCase()}
           </p>
 
           <p className="st-meta text-right">
             <span suppressHydrationWarning>
-              {PROFILE.location.toLowerCase()}, {time}
+              {profile.location.toLowerCase()}, {time}
             </span>
             <br />
-            <a className="st-link text-[var(--ink)]" href={`mailto:${PROFILE.email}`}>
-              {PROFILE.email}
+            <a className="st-link text-[var(--ink)]" href={`mailto:${profile.email}`}>
+              {profile.email}
             </a>
           </p>
         </div>
@@ -69,7 +69,7 @@ export default function Corners(): React.ReactElement {
 
       <div className="st-fade pointer-events-none fixed inset-x-0 bottom-0 z-50 bg-[linear-gradient(to_top,var(--paper)_0%,var(--paper)_72%,transparent_100%)] pt-[2.5rem]">
         <div className="pointer-events-auto flex items-end justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pb-[var(--gut)]">
-          <p className="st-meta">{PROFILE.availability.toLowerCase()}</p>
+          <p className="st-meta">{profile.availability.toLowerCase()}</p>
 
           <nav aria-label="Sections">
             <ul className="st-meta flex flex-wrap justify-end gap-x-[1.1rem] gap-y-[0.2rem]">

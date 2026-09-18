@@ -1,7 +1,7 @@
 import { shortest } from '@Hooks/useCarousel';
 import type React from 'react';
 import { memo } from 'react';
-import { PROJECTS, type Project } from '@/content/site';
+import type { Project } from '@/content/site';
 
 /**
  * What the ring is pointing at: its place in the list, its name, its one
@@ -16,32 +16,35 @@ import { PROJECTS, type Project } from '@/content/site';
  * projects is not one; what this reports is where in the list you are
  * standing, which is exactly what the index's own `01 / 08` reports.
  *
- * It takes no props and never re-renders. The lines are placed every frame
- * by `Library`'s `draw`, off the same continuous position the covers are
+ * It takes the projects and nothing else, and never re-renders: the array
+ * arrives from a server component by way of `Library`, so its reference is
+ * the same on every client re-render and `memo` still holds. The lines are
+ * placed every frame by `Library`'s `draw`, off the same continuous position the covers are
  * placed from, so they roll *with* the ring rather than after it. React
  * only writes the pose below, which is that same law at position 0 — the
  * frame the server renders, and the one the first `draw` overwrites.
  */
 
 /** Where line `index` sits when the ring stands at position 0. */
-const initial = (index: number): string =>
-  `translateY(${(shortest(index, PROJECTS.length) * 110).toFixed(2)}%)`;
+const initial = (index: number, count: number): string =>
+  `translateY(${(shortest(index, count) * 110).toFixed(2)}%)`;
 
 interface RolledProps {
+  projects: Project[];
   /** Goes on every line, so they are all the same size and all roll alike. */
   className: string;
   render: (project: Project, index: number) => React.ReactNode;
 }
 
 /** One line of the readout, with every project's version of it stacked. */
-function Rolled({ className, render }: RolledProps): React.ReactElement {
+function Rolled({ projects, className, render }: RolledProps): React.ReactElement {
   return (
     <span className="st-roll">
-      {PROJECTS.map((project, index) => (
+      {projects.map((project, index) => (
         <span
           key={project.slug}
           className={`st-roll-line ${className}`}
-          style={{ transform: initial(index) }}
+          style={{ transform: initial(index, projects.length) }}
         >
           {render(project, index)}
         </span>
@@ -50,7 +53,7 @@ function Rolled({ className, render }: RolledProps): React.ReactElement {
   );
 }
 
-function Readout(): React.ReactElement {
+function Readout({ projects }: { projects: Project[] }): React.ReactElement {
   return (
     <div
       aria-hidden="true"
@@ -73,6 +76,7 @@ function Readout(): React.ReactElement {
     >
       <span className="block">
         <Rolled
+          projects={projects}
           className="st-display block text-[clamp(1.1rem,3.6vw,3rem)] text-[var(--ink)] tabular-nums"
           render={(_project, index) => String(index + 1).padStart(2, '0')}
         />
@@ -80,6 +84,7 @@ function Readout(): React.ReactElement {
 
       <span className="block min-w-0">
         <Rolled
+          projects={projects}
           className="st-display block text-[clamp(1.5rem,5vw,3.6rem)] text-[var(--ink)]"
           render={(project) => project.name}
         />
@@ -87,17 +92,22 @@ function Readout(): React.ReactElement {
 
       <span className="st-display st-display-reg block text-[clamp(1.1rem,3.6vw,3rem)]">
         <Rolled
+          projects={projects}
           className="block text-[var(--ink)] tabular-nums"
           render={(project) => project.year}
         />
       </span>
 
       <span className="st-meta block tabular-nums">
-        / {String(PROJECTS.length).padStart(2, '0')}
+        / {String(projects.length).padStart(2, '0')}
       </span>
 
       <span className="block min-w-0">
-        <Rolled className="st-meta block leading-[1.45]" render={(project) => project.summary} />
+        <Rolled
+          projects={projects}
+          className="st-meta block leading-[1.45]"
+          render={(project) => project.summary}
+        />
       </span>
     </div>
   );

@@ -1,7 +1,7 @@
 import Lines from '@Components/Lines';
 import Reveal from '@Components/Reveal';
 import type React from 'react';
-import { COLOPHON, CONTACT_LINKS, PROFILE } from '@/content/site';
+import type { LinkColumn } from '@/content/site';
 
 /**
  * Contact.
@@ -12,7 +12,15 @@ import { COLOPHON, CONTACT_LINKS, PROFILE } from '@/content/site';
  * the floor is in rem and not purely in vh; a vh-only value lets the band
  * swallow the last row on a short viewport.
  */
-export default function Contact(): React.ReactElement {
+export default function Contact({
+  email,
+  links,
+  colophon
+}: {
+  email: string;
+  links: LinkColumn[];
+  colophon: string;
+}): React.ReactElement {
   return (
     <section
       id="contact"
@@ -30,15 +38,15 @@ export default function Contact(): React.ReactElement {
             glyphs hang outside their own box and the mask shaves them. */}
         <Reveal className="st-line block">
           <a
-            href={`mailto:${PROFILE.email}`}
+            href={`mailto:${email}`}
             className="st-line-body st-display text-[clamp(1.9rem,7vw,5.2rem)] text-[var(--ink)] leading-[1.18]"
           >
-            {PROFILE.email}
+            {email}
           </a>
         </Reveal>
 
         <div className="flex flex-wrap gap-[clamp(1.75rem,4vw,3.5rem)]">
-          {CONTACT_LINKS.map((column) => (
+          {links.map((column) => (
             <div key={column.label}>
               <p className="st-meta m-0">{column.label}</p>
               <ul className="m-0 mt-[0.35rem] list-none p-0">
@@ -60,7 +68,7 @@ export default function Contact(): React.ReactElement {
         </div>
       </div>
 
-      <Lines className="st-measure st-meta mt-[clamp(3rem,9vh,6rem)] mb-0">{COLOPHON}</Lines>
+      <Lines className="st-measure st-meta mt-[clamp(3rem,9vh,6rem)] mb-0">{colophon}</Lines>
     </section>
   );
 }

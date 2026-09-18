@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "@payload-config": ["./payload.config.ts"],
       "@/*": ["./src/*"],
       "@Api/*": ["./src/api/*"],
       "@Styles/*": ["./src/styles/*"],

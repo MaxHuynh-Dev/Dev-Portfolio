@@ -5,9 +5,7 @@ import Lines from '@Components/Lines';
 import { useFittedText } from '@Hooks/useFittedText';
 import { useViaRoute } from '@Hooks/useReveal';
 import type React from 'react';
-import { PROFILE } from '@/content/site';
-
-const FULL_NAME = `${PROFILE.firstName} ${PROFILE.lastName}`;
+import type { Profile } from '@/content/site';
 
 /**
  * The opening.
@@ -23,7 +21,12 @@ const FULL_NAME = `${PROFILE.firstName} ${PROFILE.lastName}`;
  * heading — the document outline no longer has to survive someone typing
  * into it.
  */
-export default function Open(): React.ReactElement {
+export default function Open({ profile }: { profile: Profile }): React.ReactElement {
+  // Built here from the same two fields MainLayout builds it from, and
+  // that agreement is load-bearing: the entry curtain finds this heading
+  // by matching its own assembled copy against this text.
+  const FULL_NAME = `${profile.firstName} ${profile.lastName}`;
+
   const { ref } = useFittedText(FULL_NAME, {
     maxViewportFraction: 0.36,
     lineHeight: 0.9
@@ -95,7 +98,7 @@ export default function Open(): React.ReactElement {
         delay={viaRoute ? 340 : 120}
         className="mt-[clamp(1.4rem,3.5vh,2.6rem)] max-w-[42ch] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.35] md:ml-auto"
       >
-        {PROFILE.intro}
+        {profile.intro}
       </Lines>
     </section>
   );

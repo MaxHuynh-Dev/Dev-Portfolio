@@ -4,11 +4,10 @@ import Headline from '@Components/Headline';
 import Reveal from '@Components/Reveal';
 import Shot from '@Components/Shot';
 import { useFittedText } from '@Hooks/useFittedText';
-import type { Size } from '@Utils/imageSize';
 import Image from 'next/image';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import type { Project } from '@/content/site';
+import type { Project, Size } from '@/content/site';
 
 /**
  * The shape of an EMPTY field, and only of an empty field.

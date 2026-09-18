@@ -1,13 +1,16 @@
-import { PROFILE } from '@/content/site';
-
-// Derived from the single content file so the site name, description and
-// contact address can never drift out of sync with the page itself.
-const FULL_NAME = `${PROFILE.firstName} ${PROFILE.lastName}`;
-
-export const APP_NAME = FULL_NAME;
-export const APP_TITLE_TEMPLATE = `%s | ${PROFILE.role}`;
+/**
+ * The parts of the site's identity that are NOT content.
+ *
+ * Everything here is a property of the deployment rather than of the
+ * person: where the site lives, what it is filed under, which file the
+ * share card uses. The name, the role, the description and the contact
+ * address used to sit beside them and now come from the CMS — see
+ * `src/constants/metadata.ts`, which is async for exactly that reason.
+ *
+ * Keep these synchronous. `app/robots.ts` and `app/sitemap.ts` read
+ * DOMAIN_URL at module scope.
+ */
 export const DOMAIN_URL = 'https://example.com'; // TODO: your deployed domain
-export const APP_DESCRIPTION = PROFILE.intro;
 export const APP_KEYWORDS = [
   'Front-End Developer',
   'Creative Developer',
@@ -18,5 +21,4 @@ export const APP_KEYWORDS = [
   'WebGL',
   'Portfolio'
 ];
-export const EMAIL_CONTACT = PROFILE.email;
 export const APP_OG_IMAGE = '/images/og-image.png'; // TODO: add this file

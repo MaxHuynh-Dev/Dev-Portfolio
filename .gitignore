@@ -42,6 +42,9 @@ next-env.d.ts
 
 # payload
 /media
+# Uploads land here so Next serves them directly at /media/<file>.
+# They are the owner's own image files, restored by running `yarn seed`.
+/public/media
 
 # Playwright MCP scratch output
 /.playwright-mcp/

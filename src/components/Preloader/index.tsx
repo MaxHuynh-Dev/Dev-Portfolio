@@ -2,16 +2,9 @@
 
 import gsap from 'gsap';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { PROFILE } from '@/content/site';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { PRELOADING_ATTR } from './boot';
-
-const FULL_NAME = `${PROFILE.firstName} ${PROFILE.lastName}`;
-
-/** One entry per character, with a key that is stable because the string
- *  is: this list is built once at module scope and never reorders. */
-const LETTERS = Array.from(FULL_NAME).map((char, index) => ({ char, key: `${index}${char}` }));
 
 /** The curtain holds at least this long so it reads as a deliberate
  *  gesture. The page is prerendered and small; on a warm cache every real
@@ -127,7 +120,20 @@ interface Geometry {
  * The hold itself lives in `global.css`, keyed on the `data-preloading`
  * attribute that `boot.ts` sets before first paint.
  */
-export default function Preloader(): React.ReactElement | null {
+export default function Preloader({ fullName }: { fullName: string }): React.ReactElement | null {
+  // The name is handed down rather than read here, and it is the SAME
+  // string the masthead is built from — see MainLayout. The curtain lands
+  // its letters on that heading exact to the pixel, and it finds the
+  // heading by matching this text against it, so two independent readings
+  // of 'the name' would be a handover resting on a coincidence.
+  const FULL_NAME = fullName;
+
+  /** One entry per character. The key is stable because the string is. */
+  const LETTERS = useMemo(
+    () => Array.from(FULL_NAME).map((char, index) => ({ char, key: `${index}${char}` })),
+    [FULL_NAME]
+  );
+
   // Server and first client render agree: the markup always ships. Whether
   // it is *painted* is decided in CSS from the <html> attribute, which is
   // already correct at first paint, so there is no hydration mismatch to
@@ -687,7 +693,7 @@ export default function Preloader(): React.ReactElement | null {
       cleanup();
       release();
     };
-  }, []);
+  }, [FULL_NAME]);
 
   if (!active) return null;
 

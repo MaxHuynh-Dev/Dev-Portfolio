@@ -1,4 +1,3 @@
-import { sizeOf } from '@Utils/imageSize';
 import type React from 'react';
 import type { Project } from '@/content/site';
 
@@ -17,20 +16,21 @@ import SpecSheet from './SpecSheet';
  * A server component. ShotStack is the only client leaf, because it owns
  * which shot is at eye level and the name's fit.
  *
- * It is also where every shot is measured. The files are read here, on the
- * server, rather than letting the browser discover each image's height as
- * it loads: ShotStack places the rail's marker from where each shot's
+ * Every shot arrives already knowing its own proportions. Payload records
+ * a file's width and height when it is uploaded, so the shape is settled
+ * before the page is built rather than discovered by the browser as each
+ * image lands: ShotStack places the rail's marker from where each shot's
  * centre falls, and a column that grew under the reader would move all of
- * them. These pages are statically generated, so this is a build-time read.
+ * them.
  */
-export default async function ProjectView({
+export default function ProjectView({
   project,
   next
 }: {
   project: Project;
   next: Project;
-}): Promise<React.ReactElement> {
-  const shotSizes = await Promise.all(project.shots.map((shot) => sizeOf(shot.src)));
+}): React.ReactElement {
+  const shotSizes = project.shots.map((shot) => shot.size);
 
   return (
     <>

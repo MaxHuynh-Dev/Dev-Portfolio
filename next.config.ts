@@ -1,5 +1,6 @@
 import { DEV_ENV, PROD_ENV } from '@Constants/envs';
 import withPWA from '@ducanh2912/next-pwa';
+import { withPayload } from '@payloadcms/next/withPayload';
 import type { NextConfig } from 'next';
 
 const isProd = process.env.NEXT_PUBLIC_APP_ENV === PROD_ENV;
@@ -37,4 +38,8 @@ const createNextConfig = (): NextConfig => {
   return baseConfig;
 };
 
-export default createNextConfig();
+// withPayload goes OUTERMOST, so the admin's server-only packages are
+// externalised after the PWA plugin has finished rewriting the config
+// rather than before. It also adds the admin's own webpack/turbopack
+// aliases, which the PWA wrapper has no opinion about.
+export default withPayload(createNextConfig());

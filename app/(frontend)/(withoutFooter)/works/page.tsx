@@ -1,14 +1,18 @@
 import Library from '@Modules/Library';
 import type { Metadata } from 'next';
 import type React from 'react';
-import { WORK_RANGE } from '@/content/site';
+import { getProjects, getSiteSettings } from '@/content/source';
 
-export const metadata: Metadata = {
-  // The root layout's title template turns this into "All work | Role".
-  title: 'All work',
-  description: `Every project, ${WORK_RANGE}.`
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { workRange } = await getSiteSettings();
+  return {
+    // The root layout's title template turns this into "All work | Role".
+    title: 'All work',
+    description: `Every project, ${workRange}.`
+  };
+}
 
-export default function WorksPage(): React.ReactElement {
-  return <Library />;
+export default async function WorksPage(): Promise<React.ReactElement> {
+  const [projects, settings] = await Promise.all([getProjects(), getSiteSettings()]);
+  return <Library projects={projects} workRange={settings.workRange} />;
 }

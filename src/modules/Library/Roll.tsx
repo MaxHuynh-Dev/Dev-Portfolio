@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type React from 'react';
-import { PROJECTS } from '@/content/site';
+import type { Project } from '@/content/site';
 import {
   ROW_FALL_MS,
   ROW_FALL_STAGGER_MS,
@@ -49,10 +49,12 @@ const timing = (index: number, shown: boolean): React.CSSProperties => ({
 });
 
 export default function Roll({
+  projects,
   active,
   shown,
   onActive
 }: {
+  projects: Project[];
   active: number;
   /** True once the list is the view being asked for. Drives the rise. */
   shown: boolean;
@@ -60,7 +62,7 @@ export default function Roll({
 }): React.ReactElement {
   return (
     <ol data-in={shown} className="m-0 list-none p-0">
-      {PROJECTS.map((project, index) => {
+      {projects.map((project, index) => {
         const pose = timing(index, shown);
         return (
           <li key={project.slug}>

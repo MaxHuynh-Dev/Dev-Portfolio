@@ -1,7 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
   "files": {
-    "includes": ["**"]
+    "includes": ["**", "!src/payload/payload-types.ts", "!app/(payload)/admin/importMap.js"]
   },
   "formatter": {
     "enabled": true,
@@ -12,7 +12,13 @@
     "lineWidth": 100,
     "attributePosition": "auto"
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {

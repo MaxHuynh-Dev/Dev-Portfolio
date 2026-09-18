@@ -6,7 +6,7 @@ import { useReleased, useViaRoute } from '@Hooks/useReveal';
 import Link from 'next/link';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PROJECTS, WORK_RANGE } from '@/content/site';
+import type { Project } from '@/content/site';
 import Readout from './Readout';
 import Roll from './Roll';
 import {
@@ -242,7 +242,13 @@ const phase = (elapsed: number, at: number, span: number): number =>
 
 type Mode = 'wheel' | 'list';
 
-export default function Library(): React.ReactElement {
+export default function Library({
+  projects,
+  workRange
+}: {
+  projects: Project[];
+  workRange: string;
+}): React.ReactElement {
   const [mode, setMode] = useState<Mode>('wheel');
 
   // The elements the engine drives, held as state rather than refs so that
@@ -386,7 +392,7 @@ export default function Library(): React.ReactElement {
       // reference the wheel spins and the type rises separately; giving the
       // readout this offset would spin eight names behind a one-line mask
       // for no gain.
-      const spun = position + (1 - phase(elapsed, 0, ENTRY_TURN_MS)) * PROJECTS.length;
+      const spun = position + (1 - phase(elapsed, 0, ENTRY_TURN_MS)) * projects.length;
 
       if (pitch.current === 0) {
         // Before `measure()` has run there is no pose to write, and the
@@ -400,7 +406,7 @@ export default function Library(): React.ReactElement {
         return;
       }
       const radius = pitch.current / Math.sin(STEP_DEG * RAD);
-      const fade = fadeFor(PROJECTS.length);
+      const fade = fadeFor(projects.length);
 
       // Where the stack is, measured off the empty slot in the list rather
       // than positioned by a second set of numbers that would have to be kept
@@ -427,11 +433,11 @@ export default function Library(): React.ReactElement {
       }
       const centre = Math.round(position);
 
-      for (let index = 0; index < PROJECTS.length; index += 1) {
+      for (let index = 0; index < projects.length; index += 1) {
         const element = covers.current[index];
         if (element === null || element === undefined) continue;
 
-        const away = shortest(index - spun, PROJECTS.length);
+        const away = shortest(index - spun, projects.length);
         const angle = away * STEP_DEG;
         let x = radius * Math.sin(angle * RAD);
         let y = ringTop.current + radius * (1 - Math.cos(angle * RAD));
@@ -443,7 +449,7 @@ export default function Library(): React.ReactElement {
           // Depth in the deck is taken from the settled project, not the
           // continuous position: a stack whose cards re-order mid-flight
           // shuffles instead of gathering.
-          const depth = shortest(index - centre, PROJECTS.length);
+          const depth = shortest(index - centre, projects.length);
           const lean = Math.max(-STACK_DEPTH, Math.min(STACK_DEPTH, depth)) * STACK_TILT;
           x = mix(x, stack.x, gather);
           y = mix(y, stack.y, gather);
@@ -490,15 +496,15 @@ export default function Library(): React.ReactElement {
         element.style.zIndex = String(
           stack === null
             ? 50 - Math.round(Math.abs(away) * 10)
-            : 50 - Math.abs(shortest(index - centre, PROJECTS.length))
+            : 50 - Math.abs(shortest(index - centre, projects.length))
         );
       }
     },
-    [slot, surface]
+    [projects, slot, surface]
   );
 
   const carousel = useCarousel({
-    count: PROJECTS.length,
+    count: projects.length,
     onFrame: draw,
     enabled: mode === 'wheel',
     surface,
@@ -684,7 +690,7 @@ export default function Library(): React.ReactElement {
         </h1>
         <p className="st-meta tabular-nums">
           <span className="st-line" data-in={released} style={chrome(1)}>
-            <span className="st-line-body">{WORK_RANGE}</span>
+            <span className="st-line-body">{workRange}</span>
           </span>
         </p>
       </header>
@@ -735,7 +741,7 @@ export default function Library(): React.ReactElement {
       </div>
 
       <div ref={setReadout} className="mt-[clamp(1.2rem,4vh,2.8rem)]">
-        <Readout />
+        <Readout projects={projects} />
       </div>
 
       {/* One stage, both views. They are overlaid rather than laid out one
@@ -756,7 +762,12 @@ export default function Library(): React.ReactElement {
         >
           <div className="flex flex-col gap-[clamp(0.6rem,2vh,2rem)] md:flex-row md:items-start md:gap-[clamp(1.5rem,4vw,3.5rem)]">
             <div className="order-2 min-w-0 flex-1 md:order-1">
-              <Roll active={carousel.active} shown={shown} onActive={carousel.goTo} />
+              <Roll
+                projects={projects}
+                active={carousel.active}
+                shown={shown}
+                onActive={carousel.goTo}
+              />
             </div>
 
             {/* Where the covers gather, and nothing else. Empty, because
@@ -789,7 +800,7 @@ export default function Library(): React.ReactElement {
           }
         >
           <ol ref={setLinks} className="m-0 list-none p-0">
-            {PROJECTS.map((project, index) => (
+            {projects.map((project, index) => (
               <li
                 key={project.slug}
                 ref={(node) => {

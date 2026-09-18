@@ -2,6 +2,7 @@
   "name": "nextjs-template-v2",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,11 +10,18 @@
     "prepare": "husky",
     "format": "biome format --write .",
     "lint": "biome lint .",
-    "lint:fix": "biome check --write ."
+    "lint:fix": "biome check --write .",
+    "payload": "payload",
+    "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap",
+    "seed": "payload run src/payload/seed.ts"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "@gsap/react": "^2.1.2",
+    "@payloadcms/db-mongodb": "3.90.0",
+    "@payloadcms/next": "3.90.0",
+    "@payloadcms/richtext-lexical": "3.90.0",
     "@preact/signals-react": "^3.5.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@uidotdev/usehooks": "^2.4.1",
@@ -32,6 +40,7 @@
     "lucide-react": "^0.562.0",
     "next": "^16.3.5",
     "next-themes": "^0.4.6",
+    "payload": "3.90.0",
     "postcss": "^8.5.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

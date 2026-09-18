@@ -1,6 +1,6 @@
 import Lines from '@Components/Lines';
 import type React from 'react';
-import { ABOUT_META, PROFILE } from '@/content/site';
+import type { MetaColumn } from '@/content/site';
 
 /**
  * About.
@@ -10,7 +10,13 @@ import { ABOUT_META, PROFILE } from '@/content/site';
  * em-dash placeholders under a "Numbers" label — a stat row with no stats,
  * which is worse than no stat row.
  */
-export default function About(): React.ReactElement {
+export default function About({
+  bio,
+  meta
+}: {
+  bio: string;
+  meta: MetaColumn[];
+}): React.ReactElement {
   return (
     <section
       id="about"
@@ -23,11 +29,11 @@ export default function About(): React.ReactElement {
 
       <div className="mt-[clamp(1.5rem,4vh,2.5rem)] flex flex-wrap justify-between gap-[clamp(2rem,6vw,6rem)]">
         <Lines className="st-measure m-0 text-[clamp(1.1rem,2.1vw,1.6rem)] leading-[1.42]">
-          {PROFILE.bio}
+          {bio}
         </Lines>
 
         <div className="flex flex-wrap gap-[clamp(1.75rem,4vw,3.5rem)]">
-          {ABOUT_META.map((column) => (
+          {meta.map((column) => (
             <div key={column.label}>
               <p className="st-meta m-0">{column.label}</p>
               <ul className="m-0 mt-[0.35rem] list-none p-0">
