@@ -1,5 +1,6 @@
 'use client';
 
+import Lines from '@Components/Lines';
 import { useFittedText } from '@Hooks/useFittedText';
 import type React from 'react';
 import { PROFILE } from '@/content/site';
@@ -46,9 +47,18 @@ export default function Open(): React.ReactElement {
         {FULL_NAME}
       </h1>
 
-      <p className="mt-[clamp(1.4rem,3.5vh,2.6rem)] max-w-[42ch] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.35] md:ml-auto">
+      {/* The line under the name is what arrives on load — not the name.
+          The curtain assembles its own copy of the masthead and hands it
+          over already in place, so there is nothing left there to reveal,
+          and revealing it anyway would break a handover that is currently
+          exact to the pixel. This waits for the same release. */}
+      <Lines
+        on="load"
+        delay={120}
+        className="mt-[clamp(1.4rem,3.5vh,2.6rem)] max-w-[42ch] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.35] md:ml-auto"
+      >
         {PROFILE.intro}
-      </p>
+      </Lines>
     </section>
   );
 }

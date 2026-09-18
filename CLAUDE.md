@@ -95,6 +95,21 @@ is nothing left for it to report. The one size still short is 320x568, by
 one there, verified — the wheel moves it 36px and tabbing to the eighth row
 scrolls it into view.
 
+**Arriving at the index, after the curtain.** The line under the masthead
+rises out of its own mask once the page has been handed back — and the
+masthead itself does not, because there is nothing there left to reveal:
+the curtain assembles its own copy of the name and hands it over already in
+place, exact to the pixel. Revealing the `<h1>` would break that handover.
+
+Further down, `About`'s paragraph, the address and the colophon rise as
+they are reached. This is a reversal of something recorded below as
+rejected, and the difference is the point: what was thrown out was the same
+fade-and-slide-up on all seven sections. What is here is a mask per
+*measured* line, on chosen pieces of type, in the idiom the site already
+speaks — the preloader's letters, the readout on `/works`, that page's list.
+`Lines` measures where a paragraph actually breaks; `useReveal` decides
+when. Nothing reveals on the project pages.
+
 **Moving between pages** (`PageTransition`). An ink panel rises to cover
 the page, the next route is fetched and committed behind it, the scroll is
 put back to the top, and the panel carries on upward to uncover. One
@@ -198,6 +213,9 @@ src/modules/Project/
   index.tsx        the three-column project view
   SpecSheet.tsx | ShotStack.tsx | NextProject.tsx
 src/components/Shot.tsx    one image, or the field it will go in
+src/components/Lines.tsx   prose split into its own measured lines, masked
+src/components/Reveal.tsx  the same mask for what is already one line
+src/hooks/useReveal.ts     when a masked block is allowed to come up
 src/components/Preloader/  entry curtain + pre-paint boot script (boot.ts)
 src/components/PageTransition/  the route curtain, and the only place
                            internal navigation is handled
@@ -551,7 +569,51 @@ such correction, because it is centred and the centre is the one thing
 scaling holds still. With the term in, the landed cover matches the slot at
 `dx` `dy` `dw` `dh` all 0, at every width.
 
-**23. An indicator quantised to N places cannot track a continuous scroll.**
+**23. Measuring where text breaks must not change where text breaks.**
+`Lines` splits a paragraph into its own lines. The first version wrapped
+every word in a span and read the spans, and it never settled: these
+paragraphs sit where the element's width follows its content — a flex item
+in `About`, an `ml-auto` block in `Open` — so splitting changed the width,
+the observer watching for a width change fired, the split was thrown away,
+and the block oscillated. That is trap 8 in a new costume, and it has the
+same two answers. **Measure without writing**: a `Range` over the element's
+own text node, one word at a time, reading which line box each landed in —
+no DOM change, so no layout change (and touch `el.getBoundingClientRect()`
+first, per trap 18). **And observe the parent**, whose width does not
+depend on this element's pose.
+
+Three more things it cost, each a real bug:
+
+- **A value cannot be its own request.** Invalidating by setting `lines`
+  back to `null` loses the request whenever the reset lands in the same
+  batch as the split before it: React collapses rows-then-null to no
+  change, the effect's dependencies never move, and the block sits plain
+  for good. Measured exactly that way — the split ran once per paragraph
+  and the three resets that followed re-ran nothing. A separate `pass`
+  counter is what asks for a re-split; `lines` only ever answers.
+- **`data-preloading` must not be read synchronously at mount.** Trap 10
+  says the preloader re-asserts the attribute because StrictMode's first
+  cleanup removes it. A consumer reading it in its own mount effect can
+  land in that gap and conclude the page was let go before the curtain had
+  drawn — measured: the intro arrived at 33ms with the curtain still up.
+  `useReleased` defers its first read by a frame, by which time both writes
+  have happened, and keeps a MutationObserver for the real release.
+- **A block per line eats the space the break stood for.** Concatenated
+  back, the paragraph read "I build it tohold up." Each line but the last
+  carries a trailing space, which a block collapses away visually and a
+  screen reader does not.
+
+**24. An IntersectionObserver reports a change, not a state.**
+A block can go from below the fold to above it without ever intersecting —
+a hash link, a restored scroll position, any programmatic jump. Measured at
+375: one jump to the foot of the index and the about paragraph stayed
+hidden for good. Text that never appears is a worse failure than a reveal
+that fires early, so `useReveal` asks a plain question on scroll instead —
+is this block at or above the trigger line — which is true for everything
+already passed. Lenis scrolls the real document, so the listener fires
+(trap 3).
+
+**25. An indicator quantised to N places cannot track a continuous scroll.**
 The project page's thumbnail rail outlined whichever shot was nearest the
 middle of the screen, which meant the outline had only as many positions as
 there were shots: on a two-shot project it took exactly **two**, and moved
@@ -594,7 +656,7 @@ Three things this cost, all worth knowing:
 Under `reduce` the marker stands on whole shots — verified at two distinct
 positions across the scroll, where ordinary motion gives 21.
 
-**24. Four things on the ring are measured, not chosen.**
+**26. Four things on the ring are measured, not chosen.**
 
 - **The mask's line-height is `normal`.** `.st-roll` clips, and `.st-display`
   sets `line-height: 0.9`, which is tighter than Nippo's ascent plus
@@ -699,6 +761,10 @@ Other invariants:
   static, and it still lands on the masthead to the pixel. The paper itself
   still fades in, because an opacity change is not the movement the query
   is about — the same call `PageTransition` makes.
+- The index's reveals are a CSS transition on one property, so the
+  reduced-motion block flattens them to 0.01ms and the text simply arrives.
+  Verified: `transition-duration` 1e-05s and the intro at its resting
+  position, not travelling to it. Nothing there needs its own check.
 - Five things honour `prefers-reduced-motion` — the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which

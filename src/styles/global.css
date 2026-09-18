@@ -156,9 +156,14 @@ body {
 /* ── Keyframes ──
    One, shared. st-fade is the corner marks' half of the load moment, and
    .st-swap borrows it for the work list's preview, which answers the
-   reader's own scrolling. There is no scroll-triggered reveal anywhere on
-   this site: a fade-and-slide-up on every section is the single most
-   recognisable generated-page tell, and this build removed all seven.
+   reader's own scrolling.
+
+   The index does now reveal text on scroll — see .st-line and CLAUDE.md —
+   but not the way it used to. The seven this build removed were the same
+   fade-and-slide-up on every section, which is the single most
+   recognisable generated-page tell. What replaced them is a mask per
+   measured line, on chosen pieces of type, in the same idiom as the
+   preloader's letters and the readout on /works.
 
    There used to be a second, st-rise, which lifted the masthead's name out
    of a mask on load. The name is not revealed any more — the preloader
@@ -338,6 +343,39 @@ body {
   .st-quiet-scroll::-webkit-scrollbar {
     width: 0;
     height: 0;
+  }
+
+  /* Text rising out of its own lines, on the index.
+     One mask per measured line, and the line inside it parked a whole mask
+     below until the block is asked for. `Lines` measures where the breaks
+     actually fall and writes the per-line delay inline, because it is a
+     different number for every line.
+
+     Deliberately WITHOUT the forced `line-height: normal` that
+     .st-reveal-line carries. That one masks single-line cells in a rail,
+     where the face's own box is what must not be clipped; this one masks
+     running prose, where taking the line-height away would throw out the
+     measure the paragraph was set at. A call site putting display type in
+     here has to loosen its own leading — .st-display's 0.9 hangs the
+     glyphs outside their box and the mask would shave them.
+
+     `transition-property: transform` only, so the inline duration and
+     delay cannot reach anything else, and so the reduced-motion block can
+     flatten the whole thing to nothing without this file asking. */
+  .st-line {
+    display: block;
+    overflow: clip;
+  }
+
+  .st-line-body {
+    display: block;
+    transform: translateY(105%);
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  [data-in="true"] .st-line-body {
+    transform: none;
   }
 
   /* The route curtain. Parked and inert until PageTransition wakes it —

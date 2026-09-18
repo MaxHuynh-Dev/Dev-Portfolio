@@ -1,3 +1,4 @@
+import Lines from '@Components/Lines';
 import type React from 'react';
 import { ABOUT_META, PROFILE } from '@/content/site';
 
@@ -21,9 +22,9 @@ export default function About(): React.ReactElement {
       </h2>
 
       <div className="mt-[clamp(1.5rem,4vh,2.5rem)] flex flex-wrap justify-between gap-[clamp(2rem,6vw,6rem)]">
-        <p className="st-measure m-0 text-[clamp(1.1rem,2.1vw,1.6rem)] leading-[1.42]">
+        <Lines className="st-measure m-0 text-[clamp(1.1rem,2.1vw,1.6rem)] leading-[1.42]">
           {PROFILE.bio}
-        </p>
+        </Lines>
 
         <div className="flex flex-wrap gap-[clamp(1.75rem,4vw,3.5rem)]">
           {ABOUT_META.map((column) => (

@@ -1,3 +1,5 @@
+import Lines from '@Components/Lines';
+import Reveal from '@Components/Reveal';
 import type React from 'react';
 import { COLOPHON, CONTACT_LINKS, PROFILE } from '@/content/site';
 
@@ -22,12 +24,18 @@ export default function Contact(): React.ReactElement {
       </h2>
 
       <div className="mt-[clamp(1.25rem,3vh,2rem)] flex flex-wrap items-end justify-between gap-[clamp(1.5rem,5vw,4rem)]">
-        <a
-          href={`mailto:${PROFILE.email}`}
-          className="st-display text-[clamp(1.9rem,7vw,5.2rem)] text-[var(--ink)]"
-        >
-          {PROFILE.email}
-        </a>
+        {/* The mask goes around the link, not inside it: a reveal must not
+            come between the reader and the only action on this page. The
+            leading is loosened from .st-display's 0.9 because at 0.9 the
+            glyphs hang outside their own box and the mask shaves them. */}
+        <Reveal className="st-line block">
+          <a
+            href={`mailto:${PROFILE.email}`}
+            className="st-line-body st-display text-[clamp(1.9rem,7vw,5.2rem)] text-[var(--ink)] leading-[1.18]"
+          >
+            {PROFILE.email}
+          </a>
+        </Reveal>
 
         <div className="flex flex-wrap gap-[clamp(1.75rem,4vw,3.5rem)]">
           {CONTACT_LINKS.map((column) => (
@@ -52,7 +60,7 @@ export default function Contact(): React.ReactElement {
         </div>
       </div>
 
-      <p className="st-measure st-meta mt-[clamp(3rem,9vh,6rem)] mb-0">{COLOPHON}</p>
+      <Lines className="st-measure st-meta mt-[clamp(3rem,9vh,6rem)] mb-0">{COLOPHON}</Lines>
     </section>
   );
 }
