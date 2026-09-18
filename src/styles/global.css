@@ -286,6 +286,60 @@ body {
     line-height: normal;
   }
 
+  /* The list on /works, rising out of its masks.
+     One mask per cell, and the line inside it is parked a whole mask below
+     until the list is the view being asked for. The stagger is per row and
+     lives inline, because it is a different number for every row and a
+     different one again on the way out.
+
+     `transition-property: transform` and nothing else, deliberately. The
+     rows carry their duration and delay inline, and with `all` those
+     reached the colour too — pointing at the seventh row lit it up half a
+     second later, because the dim-to-ink had inherited the row's place in
+     the queue.
+
+     `line-height: normal` for the same reason as .st-roll-line: at
+     .st-display's 0.9 the glyphs hang outside their own box and a mask cut
+     to the box shaves the caps and the descenders. */
+  .st-reveal {
+    display: block;
+    overflow: clip;
+  }
+
+  .st-reveal-line {
+    display: block;
+    line-height: normal;
+    transform: translateY(105%);
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  [data-in="true"] .st-reveal-line {
+    transform: none;
+  }
+
+  /* A scroll region with no scrollbar drawn.
+     Only for the list on /works, and only because that list is sized to
+     fit: measured across every width and height this site is checked at,
+     it overflows at exactly one — 320x568, by 85px — where the row that is
+     half cut off IS the affordance. Everywhere else there is nothing to
+     scroll and nothing to draw.
+
+     The region stays a real scroll container: the wheel drives it
+     natively, touch drags it, and tabbing to a row below the fold scrolls
+     it into view. What is removed is the painted bar, not the scrolling.
+     Do not reach for this anywhere the content is not sized to fit — a
+     hidden bar on a region that genuinely overflows is how a page ends up
+     silently cutting its own content off. */
+  .st-quiet-scroll {
+    scrollbar-width: none;
+  }
+
+  .st-quiet-scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
   /* The route curtain. Parked and inert until PageTransition wakes it —
      hidden rather than merely translated off-screen, so it cannot take a
      click or stretch the page while it is doing nothing. The component

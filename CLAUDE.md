@@ -60,10 +60,40 @@ back to the first. The curve is eight CSS transforms — a point on a circle
 and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
 
-It costs the reader the wheel for as long as they are on that page, which is
-the one thing a scroll-driven carousel can never give back. The `list` view
-is not a nicety, it is the answer to that: same projects, ordinary page,
-ordinary scrolling, and a keyboard path that does not go through the ring.
+**Switching views** is the same covers doing something else. They do not
+disappear and reappear: one number, `blend`, runs 0 to 1 and every cover is
+placed by interpolating its pose on the ring against its pose in the deck,
+so the ring visibly gathers into the list's preview and fans back out of it.
+The list's rows rise out of their own masks 42ms apart, starting *inside*
+the gather rather than after it — waiting for the covers to land first reads
+as two things in turn, overlapping reads as one. All of it lives in
+`Library/timing.ts`.
+
+The shape came from the page the owner asked for, measured rather than
+copied by eye: its rows began rising 557ms after the click, 39ms apart, each
+taking 587ms, while its covers were still gathering. Ours is that,
+tightened, because it has eight rows to fill and the reference had twenty.
+
+The ring costs the reader the wheel for as long as they are on that page,
+which is the one thing a scroll-driven carousel can never give back. The
+`list` view is the answer to that, and it is worth being exact about what it
+does and does not give: all eight names at once, a keyboard path that does
+not go through the ring, and a plain scroll region the wheel drives natively
+rather than a hijacked one. What it no longer gives is document scrolling:
+both views are one screen tall, which is what lets them share a stage and
+animate into each other.
+
+**The list is sized to fit, and only then is its scrollbar taken away.**
+Those are one decision, in that order. The row rhythm was set by eye at
+1440x900, where it fit — and overflowed at every laptop anyone actually
+owns: 1440x800 by 50px, 1366x768 by 58, 1280x800 by 21, 1024x768 by 24.
+Hiding the bar first would have meant a MacBook Air silently cutting off the
+last project. Tightening the row to about 39px instead puts the overflow at
+zero from 375x700 all the way up, and the bar is then hidden because there
+is nothing left for it to report. The one size still short is 320x568, by
+37px, where the half-cut row is the affordance; the region is still a real
+one there, verified — the wheel moves it 36px and tabbing to the eighth row
+scrolls it into view.
 
 **Moving between pages** (`PageTransition`). An ink panel rises to cover
 the page, the next route is fetched and committed behind it, the scroll is
@@ -511,7 +541,17 @@ again. Its lines are collected from the DOM once and written to directly.
 That costs 32 style writes a frame on top of the covers' and changes
 nothing: 13.4ms median, zero frames over 20ms.
 
-**22. Three things on the ring are measured, not chosen.**
+**22. `scale()` shrinks about the centre, so a corner landing is off by
+half of what the element gave up.**
+The covers gather onto an empty slot in the list, and the slot is measured
+rather than positioned by a second set of numbers. Translating a cover to
+the slot's top and then scaling it down left it **34.6px** low with a 434px
+cover landing in a 311px slot — exactly `h(1 - scale) / 2`. The x needed no
+such correction, because it is centred and the centre is the one thing
+scaling holds still. With the term in, the landed cover matches the slot at
+`dx` `dy` `dw` `dh` all 0, at every width.
+
+**23. Four things on the ring are measured, not chosen.**
 
 - **The mask's line-height is `normal`.** `.st-roll` clips, and `.st-display`
   sets `line-height: 0.9`, which is tighter than Nippo's ascent plus
@@ -520,15 +560,36 @@ nothing: 13.4ms median, zero frames over 20ms.
   for Nippo, so no glyph can reach past the clip and no number in this repo
   has to be kept in step with the font. A call site that wants a looser
   line still wins, because utilities are layered after components.
-- **The cover width is climbed, not a fraction of anything.** The ring only
-  has to leave room below itself for the covers actually on screen, and how
-  many those are depends on the cover width being solved for. So the solver
-  starts one step deep and goes deeper only while the next cover out would
-  still be on screen at the answer that produced. A fraction tuned at 1440
-  gave a phone a row of stamps with half the screen empty under it; a
-  fraction tuned at 375 gave a desktop three covers the size of posters.
-  The width cap is derived the same way, from how much of the next cover
-  has to stay visible (`PEEK`) — one promise that holds at every width.
+- **The cover width is solved, not a fraction of anything.** A fraction
+  tuned at 1440 gave a phone a row of stamps; one tuned at 375 gave a
+  desktop three covers the size of posters. Four rules answer instead, in
+  the order they matter: the stage height, so nothing runs off the bottom;
+  a **whole** neighbour clear of the middle cover, which is the thing the
+  ring actually reads as; `COVER_READABLE`, because a screenshot below
+  about 200px shows nothing; and `PEEK` last with the final say, because a
+  ring with no visible neighbour is not a ring. Which one binds changes
+  with the screen — the height on a short desktop window, the whole
+  neighbour on a tall one, `PEEK` on a phone — and that is the point.
+  How deep the ring is drawn is climbed on top of that: the room to reserve
+  below it depends on how many covers are on screen, which depends on the
+  width being solved for, so the solver starts one step deep and goes
+  deeper only while the next cover out would still be on screen at the
+  answer that produced.
+- **A cover is 16:9, and the shape is one number.** `TALL` is a cover's
+  height per unit width, and everything above resolves through it, so
+  changing the shape is changing `TALL` and the `ratio` on the `Shot` —
+  nothing else. The covers were 4:5 first, and the change to 16:9 is what
+  turned up the bug in the bullet below.
+- **A turned box is bigger than the box it came from.** `w x h` rotated by
+  `a` occupies `h·cos a + w·sin a` tall and `w·cos a + h·sin a` wide, and
+  the ring turns every cover off the middle. Reserving room for the
+  *unrotated* box was a rounding error while the covers were portrait and
+  became a real one the moment they were landscape — a wide box gives up
+  far more to a turn than a tall one does. Measured as exactly the **14px**
+  the outer covers were clipped by at 1440 straight after the change to
+  16:9. The reservation is a maximum over the whole steps the covers sit
+  on, not the value at the furthest one, because with the turn folded in
+  the deepest cover is not always the furthest out.
 - **A cover off the side of the screen stays focusable.** It is faded and
   has `pointer-events: none`, never `visibility: hidden` — hidden would
   take it out of the tab order and make five of the eight projects
@@ -593,10 +654,15 @@ Other invariants:
 - Five things honour `prefers-reduced-motion` — the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which
-  drops the wipe for a fade) and the ring on `/works`. The last three read
+  drops the wipe for a fade) and `/works`, where both the ring and the
+  gather between views are assigned rather than walked. The last three read
   the query in JavaScript, because the CSS block cannot reach a GSAP tween
   or a rAF loop; add a sixth motion source and it will need its own check
-  too. Verified under `reduce`: the panel never translates, only fades, and
+  too. The list's rows are the exception that proves it: their rise is a CSS
+  transition, so the block flattens it to 0.01ms without the component
+  asking. Verified under `reduce`: the switch shows **two** distinct cover
+  scales across 114 frames — the ring's and the deck's, and nothing
+  between. Verified under `reduce`: the panel never translates, only fades, and
   the navigation still lands at the top; and the ring never eases — 245
   sampled frames across a gesture, **zero** of them between two projects,
   because every gesture is quantised to whole steps and the position is
@@ -608,12 +674,29 @@ Other invariants:
   the page being let go mid-dissolve. The route curtain answers a click,
   and the ring answers a wheel, a drag or an arrow key.
 - **A page that takes the wheel owes the reader a way out.** `/works` is
-  exactly one screen tall and the document does not scroll while the ring
-  is up. That is defensible only because the `list` view is one click away,
-  is reachable by keyboard before the ring is (it sits earlier in the tab
-  order), scrolls like every other page, and carries the same links. The
-  two buttons say which is on with `aria-pressed`, not with the underline
+  exactly one screen tall in both views and the document never scrolls.
+  That is defensible only because the `list` view is one click away, is
+  reachable by keyboard before either set of links is (the switch sits
+  earlier in the tab order than both), shows all eight names at once, and
+  carries the same links. Where the rows do not fit — measured at 320x568,
+  and nowhere else — the list is a plain scroll region the wheel drives
+  natively; it is not hijacked, it is just not the document. The two
+  buttons say which view is on with `aria-pressed`, not with the underline
   alone.
+- **`.st-quiet-scroll` is not a general-purpose class.** It removes the
+  painted scrollbar and nothing else — the wheel, touch and
+  scroll-into-view all still work — and it is applied to exactly one
+  element, whose content is sized to fit first. A hidden bar on a region
+  that genuinely overflows is how a page ends up cutting its own content
+  off without saying so.
+- **Both views are always mounted, and exactly one of them is live.** The
+  covers and the rows are two sets of links to the same eight projects, so
+  the set that is not the current view carries `inert` *and* `aria-hidden`:
+  in the ring the rows are parked inside their masks and out of the tree, and
+  in the list the covers are the preview — a visual echo, which is the same
+  rule the index's aside follows. Verified both ways: tabbing in the ring
+  goes switch then covers, and in the list switch then rows, with the other
+  set skipped entirely.
 - **The ring's readout is `aria-hidden`,** so the name, the one-line
   summary, the category and the year all live in each cover link's own
   accessible name — the same rule the index's preview aside follows.
