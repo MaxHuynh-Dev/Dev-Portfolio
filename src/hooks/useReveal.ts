@@ -107,11 +107,30 @@ export const useReleased = (): boolean => {
  *
  * Read once. How a page got here cannot change while it is here.
  */
+/**
+ * Whether this document has ever navigated on the client.
+ *
+ * Module scope, so it is per document — which is exactly the question
+ * `useViaRoute` is really asking. The attribute alone is not enough: when
+ * the route curtain's 3s cap fires, it lets go BEFORE the destination
+ * mounts, and the destination then reads no attribute and concludes it was
+ * a cold load. Measured on that path: the attribute went at 3625ms, the
+ * page mounted at 4785ms, and the masthead came up carrying no mask at all
+ * — the largest thing on the page, never revealed, on the one path where
+ * the reader has already been kept waiting.
+ */
+let routed = false;
+
+/** Called by `PageTransition` the moment a client navigation begins. */
+export const markRouted = (): void => {
+  routed = true;
+};
+
 export const useViaRoute = (): boolean => {
   const [viaRoute, setViaRoute] = useState(false);
 
   useEffect(() => {
-    setViaRoute(document.documentElement.hasAttribute('data-routing'));
+    setViaRoute(routed || document.documentElement.hasAttribute('data-routing'));
   }, []);
 
   return viaRoute;
@@ -129,7 +148,15 @@ const TRIGGER = 0.88;
 
 /** True once the block may be shown. Latches — a reveal happens once. */
 export function useReveal(on: Trigger, element: HTMLElement | null): boolean {
-  const [seen, setSeen] = useState(on === 'load');
+  // Derived, NOT latched from `on` in a useState initialiser. An initialiser
+  // reads its argument exactly once, so an instance that was reused with a
+  // different `on` would keep the old answer — and in the one direction that
+  // matters, `scroll` to `load`, it keeps `false` while the effect below
+  // returns early, which is text that never appears at all. Every other
+  // latch here fails open; this is the only one that could fail closed, and
+  // it costs nothing to make it a plain derivation.
+  const [scrolledTo, setScrolledTo] = useState(false);
+  const seen = on === 'load' || scrolledTo;
   const released = useReleased();
 
   useEffect(() => {
@@ -147,7 +174,7 @@ export function useReveal(on: Trigger, element: HTMLElement | null): boolean {
       // one jump to the foot of the page. Text that never appears is a
       // worse failure than a reveal that fires early.
       if (element.getBoundingClientRect().top >= window.innerHeight * TRIGGER) return;
-      setSeen(true);
+      setScrolledTo(true);
     };
 
     const schedule = (): void => {

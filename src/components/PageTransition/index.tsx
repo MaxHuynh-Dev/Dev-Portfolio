@@ -1,5 +1,6 @@
 'use client';
 
+import { markRouted } from '@Hooks/useReveal';
 import gsap from 'gsap';
 import { usePathname, useRouter } from 'next/navigation';
 import type React from 'react';
@@ -30,6 +31,23 @@ const HARD_CAP_MS = 3000;
  * at a page whose text never arrives.
  */
 const ROUTING_ATTR = 'data-routing';
+
+/**
+ * The value the attribute carries, which is how `global.css` can hold the
+ * destination blank for exactly the part of the transition where blanking
+ * it is invisible.
+ *
+ * `useReleased` asks `hasAttribute` and observes with an `attributeFilter`,
+ * so all three of these read as "a curtain is up" and a change from one to
+ * the next simply re-fires the observer, which re-checks and finds it still
+ * true. One attribute, three states, and nothing else to remember to clear.
+ *
+ * `covering` deliberately does NOT blank anything: the panel is still on
+ * its way up and the reader is looking at the page they are leaving. Taking
+ * it away underneath them is the jump this whole component exists to
+ * remove.
+ */
+type Curtain = 'covering' | 'holding' | 'leaving';
 
 type Phase = 'idle' | 'covering' | 'holding' | 'revealing';
 
@@ -100,6 +118,10 @@ export default function PageTransition(): React.ReactElement {
     const coverMs = readMs('--t-cover', FALLBACK.cover);
     const revealMs = readMs('--t-reveal', FALLBACK.reveal);
 
+    const raise = (at: Curtain): void => {
+      document.documentElement.setAttribute(ROUTING_ATTR, at);
+    };
+
     const settle = (): void => {
       phase.current = 'idle';
       target.current = null;
@@ -146,7 +168,23 @@ export default function PageTransition(): React.ReactElement {
     const reveal = (): void => {
       if (phase.current !== 'holding') return;
       phase.current = 'revealing';
+      // RE-ARMED, not cleared. The uncover is a GSAP tween and GSAP runs on
+      // rAF, which a backgrounded tab suspends — so `onComplete` never
+      // fires, `settle` never runs, and the attribute stays up. That used to
+      // mean a few parked reveals on an otherwise visible page; now that the
+      // attribute also empties the page during the hold, it would mean a
+      // blank one. "The route curtain must always let go" has to cover the
+      // uncover too, not just the hold.
       window.clearTimeout(capTimer.current);
+      capTimer.current = window.setTimeout(settle, HARD_CAP_MS);
+
+      // The gate comes off at the START of the uncover, so the strip the
+      // panel clears shows the page in its PARKED state — masks empty,
+      // display type below its clip — rather than a blank sheet. The
+      // reveals themselves still wait for `settle` at the end, which is
+      // what keeps them from playing behind the part of the panel that has
+      // not moved yet.
+      raise('leaving');
       toTop();
 
       // Focus follows the navigation. preventDefault cancelled the
@@ -173,6 +211,11 @@ export default function PageTransition(): React.ReactElement {
     const covered = (): void => {
       if (phase.current !== 'covering') return;
       phase.current = 'holding';
+      // The panel is shut, so the page underneath can be emptied without
+      // anyone seeing it go. Everything the destination mounts behind this
+      // is invisible until the uncover starts.
+      raise('holding');
+
       const url = target.current;
       if (url === null) {
         reveal();
@@ -190,7 +233,8 @@ export default function PageTransition(): React.ReactElement {
       target.current = url;
 
       window.lenis?.stop();
-      document.documentElement.setAttribute(ROUTING_ATTR, '');
+      markRouted();
+      raise('covering');
       panel.style.visibility = 'visible';
       panel.style.pointerEvents = 'auto';
       label.textContent = text;

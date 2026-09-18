@@ -129,6 +129,27 @@ export default function Lines({
    * three resets that followed re-ran nothing.
    */
   const [pass, setPass] = useState(0);
+  /**
+   * Whether the masked pose has been PAINTED at least once.
+   *
+   * A transition needs a value to come from. `Reveal` and `Headline` render
+   * their line on the very first commit, parked, so there always is one —
+   * but this component cannot: it has to measure where the paragraph breaks
+   * before it can split it, so the `.st-line-body` spans do not exist until
+   * a later commit. If the page has already been let go by then, those
+   * spans are INSERTED with the ancestor already at `data-in="true"`, and a
+   * newly inserted element's first computed style is simply `transform:
+   * none`. There is nothing to transition from, so nothing transitions.
+   *
+   * Measured on the paths where that happens — a browser Back, which raises
+   * no curtain at all, and any navigation slower than the route curtain's
+   * 3s cap, which in `next dev` is an ordinary on-demand compile: **one**
+   * distinct transform across 264 frames. The text simply appeared.
+   *
+   * So the split's first commit is always parked, and the reveal is allowed
+   * one frame later, by which time the browser has a previous value.
+   */
+  const [painted, setPainted] = useState(false);
   const asked = useReveal(on, element);
 
   // `pass` is the request for a split, not an input to one, so the body has
@@ -143,6 +164,39 @@ export default function Lines({
     const read = readLines(element);
     if (read !== null) setLines(read);
   }, [element, pass]);
+
+  // A new paragraph is a new measurement. The split's own effect cannot
+  // take `children` as a dependency — it has to run against the PLAIN pose,
+  // and by the time it re-ran the masks would still be in the DOM with no
+  // text node to range over. So the content change asks for a split the
+  // same way a width change does: back to plain, then bump the counter.
+  //
+  // Today this is belt and braces on the route path — Next keys each
+  // dynamic segment by its param value, so `/work/hylix` to `/work/soluis`
+  // remounts the whole subtree rather than reusing it. It is not belt and
+  // braces in development, where Fast Refresh preserves state and a paragraph
+  // edited in `site.ts` would otherwise keep rendering the old lines.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: children is the trigger for a re-split, not a value the effect reads
+  useEffect(() => {
+    setLines(null);
+    setPass((previous) => previous + 1);
+  }, [children]);
+
+  useEffect(() => {
+    if (lines === null) {
+      setPainted(false);
+      return;
+    }
+    // One frame, not a microtask: the parked pose has to have been through
+    // a real style recalculation, and `Promise.resolve()` would run inside
+    // the same one.
+    const frame = requestAnimationFrame(() => {
+      setPainted(true);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [lines]);
 
   // The parent, not this element: this one's width follows its own content
   // at several of the call sites, so observing it would be observing the
@@ -179,7 +233,11 @@ export default function Lines({
   }, [element]);
 
   return (
-    <Tag ref={setElement} className={className} data-in={lines === null ? undefined : asked}>
+    <Tag
+      ref={setElement}
+      className={className}
+      data-in={lines === null ? undefined : painted && asked}
+    >
       {lines === null
         ? children
         : lines.map((line) => (

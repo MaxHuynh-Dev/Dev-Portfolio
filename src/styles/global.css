@@ -154,9 +154,10 @@ body {
 }
 
 /* ── Keyframes ──
-   One, shared. st-fade is the corner marks' half of the load moment, and
-   .st-swap borrows it for the work list's preview, which answers the
-   reader's own scrolling.
+   One, and it is the corner marks' half of the load moment. The work
+   list's preview used to borrow it for a 180ms cross-fade; it wipes now,
+   from GSAP, because a fade cannot hide a picture that has not loaded yet
+   (see Work.tsx).
 
    The index does now reveal text on scroll — see .st-line and CLAUDE.md —
    but not the way it used to. The seven this build removed were the same
@@ -246,12 +247,41 @@ body {
     animation: st-fade 0.9s ease both;
   }
 
-  /* The work list's preview, when the live row changes. A hard cut reads
-     as a glitch while scrolling drives the change; 180ms is short enough
-     that the preview never lags behind the names. Triggered by the
-     reader's own scroll or pointer — the one on load is below the fold. */
-  .st-swap {
-    animation: st-fade 180ms ease both;
+  /* The work list's preview. Every project's is mounted at once and they
+     are stacked in ONE grid cell, which is what lets the live one change
+     without anything being created or destroyed — see Work.tsx.
+
+     `grid` and not absolute positioning, because a grid cell is sized by
+     its tallest occupant. Absolute layers would have collapsed the frame
+     to nothing and needed a height from somewhere; this way the panel is
+     as tall as the longest summary and stays that height, so the sticky
+     aside no longer resizes under the reader when the live row changes.
+
+     `clip`, not `hidden`, for the same reason as html and body.
+
+     The z-index here only has to be right for the first paint. From the
+     first wipe on, Work.tsx writes an inline one per activation, which
+     beats this. */
+  .st-cover-stack {
+    display: grid;
+    overflow: clip;
+  }
+
+  .st-cover {
+    grid-area: 1 / 1;
+    z-index: 0;
+    /* EACH layer is a window, not just the stack around them. The layer
+       travels up into the frame while its contents travel down inside it by
+       the same amount, so without a clip here the contents simply hang out
+       of the top of their own layer and paint over the project underneath —
+       the layer's opaque background covers the slice it has reached, and its
+       text does not. It showed up as two projects' numbers on top of each
+       other in a photograph of the wipe, and nowhere in the numbers. */
+    overflow: clip;
+  }
+
+  .st-cover[data-on="true"] {
+    z-index: 1;
   }
 
   /* The rolling readout on /works.
@@ -452,6 +482,39 @@ body {
   [data-in="true"].st-wash,
   [data-in="true"] .st-wash {
     opacity: 1;
+  }
+
+  /* The destination is empty while the panel is SHUT.
+     
+     `holding` only, and that is the whole design. During `covering` the
+     panel is still on its way up and the reader is looking at the page they
+     are leaving — taking it away underneath them is the visible jump this
+     curtain exists to remove. During `leaving` the gate is off again, so
+     the strip the panel clears shows the page in its parked state: masks
+     empty, display type below its clip, the ring turned away. The reveals
+     themselves still wait for the end of the uncover.
+
+     `opacity`, and not `visibility` or `display`. All three keep the page
+     off the screen; only this one keeps everything else working. `display:
+     none` and `content-visibility: hidden` skip layout for descendants,
+     which silently breaks the three things on this site that measure:
+     useFittedText reads a zero container width and never writes
+     `--fit-size`, `Lines` reads collapsed Range rects and splits the
+     paragraph into one bogus line, and the ring's `measure()` bails on a
+     zero box. `visibility: hidden` keeps layout but is not focusable, and
+     `reveal()` moves focus to `#content` BEFORE the attribute drops — so it
+     would silently break "a navigation moves focus".
+
+     A property flip, never a @keyframes animation: `html[data-preloading] *`
+     pauses animations unlayered, and a `both`-filled one would freeze at
+     `from` and leave the page blank for good.
+
+     Not keyed on `data-preloading`. The load curtain's whole contract is
+     that the paper dissolves onto an <h1> that is already there, exact to
+     the pixel, and it lets go mid-dissolve — so blanking the page there
+     would pop the index in through a half-faded sheet. */
+  html[data-routing="holding"] #content {
+    opacity: 0;
   }
 
   /* The route curtain. Parked and inert until PageTransition wakes it —

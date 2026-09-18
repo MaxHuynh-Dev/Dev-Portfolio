@@ -11,7 +11,8 @@ Three kinds of page:
 
 - **`/`** — the index. Masthead, work list, about, contact. The work list
   is the way in: one row is live at a time and its cover, summary and
-  position sit beside it at eye level.
+  position sit beside it at eye level, and the preview wipes from one
+  project to the next rather than cutting (trap 30).
 - **`/works`** — all of it, on a ring. The covers hang on the rim of a
   circle whose centre is far below the page; the wheel, a drag or the
   arrow keys turn it, and a readout above rolls with it — number, name,
@@ -118,6 +119,14 @@ and clear. The spec sheet comes up a row at a time behind the name, and the
 first shot washes in. Before that, a project was the one place on this site
 where the curtain opened onto a still picture.
 
+The work list's names rise out of their own masks as the list is reached,
+38ms apart. That is not decoration: the corner marks off the index point at
+`/#work`, `/#about` and `/#contact`, not at `/`, so arriving from a project
+page drops the reader **past** the masthead and its line — measured at
+scrollY 1078, with every revealing block above the viewport and nothing at
+all animating in view. The list was the one thing on screen and the one
+thing with no reveal on it.
+
 Further down the index, `About`'s paragraph, the address and the colophon
 rise as they are reached. All of this is a reversal of something recorded
 below as rejected, and the difference is the point: what was thrown out was
@@ -145,6 +154,16 @@ The inversion is not a new colour. `::selection` has always drawn this
 site's type paper-on-ink, so the curtain is the page's own palette turned
 over for a second rather than a second palette.
 
+**The destination is empty while the panel is shut.** `data-routing` carries
+a phase now — `covering`, `holding`, `leaving` — and `#content` is blanked
+for `holding` only. During `covering` the reader is still looking at the
+page they are leaving, and taking it away underneath them is the jump this
+whole thing exists to remove. The gate comes off the moment the uncover
+starts, so the strip the panel clears shows the destination in its PARKED
+state — masks empty, display type below its clip, the ring turned away —
+and the reveals still wait for the end of the uncover. Panel shut onto a
+blank page, panel sweeps off a parked one, type arrives. See trap 34.
+
 **The route is only pushed once the panel is closed.** Push during the rise
 and React commits the new page while the top of the screen still shows the
 old one — a visible jump, which is the whole thing this exists to remove.
@@ -154,6 +173,25 @@ Durations live in `global.css` as `--t-quick`, `--t-cover`, `--t-reveal`
 and `--t-handoff`. Only the first is used by CSS; the other three are read
 off the computed style by the two components, because a CSS animation
 cannot wait for a webfont or a route. Do not invent a fifth at a call site.
+
+**Changing the live project** (the index's work list). Every project's
+preview is mounted at once and stacked in one grid cell, and the live one
+wipes over the top: the layer travels a frame-height while its own contents
+travel the same distance the other way inside it, so the picture never moves
+and only the edge does.
+
+**It is scrubbed, not played.** The edge sits wherever the reader's own
+position between two rows puts it — scroll down and the next project rises
+into the frame, stop half way and it stays half way, scroll back up and it
+lowers out again. There is no duration and no direction to detect: one
+expression of one number covers both ways, which is also why it can never
+be caught stuck part-way when the reader changes their mind. It is the same
+continuous reading the ring's readout and the thumbnail rail are placed
+from, and the same reason none of the three has a transition on it.
+
+The pointer and the keyboard are the exception, because they are not a
+position — pointing at a row eases the edge to it, and leaving the list
+eases it back to wherever the scroll had got to.
 
 ## Things that have been rejected here
 
@@ -905,6 +943,305 @@ during the route commit, and **zero** after the uncover. Under `reduce` the
 heading takes **2** positions, 0.00 and 1.45 of its own height, against
 **37** with ordinary motion — it arrives, it does not travel.
 
+**31. A scrubbed value is written, not tweened.**
+The wipe above started life as a 420ms GSAP tween fired whenever the live
+row changed. That is the third time this repo has had to learn the same
+thing — the ring's readout parked on whole projects and transitioned
+between them (trap 21), the thumbnail rail outlined whichever shot was
+nearest (trap 25) — and the answer is the same every time: take the
+reader's continuous position and write the pose from it every frame.
+
+`Work` already had that number in all but name; it was throwing the
+fraction away and keeping `Math.round`. Keeping it gives the edge its
+position directly, and gives the list's colour the rounded one, so the live
+name and the live picture are two readings of one number and cannot
+disagree.
+
+- **Both directions come free.** The layer the position is heading for is
+  placed at `(1 - part)` of a frame-height; scrolling back up simply runs
+  `part` backwards. There is no reverse case written anywhere, which is why
+  there is no reverse case to get wrong.
+- **Assigned, not eased — while it is the scroll.** Easing toward a scroll
+  target would be the "second opinion, always a few frames behind" that
+  trap 21 exists to record. Measured against an independent reading of the
+  reader's own position across 331 frames of scrolling down and back up:
+  worst error **0.0223 of a row**, median and 95th percentile **0**, and
+  nothing above 0.1.
+- **The pointer is not a position, so it is the one thing that eases.**
+  Hovering the seventh row takes the edge to exactly 6, leaving the list
+  hands it back to the scroll's own 2.01, and it crosses in 39 distinct
+  positions rather than jumping.
+- **GSAP is gone from this file**, and that is the point rather than a
+  regret: a tween has a duration, and this does not. It stays where it is
+  still the right tool — the two curtains, which answer a click and a load
+  rather than a position.
+
+Verified: scrolling down the edge only ever rises (163 rising frames, **0**
+falling) and scrolling up it only ever falls (**0** rising, 164 falling);
+174 distinct edge positions across one pass; parking the scroll exactly
+between two rows holds the edge at **0.497** and leaves it there; 13.3-13.4ms
+median with **zero** frames over 20ms at every width; and under `reduce` the
+edge is only ever at 0 — the preview stands on whole projects, the same
+answer the rail gives.
+
+**30. A `key` is an instruction to throw the subtree away.**
+The index's preview was one block carrying `key={current.slug}`, so every
+change of the live row destroyed it and built a new one — a new `<img>`
+element, with the fetch, the decode and the empty box that go with it. The
+180ms cross-fade over the top could not hide that, because it was fading
+*in* a picture that had not arrived: measured while bouncing between the
+two projects that have real covers, **126 of 235 frames — 54% — had an
+`<img>` in the DOM that was not decoded**. That blank box is the flash.
+
+Every project's preview is mounted once now and they are stacked, so
+nothing is created or destroyed when the row changes and every cover is
+already decoded. Same measurement after: **0 of 235**.
+
+Four things it is worth keeping:
+
+- **Stack them in a grid cell, not with `position: absolute`.** A grid cell
+  is sized by its tallest occupant, so the frame has a height without one
+  having to be supplied from somewhere, and it cannot jump when a longer
+  summary becomes live.
+- **EVERY layer clips, not just the stack around them.** The layer travels
+  up and its contents travel down inside it by the same amount; without
+  `overflow: clip` on the layer itself, those contents hang out of the top
+  and paint over the project underneath. The layer's opaque background
+  covers the slice it has reached and its text does not, so two projects'
+  numbers sit on top of each other. **Nothing in the numbers caught this** —
+  net drift, decoded frames and frame times were all already perfect. It
+  was visible the moment the wipe was actually photographed, which is why
+  it is worth slowing a 420ms gesture down and looking at it.
+- **Z-order has to be recency, not `index === active`.** During a wipe the
+  part the incoming layer has not covered yet shows whatever is highest
+  underneath, and with everything on one z-index that is the last layer in
+  DOM order rather than the one the reader was just looking at. A counter
+  incremented per activation, written inline, is what decides; the CSS rule
+  keyed off `data-on` only has to be right for the first paint.
+- **Entering only.** Interruption is the normal case here, not the edge
+  case — scrolling moves the live row every few frames. A layer caught
+  mid-wipe is simply covered by the one that follows it, so there is
+  nothing to strand and nothing to reconcile.
+
+Verified: the picture's net drift **0** at every frame of every wipe,
+13.3ms median with **zero** frames over 20ms, and under `reduce` the
+preview stands on whole projects.
+
+(The z-order note above is what the recency counter was for while the wipe
+was a fired tween. Scrubbed, it is simpler still: the layer the position has
+passed is 1, the one it is heading for is 2, everything else 0 — read off
+the position rather than remembered. See trap 31.)
+
+**32. A transition needs a value to come FROM, and a measured block has
+none on its first commit.**
+This is the bug behind "the curtain lifts and no text animates", reported
+three times and mis-diagnosed twice, because the two obvious paths —
+`/works` to `/`, and one project to the next — were always green.
+
+`Reveal` and `Headline` render their line on the very first commit, parked,
+so the browser always has a previous computed transform to interpolate
+from. `Lines` cannot: it has to measure where the paragraph breaks before it
+can split it, so the `.st-line-body` spans do not exist until a later
+commit. If the page has already been let go by then, those spans are
+**inserted with the ancestor already at `data-in="true"`** — and a newly
+inserted element's first computed style is simply `transform: none`. There
+is nothing to transition from, so nothing transitions. Measured on the
+failing paths: **one** distinct transform across 264 frames.
+
+Release beats the measurement on two navigations, and neither is exotic:
+
+- **Back and forward.** `PageTransition` listens for `click` only. History
+  navigation raises no curtain, so `useReleased` latches about a frame after
+  mount — long before the split lands.
+- **Any destination slower than `HARD_CAP_MS`.** The cap is 3s, and in
+  `next dev` an on-demand route compile routinely exceeds it. Measured:
+  `data-routing` dropped at 3871ms with the curtain sweeping off the OLD
+  page, the new page mounted at 5019ms, and the prose was born true at
+  5022ms. **That is the everyday development repro**, which is exactly why
+  it survived two rounds of measuring warm routes.
+
+The fix is one frame: `Lines` holds `data-in="false"` on the commit that
+first has lines, and lets the reveal through on the next frame, by which
+time the parked pose has been through a real style recalculation. A
+`Promise.resolve()` would not do — it runs inside the same one. After:
+born parked on both paths, **32** distinct transforms past the cap and
+**33** on a Back, against one before.
+
+Two things found alongside it and worth keeping:
+
+- **`useReveal`'s `seen` was latched in a `useState` initialiser** from the
+  `on` prop, which is read exactly once. Every other latch in this machinery
+  fails open — text appears without its animation — but that one could fail
+  closed, which is text that never appears. It is a plain derivation now.
+- **`Lines` re-splits when its `children` change.** Today Next keys every
+  dynamic segment by its param value, so `/work/hylix` to `/work/soluis`
+  remounts rather than reuses and this is belt and braces. It is not belt
+  and braces in development, where Fast Refresh preserves state and an
+  edited paragraph would otherwise keep rendering the old lines.
+
+**Still true, and deliberately not changed:** Back and forward raise no
+curtain at all, so the arrival plays on an already-visible page rather than
+out from behind a panel. The reveals are correct there now; the choreography
+is not the click path's. Giving `popstate` its own curtain is the fix if
+that ever matters.
+
+**Before debugging this again, ask whether the reader has Reduce Motion on.**
+`global.css` flattens every transition to 0.01ms, so under it *no* reveal
+on this site plays, on any path, and no amount of JavaScript will change
+that. It is the one explanation that looks identical to every bug above.
+
+**34. Blank the destination for the hold, and only the hold.**
+The complaint was that every arrival looked finished by the time the panel
+slid away, and it was accurate: the panel uncovers over 560ms but
+`data-routing` was not dropped until `settle()` at the end of that sweep, so
+the reader spent the whole sweep looking at a destination whose un-gated
+parts were already at rest. Most of the page has no arrival — after the
+scroll reset the visible ones are the corner marks, the index's preview
+aside, a project page's thumbnail rail and the readout's static `/ 08`.
+
+The fix is a gate, and what it is NOT matters as much as what it is:
+
+- **Not a page-wide fade.** That is the pattern this file threw out, at page
+  scale — "the same fade-and-slide-up on all seven sections" — and it would
+  be a sixth motion source needing its own reduced-motion check. The gate
+  is a property FLIP under a closed panel, where nobody can see it happen.
+- **`opacity`, never `visibility` or `display`.** All three take the page
+  off the screen; only opacity costs nothing. `display: none` and
+  `content-visibility: hidden` skip layout for descendants and break the
+  three things here that measure — `useFittedText` reads a zero container
+  and never writes `--fit-size`, `Lines` reads collapsed Range rects and
+  splits a paragraph into one bogus line, and the ring's `measure()` bails
+  on a zero box. `visibility: hidden` keeps layout but is not focusable, and
+  `reveal()` moves focus to `#content` BEFORE the attribute drops, so it
+  would silently break "a navigation moves focus".
+- **Never a `@keyframes` animation.** `html[data-preloading] *` pauses
+  animations unlayered (trap 10), and a `both`-filled one would freeze at
+  `from` — a blank page, for good.
+- **Keyed on `data-routing` only.** The load curtain's contract is that the
+  paper dissolves onto an `<h1>` already in place, exact to the pixel, and
+  it lets go mid-dissolve. Blanking there would pop the whole index in
+  through a half-faded sheet. Verified: on a cold load the attribute is
+  never set and `#content` is opacity 1 on every frame.
+- **The phase lives in the attribute's VALUE**, not a second attribute.
+  `useReleased` asks `hasAttribute` and observes with an `attributeFilter`,
+  so all three values read as "a curtain is up" and a change from one to the
+  next just re-fires the observer. One thing to clear, not two.
+
+**And the cap had to be re-armed before any of this could ship.** `reveal()`
+used to CLEAR the hold's timer and then start the uncover, so nothing
+covered the uncover itself — and the uncover is a GSAP tween on rAF, which a
+backgrounded tab suspends. `onComplete` never fires, `settle` never runs,
+the attribute stays up. That used to mean some parked text on a visible
+page; with a gate it means a blank one. "The route curtain must always let
+go" now has to cover the sweep too, so the timer is re-armed rather than
+cleared.
+
+Measured across one navigation: `covering` 0–477ms with `#content` at
+opacity **1**, `holding` 497–544ms at **0**, `leaving` 563–1158ms at **1**,
+attribute gone at 1173ms. Every navigation tried — index to project, project
+to project, `/works` to index, and under `reduce` — ends with the attribute
+gone and `#content` at 1.
+
+Separately, `/works` was spending its 340ms lead as dead air on the click
+path. That lead exists for the preloader's mid-dissolve release; the route
+panel hands over a clear screen, so the lead is now conditional on
+`useViaRoute`. The ring starts turning **53ms** after release instead of
+340, with the revolution unchanged at 126 distinct positions.
+
+**35. Three ways an arrival can be finished before anyone sees it.**
+All three were found by tracing what is actually *on screen* during the
+uncover rather than by checking that the animations ran — they all ran
+perfectly.
+
+- **A whole revolution is a no-op modulo the count.** `shortest(i - 8, 8)`
+  and `shortest(i, 8)` are the same number, so the ring's first frame and
+  its last are the SAME pose. The covers sat at their finished position,
+  pixel-for-pixel against the settled reference, for the entire 450ms
+  uncover — and then jumped away and spun back, 106ms after the panel had
+  gone. The page looked done and then animated anyway. The reference can
+  turn without fading because it has no curtain: its wheel is already moving
+  15ms after load. Ours comes out from behind a panel, so the covers fade in
+  across the first 40% of the turn. Measured after: **72 frames of the
+  uncover with the covers at opacity 0**, then 198 distinct positions.
+- **A uniform push cannot empty a mask whose lines are closer together than
+  it is tall.** The readout's lines sit 110% apart in a 100% window, so
+  pushing every line down by 100% to park them lands the line BEFORE the
+  current one at -10% — dead centre. The arrival showed "08 Project Eight
+  2022" while the ring was on Hylix. There is no uniform offset that hides
+  all of them; the stack has to SPREAD as it goes, `away * (110 + up) + up`.
+  Measured after: no line in the window on any frame of the arrival.
+- **`useViaRoute` cannot rely on the attribute when the cap fires.** The 3s
+  cap lets the curtain go *before* the destination mounts — attribute gone
+  at 3625ms, page mounted at 4785ms — so the page read no attribute and
+  concluded it was a cold load, and `Headline enabled={viaRoute}` gave the
+  masthead no mask at all. The largest thing on the page, never revealed, on
+  the one path where the reader has already waited longest. A module-scope
+  "this document has navigated" flag, set when `go()` runs, answers the
+  question the attribute was standing in for.
+
+**What the same trace exonerated**: on `/` and `/work/<slug>` the uncover
+frame is blank paper — 14/14 and 3/3 masked items parked, nothing started,
+earliest motion anywhere +106ms after the panel is gone. What is on screen
+there is the fixed corner chrome, which is identical on the page you left
+and never re-renders on a route change. It reads as "already finished"
+because it never went away. It is furniture, not arrival, and animating it
+would be animating the one thing on the site that is meant to be continuous.
+
+**36. Type sits on a line, not in a box — so align baselines, and give
+each row its own.**
+The readout on `/works` is a number, a name and a year set at two different
+sizes, with a counter and a one-line summary under them. It was a
+three-column grid on `items-start`, which aligns the tops of boxes — and the
+taller type's baseline is further down its box by the difference in ascent.
+Measured: the number's baseline sat **6px** above the name's at 320, 10 at
+768, **14 at 1024**, 9 at 1440. It moves with the width because the two
+clamps do not hold a fixed ratio across their range, so no single nudge
+could have fixed it.
+
+`items-baseline` fixes the first row on its own. It does not fix the second,
+because with the rows stacked inside three column wrappers only the first
+item of each column can take part — `/ 08` and the summary started from
+whatever height the box above them happened to be, and were 1.5px apart at
+375 and 4px at 1024. Grid baseline alignment groups by ROW, so the structure
+has to match what is meant to line up: six cells in two rows, not three
+columns each holding a stack.
+
+**Measure the baseline by asking the browser, not the font.** Deriving it as
+`boxTop + fontBoundingBoxAscent` from a canvas reported a 0.5px error where
+there was none — those metrics round differently at different sizes. A
+zero-size `inline-block` appended to the line sits with its bottom margin
+edge exactly on the baseline, which is the browser's own answer. With that
+probe the two approaches were distinguishable: the arithmetic fix measured
+0, `items-baseline` measured 0, and the 0.5px was the measurement.
+
+Verified independently at 320 / 360 / 375 / 414 / 600 / 768 / 900 / 1024 /
+1280 / 1440 / 1680 / 1920: both rows land on **bit-identical baselines** —
+not "within a pixel" — despite genuinely different sizes in row one (46.575px
+number against 55.89px name at 1440). No horizontal or vertical document
+overflow, the section fits the viewport exactly, and nothing is clipped: the
+tightest case is `Hylix`'s descender with 2.27px of clearance at 320.
+
+**And the controls were run, because a zero nobody has made fail is not a
+measurement.** Forcing `align-items: start` back on put row one's spread at
+6.5px at 320, 14.5px at 1024 and 10px at 1440 — independently reproducing
+the numbers above. Row two needed a harder control, because both its items
+are 11.7px and top-alignment would agree with baseline-alignment by
+coincidence: blown up to 34px the counter stayed exactly coincident under
+`items-baseline` and split by 24.5px under `items-start`. So row two is
+aligned by construction, not by accident.
+
+Two things that will bite the next person measuring this page:
+`page.addInitScript` ACCUMULATES across calls on one page, so a second
+sampling run silently registers the rAF loop twice and halves the apparent
+frame time. And `ol li` matches the list view's eight rows as well as the
+ring's eight covers — scope to the covers or measure the wrong `<ol>` and
+conclude they never move.
+
+(A hand-computed lift — `ascent x (nameSize - sideSize)` — also measured
+exactly 0, and was rejected: it needs Nippo's ascent ratio hard-coded, and
+trap 26 already records the preference for arrangements where no number in
+this repo has to be kept in step with the face.)
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -970,7 +1307,12 @@ Other invariants:
   at its resting position, the masthead at **2** distinct positions across
   a whole arrival against 37 with ordinary motion, and the first shot at
   full opacity. Nothing there needs its own check.
-- Five things honour `prefers-reduced-motion` — the CSS block, Lenis
+- The `/works` arrival reads the query once at the start and assigns its
+  scalar to the end instead of walking it — the same shape the gather uses,
+  and for the same reason: a rAF loop is somewhere the CSS block cannot
+  reach. The reference suppresses its own arrival entirely rather than
+  shortening it, which is what this does too.
+- Six things honour `prefers-reduced-motion` — the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which
   drops the wipe for a fade) and `/works`, where both the ring and the
@@ -988,10 +1330,17 @@ Other invariants:
   assigned rather than tweened — and since the readout is placed from that
   same position, its lines simply arrive too: 213 sampled frames, every one
   of them on a whole step (0, ±110, ±220, ±330).
-- Motion answers actions. The only non-user-triggered motion is the single
-  load gesture: the letters assembling into the masthead's own line, and
-  the page being let go mid-dissolve. The route curtain answers a click,
-  and the ring answers a wheel, a drag or an arrow key.
+- Motion answers actions, **except on arrival**. This used to read "the
+  only non-user-triggered motion is the single load gesture", and that
+  stopped being true in stages rather than all at once: the index's masked
+  lines, the fifteen elements a project page brings up, and now `/works`
+  turning its ring. Rewritten deliberately rather than left to quietly
+  become false — what it was guarding against is still banned. What was
+  thrown out was ONE treatment applied to every block of a page; what is
+  allowed is a composed arrival, on chosen type, seen once per page.
+  Everything after the arrival still answers an action: the route curtain a
+  click, the ring a wheel, a drag or an arrow key, and the work list's
+  preview the reader's own scroll position.
 - **A page that takes the wheel owes the reader a way out.** `/works` is
   exactly one screen tall in both views and the document never scrolls.
   That is defensible only because the `list` view is one click away, is

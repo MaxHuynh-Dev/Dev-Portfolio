@@ -2,13 +2,27 @@
 
 import Shot from '@Components/Shot';
 import { shortest, useCarousel } from '@Hooks/useCarousel';
+import { useReleased, useViaRoute } from '@Hooks/useReveal';
 import Link from 'next/link';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PROJECTS, WORK_RANGE } from '@/content/site';
 import Readout from './Readout';
 import Roll from './Roll';
-import { GATHER_MS } from './timing';
+import {
+  ENTRY_CHROME_AT_MS,
+  ENTRY_CHROME_MS,
+  ENTRY_CHROME_STAGGER_MS,
+  ENTRY_FADE_SHARE,
+  ENTRY_LEAD_MS,
+  ENTRY_LINE_MS,
+  ENTRY_LINE_STAGGER_MS,
+  ENTRY_LINES_AT_MS,
+  ENTRY_ROLL_PCT,
+  ENTRY_TOTAL_MS,
+  ENTRY_TURN_MS,
+  GATHER_MS
+} from './timing';
 
 /**
  * Every project, on a ring.
@@ -211,6 +225,21 @@ const across = (value: number, from: number, to: number): number =>
 
 const mix = (a: number, b: number, t: number): number => a + (b - a) * t;
 
+/**
+ * The arrival's curve, measured off the reference rather than chosen.
+ *
+ * Eleven evenly spaced samples of its lines and its chrome both fit
+ * `1 - (1 - t) ** 4` to within 0.001 of their span — closer than any other
+ * stock curve tried, and closer than the `cubic-bezier(0.25, 1, 0.5, 1)`
+ * that approximates it. It is a harder stop than the gather's cubic, which
+ * is why the two are kept separate.
+ */
+const quart = (t: number): number => 1 - (1 - t) ** 4;
+
+/** Progress of one phase of the arrival, given the elapsed milliseconds. */
+const phase = (elapsed: number, at: number, span: number): number =>
+  quart(across(elapsed, at, at + span));
+
 type Mode = 'wheel' | 'list';
 
 export default function Library(): React.ReactElement {
@@ -245,6 +274,68 @@ export default function Library(): React.ReactElement {
   const blend = useRef(0);
   const blendTo = useRef(0);
 
+  /**
+   * 0 on arrival, 1 once the page has introduced itself.
+   *
+   * The same shape as `blend`, and for the same reason: it is folded into
+   * `draw`, so a cover still has exactly one piece of code deciding where it
+   * goes. Nothing here tweens a transform — a GSAP tween or a CSS transition
+   * on these elements would be a second opinion about a pose that is already
+   * written every frame from a position (traps 15 and 21).
+   *
+   * It starts at 0 and is folded from the very first paint, so the covers
+   * are parked by construction on every path rather than by timing.
+   */
+  const entry = useRef(0);
+  /** Set once the arrival is over, so `draw` can skip all of it. */
+  const arrived = useRef(false);
+
+  /**
+   * The last rAF timestamp a paint was made on.
+   *
+   * Three loops can ask for a paint in one frame — the carousel's own, the
+   * gather's and the entry's — and callbacks scheduled for the same frame
+   * all receive the SAME timestamp, so this collapses them to one. Without
+   * it, a gather starting while the ring is still easing already draws twice
+   * per frame: 96 readout writes with two `getBoundingClientRect` reads
+   * interleaved between them, against the 32-writes-per-frame budget trap 21
+   * was measured at.
+   */
+  const painted = useRef(0);
+
+  /** True once neither curtain is in the way. Watches both attributes. */
+  const released = useReleased();
+  /**
+   * Which curtain brought the reader here, which is what the lead is for.
+   *
+   * The preloader lets go MID-dissolve, with about 340ms of paper still
+   * fading, so an arrival starting at zero spends its first phase behind a
+   * translucent sheet. The route panel lets go at the END of its uncover
+   * and hands over a clear screen — so the same lead there is just the ring
+   * sitting still after the panel has already gone, which is the mistake
+   * trap 28 fixed, pointing the other way.
+   */
+  const viaRoute = useViaRoute();
+
+  /**
+   * The chrome's cascade, as CSS custom properties.
+   *
+   * These four are the only things on the page with no per-frame owner, so
+   * they are the only ones a transition may drive — everything else has a
+   * pose written every frame and a transition on it would be a second
+   * opinion (traps 15 and 21). The delay is absolute, counted from the
+   * moment the curtain let go, because that is what `data-in` flips on.
+   *
+   * The reference runs this group 250ms after its first readout line, on
+   * the same curve, at a slightly slower beat than the lines — which is
+   * what makes eleven staggered moves read as one cascade instead of two.
+   */
+  const chrome = (step: number): React.CSSProperties =>
+    ({
+      '--in-delay': `${(viaRoute ? 0 : ENTRY_LEAD_MS) + ENTRY_LINES_AT_MS + ENTRY_CHROME_AT_MS + step * ENTRY_CHROME_STAGGER_MS}ms`,
+      '--in-rise': `${ENTRY_CHROME_MS}ms`
+    }) as React.CSSProperties;
+
   const draw = useCallback(
     (position: number): void => {
       // The readout rolls WITH the ring, not after it. Every line is placed
@@ -254,14 +345,60 @@ export default function Library(): React.ReactElement {
       // poses could only ever start moving once the ring had already
       // arrived. One number drives both, and there is no timeline to fall
       // behind.
-      for (const roll of rolls.current) {
+      // The arrival is folded into the SAME string, not layered on top of
+      // it. `.st-roll` is the clip and `draw` only ever writes its children,
+      // so translating the mask would move the window with the text and
+      // reveal nothing — the offset has to be on the line, in the same
+      // percentage the ring's own position is expressed in.
+      // The beat is per MASK and not per project: what cascades is the
+      // number, then the name, then the line, then the year — four things
+      // one after another, which is what the reference's five-line readout
+      // does. Staggering by project would be eight lines racing inside one
+      // mask where only one of them is ever on screen.
+      const elapsed = arrived.current ? Number.POSITIVE_INFINITY : entry.current;
+      for (let mask = 0; mask < rolls.current.length; mask += 1) {
+        const roll = rolls.current[mask];
+        const up =
+          (1 - phase(elapsed, ENTRY_LINES_AT_MS + mask * ENTRY_LINE_STAGGER_MS, ENTRY_LINE_MS)) *
+          ENTRY_ROLL_PCT;
         for (let index = 0; index < roll.length; index += 1) {
           const away = shortest(index - position, roll.length);
-          roll[index].style.transform = `translateY(${(away * 110).toFixed(2)}%)`;
+          // The stack SPREADS as it is pushed down, and that is not a
+          // flourish. A line is in the window while its offset is within
+          // ±100% of the mask, and at rest they sit 110% apart — so pushing
+          // every line down by 100% lands the line BEFORE this one at -10%,
+          // dead centre. Measured: during the arrival the readout showed
+          // "08 Project Eight 2022" instead of the project the ring was on.
+          // There is no uniform push that hides all of them at 110% spacing;
+          // widening the gap as they go is what empties the window.
+          roll[index].style.transform = `translateY(${(away * (110 + up) + up).toFixed(2)}%)`;
         }
       }
 
-      if (pitch.current === 0) return;
+      // The ring turns one whole revolution into place, which is the
+      // reference's signature and the reason its covers need no fade: they
+      // are never absent, they are arriving. Folded in as an OFFSET to the
+      // position the covers are read from, so `useCarousel` still owns the
+      // real position and `draw` still owns every pose — rather than a tween
+      // driving the carousel, which would be two authors for one number.
+      //
+      // The readout above is deliberately NOT turned with it. On the
+      // reference the wheel spins and the type rises separately; giving the
+      // readout this offset would spin eight names behind a one-line mask
+      // for no gain.
+      const spun = position + (1 - phase(elapsed, 0, ENTRY_TURN_MS)) * PROJECTS.length;
+
+      if (pitch.current === 0) {
+        // Before `measure()` has run there is no pose to write, and the
+        // covers would otherwise paint stacked on top of each other at full
+        // opacity. Both curtains hide that frame; a Back or Forward
+        // navigation raises neither and it is visible. `draw` stays the only
+        // thing that touches them.
+        for (const element of covers.current) {
+          if (element !== null && element !== undefined) element.style.opacity = '0';
+        }
+        return;
+      }
       const radius = pitch.current / Math.sin(STEP_DEG * RAD);
       const fade = fadeFor(PROJECTS.length);
 
@@ -294,7 +431,7 @@ export default function Library(): React.ReactElement {
         const element = covers.current[index];
         if (element === null || element === undefined) continue;
 
-        const away = shortest(index - position, PROJECTS.length);
+        const away = shortest(index - spun, PROJECTS.length);
         const angle = away * STEP_DEG;
         let x = radius * Math.sin(angle * RAD);
         let y = ringTop.current + radius * (1 - Math.cos(angle * RAD));
@@ -319,13 +456,37 @@ export default function Library(): React.ReactElement {
           shown = mix(shown, depth === 0 ? 1 : 0, alone);
         }
 
+        // Hit-testing is decided by the RING's opacity, before the arrival
+        // is folded in. Deriving it from the faded value instead would make
+        // every cover pointer-transparent for the first part of the entry
+        // and flicker across the 0.05 boundary — and it would put a second
+        // author on hit-testing beside the drag suppression in useCarousel,
+        // whose "restored two frames after pointerup" reasoning assumes it
+        // is the only one.
+        const solid = shown < 0.05 ? 'none' : '';
+
+        // A whole revolution is a no-op modulo the count: `shortest(i - 8, 8)`
+        // and `shortest(i, 8)` are the same number, so the ring's first frame
+        // and its last are the SAME pose. That left the covers sitting at
+        // their finished position for the entire uncover and then jumping
+        // away to spin back — measured as the page looking done and then
+        // animating anyway, 106ms after the panel had gone.
+        //
+        // The reference can turn without fading because it has no curtain at
+        // all; its ring is already moving at load + 15ms, long before anyone
+        // is looking. Ours arrives from behind a panel, so the covers have to
+        // be absent until they are arriving. This fades them in across the
+        // first part of the turn — multiplied by `(1 - gather)` so it cannot
+        // touch a cover that is on its way to the slot.
+        const arriving = mix(phase(elapsed, 0, ENTRY_TURN_MS * ENTRY_FADE_SHARE), 1, gather);
+
         element.style.transform = `translate3d(calc(-50% + ${x.toFixed(2)}px), ${y.toFixed(
           2
         )}px, 0) rotate(${turn.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-        element.style.opacity = shown.toFixed(3);
+        element.style.opacity = (shown * arriving).toFixed(3);
         // A cover nobody can see must not take a click either. It stays
         // focusable, though: tabbing onto it is what brings it round.
-        element.style.pointerEvents = shown < 0.05 ? 'none' : '';
+        element.style.pointerEvents = solid;
         element.style.zIndex = String(
           stack === null
             ? 50 - Math.round(Math.abs(away) * 10)
@@ -345,6 +506,21 @@ export default function Library(): React.ReactElement {
   });
 
   const { redraw } = carousel;
+
+  /**
+   * Paint at most once per frame, however many loops asked.
+   *
+   * rAF callbacks scheduled for the same frame all receive the same
+   * timestamp, so this is exact rather than approximate.
+   */
+  const paintOnce = useCallback(
+    (now: number): void => {
+      if (painted.current === now) return;
+      painted.current = now;
+      redraw();
+    },
+    [redraw]
+  );
 
   /**
    * One measurement in, one cover width out, and the spacing follows from
@@ -411,9 +587,63 @@ export default function Library(): React.ReactElement {
    * across the page is the query's central case, and the list's own rise is
    * a CSS transition the reduced-motion block has already flattened.
    */
+  /**
+   * The arrival, and the only non-user-triggered motion on this page.
+   *
+   * Gated on `useReleased`, which watches BOTH curtains' attributes, so a
+   * cold load waits for the preloader and a route change waits for the ink
+   * panel. Deliberately not a second answer to "has the load finished" — a
+   * timeout here and an attribute watch there drift the first time
+   * `MIN_HOLD_MS` moves.
+   *
+   * Also gated on `pitch`, because before `measure()` has run there is no
+   * pose to arrive at; `surface` is state, so the first measurement lands
+   * after the first paint.
+   */
+  useEffect(() => {
+    if (!released || arrived.current) return;
+
+    // One-shot, like the gather's. Only `useCarousel` keeps a live listener,
+    // and it does so because it outlives every gesture.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      arrived.current = true;
+      redraw();
+      return;
+    }
+
+    // Started on the first frame that HAS a pose, not on the first frame
+    // after the release. `surface` is state, so `measure()` lands after the
+    // first paint, and a clock started before it would spend its lead — or
+    // all of it — on covers `draw` is still refusing to place. Waiting here
+    // rather than bailing out is also what keeps this fail-open: an arrival
+    // that never starts is a ring that never turns up.
+    let start = 0;
+    let frame = requestAnimationFrame(function step(now: number): void {
+      if (pitch.current === 0) {
+        frame = requestAnimationFrame(step);
+        return;
+      }
+      if (start === 0) start = now + (viaRoute ? 0 : ENTRY_LEAD_MS);
+      entry.current = Math.max(0, now - start);
+      if (entry.current >= ENTRY_TOTAL_MS) arrived.current = true;
+      paintOnce(now);
+      if (!arrived.current) frame = requestAnimationFrame(step);
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [released, viaRoute, redraw, paintOnce]);
+
   useEffect(() => {
     const target = mode === 'list' ? 1 : 0;
     blendTo.current = target;
+
+    // The reader has acted, so the arrival is superseded. Snapping it rather
+    // than letting both scalars be mid-flight is what keeps the gather's
+    // landing exact: a cover that arrives on the slot plus an entry offset
+    // is not on the slot.
+    if (target === 1) arrived.current = true;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       blend.current = target;
@@ -430,14 +660,14 @@ export default function Library(): React.ReactElement {
     let frame = requestAnimationFrame(function step(now: number): void {
       const t = Math.min(1, (now - start) / ms);
       blend.current = from + (target - from) * t;
-      redraw();
+      paintOnce(now);
       if (t < 1) frame = requestAnimationFrame(step);
     });
 
     return () => {
       cancelAnimationFrame(frame);
     };
-  }, [mode, redraw]);
+  }, [mode, redraw, paintOnce]);
 
   const shown = mode === 'list';
 
@@ -448,44 +678,60 @@ export default function Library(): React.ReactElement {
     >
       <header className="flex items-baseline justify-between gap-6">
         <h1 id="library-heading" className="st-meta m-0 font-[500] text-[var(--ink)]">
-          all work
+          <span className="st-line" data-in={released} style={chrome(0)}>
+            <span className="st-line-body">all work</span>
+          </span>
         </h1>
-        <p className="st-meta tabular-nums">{WORK_RANGE}</p>
+        <p className="st-meta tabular-nums">
+          <span className="st-line" data-in={released} style={chrome(1)}>
+            <span className="st-line-body">{WORK_RANGE}</span>
+          </span>
+        </p>
       </header>
 
       <div className="mt-[0.3rem] flex items-baseline justify-between gap-6">
         {/* Two buttons rather than a tab strip: they change how the same
             list is drawn, not which list is shown, and aria-pressed is the
             thing that says which one is on. Never appearance alone. */}
-        <p className="st-meta flex items-baseline">
-          <button
-            type="button"
-            aria-label="Show the work as a wheel"
-            aria-pressed={!shown}
-            onClick={() => {
-              setMode('wheel');
-            }}
-            className={shown ? 'text-[var(--ink-2)]' : 'st-link text-[var(--ink)]'}
-          >
-            wheel
-          </button>
-          <span aria-hidden="true" className="pr-[0.3rem]">
-            ,
+        {/* The mask is the <p> and the flex row is the LINE inside it. The
+            other way round, Tailwind's `flex` would beat `.st-line`'s own
+            `display: block` — utilities are layered after components — and
+            the buttons would sit in a clip that never moves. */}
+        <p className="st-meta st-line" data-in={released} style={chrome(2)}>
+          <span className="st-line-body flex items-baseline">
+            <button
+              type="button"
+              aria-label="Show the work as a wheel"
+              aria-pressed={!shown}
+              onClick={() => {
+                setMode('wheel');
+              }}
+              className={shown ? 'text-[var(--ink-2)]' : 'st-link text-[var(--ink)]'}
+            >
+              wheel
+            </button>
+            <span aria-hidden="true" className="pr-[0.3rem]">
+              ,
+            </span>
+            <button
+              type="button"
+              aria-label="Show the work as a list"
+              aria-pressed={shown}
+              onClick={() => {
+                setMode('list');
+              }}
+              className={shown ? 'st-link text-[var(--ink)]' : 'text-[var(--ink-2)]'}
+            >
+              list
+            </button>
           </span>
-          <button
-            type="button"
-            aria-label="Show the work as a list"
-            aria-pressed={shown}
-            onClick={() => {
-              setMode('list');
-            }}
-            className={shown ? 'st-link text-[var(--ink)]' : 'text-[var(--ink-2)]'}
-          >
-            list
-          </button>
         </p>
 
-        {shown ? null : <p className="st-meta">drag or scroll</p>}
+        {shown ? null : (
+          <p className="st-meta st-line" data-in={released} style={chrome(3)}>
+            <span className="st-line-body">drag or scroll</span>
+          </p>
+        )}
       </div>
 
       <div ref={setReadout} className="mt-[clamp(1.2rem,4vh,2.8rem)]">
