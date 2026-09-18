@@ -106,8 +106,8 @@ export const PROJECTS: Project[] = [
     ]
   },
   {
-    slug: 'project-two', // TODO
-    name: 'Project Two',
+    slug: 'soluis', // TODO
+    name: 'Soluis',
     kind: 'Category',
     year: '2025',
     summary: 'One line on what it is.',
@@ -116,10 +116,10 @@ export const PROJECTS: Project[] = [
     role: ['Front-end build'],
     stack: ['React / Next', 'TypeScript'],
     url: null,
-    cover: null,
+    cover: '/images/work/soluis-1.png',
     shots: [
-      { src: null, alt: 'TODO — describe this shot' },
-      { src: null, alt: 'TODO — describe this shot' }
+      { src: '/images/work/soluis-1.png', alt: 'TODO — describe this shot' },
+      { src: '/images/work/soluis-2.png', alt: 'TODO — describe this shot' }
     ]
   },
   {
