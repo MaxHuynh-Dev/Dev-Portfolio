@@ -98,10 +98,10 @@ export const PROJECTS: Project[] = [
     role: ['Front-end build'], // TODO
     stack: ['React / Next', 'TypeScript'], // TODO
     url: null, // TODO — the live site
-    cover: '/images/work/hylix-1.png', // TODO — e.g. '/images/work/project-one/cover.jpg'
+    cover: '/images/work/hylix-2.png', // TODO — e.g. '/images/work/project-one/cover.jpg'
     shots: [
-      { src: '/images/work/hylix-1.png', alt: 'TODO — describe this shot' },
-      { src: null, alt: 'TODO — describe this shot', tall: true },
+      { src: '/images/work/hylix-2.png', alt: 'TODO — describe this shot' },
+      { src: '/images/work/hylix-1.png', alt: 'TODO — describe this shot', tall: true },
       { src: null, alt: 'TODO — describe this shot' }
     ]
   },
