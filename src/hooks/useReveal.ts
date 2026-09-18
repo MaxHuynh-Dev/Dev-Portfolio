@@ -17,14 +17,41 @@ import { useEffect, useState } from 'react';
  */
 
 /**
- * Whether the entry curtain has let go of the page.
+ * The attributes a curtain raises on `<html>` while it is covering the page.
  *
- * The preloader owns `data-preloading` on `<html>` and removes it in
- * `release()`. Watching the attribute rather than guessing at a duration is
- * what makes this right on all three paths: a cold load waits for the
- * curtain, an in-app route change finds no attribute and starts at once,
- * and a reader on `reduce` — where the curtain takes a shortcut — is not
- * left looking at a column of empty masks.
+ * There are TWO curtains on this site and a reveal has to wait for either
+ * of them — which is the whole reason this is a list rather than a string.
+ * `data-preloading` is the entry curtain's, and also drives its own display
+ * and the load-time animation pause in `global.css`; `data-routing` is the
+ * route curtain's and drives nothing but this. They are deliberately
+ * separate: making the route panel raise `data-preloading` would pause
+ * every animation on the page and switch on a second scroll lock beside the
+ * one `PageTransition` already holds through Lenis.
+ */
+const CURTAINS = ['data-preloading', 'data-routing'] as const;
+
+/**
+ * Whether a curtain has let go of the page.
+ *
+ * Watching an attribute rather than guessing at a duration is what makes
+ * this right on every path: a cold load waits for the preloader, a route
+ * change waits for the ink panel to finish uncovering, a reader on `reduce`
+ * — where both curtains take a shortcut — is not left looking at a column
+ * of empty masks, and nothing here has to be kept in step with a number in
+ * another file.
+ *
+ * The route curtain matters more than it looks. It rises to cover, commits
+ * the new route BEHIND itself, and only then uncovers — so a block that
+ * asks this question at mount is asking it from behind a closed panel.
+ * Measured, before `data-routing` existed: the panel closed at 461ms, the
+ * intro's reveal fired at 635ms, and the panel did not clear the top of the
+ * screen until 1223ms, by which point the rise was three quarters over. The
+ * animation ran perfectly, in a room with the lights off.
+ *
+ * And the panel uncovers UPWARD, so the top of the page is the last thing
+ * it lets go of — which is exactly where the block waiting on `load` sits.
+ * That is why the release comes at the end of the reveal rather than at the
+ * start of it.
  */
 export const useReleased = (): boolean => {
   const [released, setReleased] = useState(false);
@@ -34,13 +61,13 @@ export const useReleased = (): boolean => {
     let done = false;
 
     const settle = (): void => {
-      if (done || html.hasAttribute('data-preloading')) return;
+      if (done || CURTAINS.some((name) => html.hasAttribute(name))) return;
       done = true;
       setReleased(true);
     };
 
     const observer = new MutationObserver(settle);
-    observer.observe(html, { attributes: true, attributeFilter: ['data-preloading'] });
+    observer.observe(html, { attributes: true, attributeFilter: [...CURTAINS] });
 
     // Deferred by a frame, and this is not a nicety. StrictMode invokes
     // effects twice, and the preloader's first cleanup REMOVES the

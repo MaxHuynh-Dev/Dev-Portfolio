@@ -20,7 +20,9 @@ Three kinds of page:
   ordinary-scrolling page. Reached from the corner marks as `all work`.
 - **`/work/<slug>`** — one page per project. A sticky spec sheet on the
   left, a stack of shots down the middle, a rail of thumbnails on the
-  right, and the next project at the foot.
+  right, and the next project at the foot. The shots are shown at their
+  own proportions — full width, height auto — and so are the thumbnails
+  beside them.
 
 ## Motion
 
@@ -95,9 +97,11 @@ is nothing left for it to report. The one size still short is 320x568, by
 one there, verified — the wheel moves it 36px and tabbing to the eighth row
 scrolls it into view.
 
-**Arriving at the index, after the curtain.** The line under the masthead
-rises out of its own mask once the page has been handed back — and the
-masthead itself does not, because there is nothing there left to reveal:
+**Arriving at the index, after whichever curtain brought you.** The line
+under the masthead rises out of its own mask once the page has been handed
+back — by the preloader on a cold load, by the ink panel on a route change
+(trap 28) — and the masthead itself does not, because there is nothing
+there left to reveal:
 the curtain assembles its own copy of the name and hands it over already in
 place, exact to the pixel. Revealing the `<h1>` would break that handover.
 
@@ -213,6 +217,7 @@ src/modules/Project/
   index.tsx        the three-column project view
   SpecSheet.tsx | ShotStack.tsx | NextProject.tsx
 src/components/Shot.tsx    one image, or the field it will go in
+src/utils/imageSize.ts     a file's real dimensions. SERVER ONLY.
 src/components/Lines.tsx   prose split into its own measured lines, masked
 src/components/Reveal.tsx  the same mask for what is already one line
 src/hooks/useReveal.ts     when a masked block is allowed to come up
@@ -702,6 +707,96 @@ positions across the scroll, where ordinary motion gives 21.
   ring to whatever the keyboard has reached. Verified: tabbing to the sixth
   cover leaves it fully on screen with the readout on `06`.
 
+**27. A shot is shown at its own shape, and the shape is read on the
+server.**
+Every shot used to be cropped to a declared `16 / 10` with `object-cover`.
+The real files are nothing like it — the two on `/work/soluis` are 1.749
+and 1.743 — so `cover` matched their height and threw away **8.5% of the
+width**, 4.3% off each side. On a screenshot that is not a neutral crop:
+the edges are where the layout being shown off actually is, and both of
+those images lost part of a right-hand column. Measured before: both
+932.3x582.7, ratio 1.6000. After: 932.3x533.3 and 932.3x534.5, at 1.7483
+and 1.7442 — the files' own shapes, at every width from 320 up.
+
+Three things that decides, and one it does not:
+
+- **The ratio has to be known before the image arrives, so it is measured
+  on the server.** `ShotStack` places the rail's marker from where each
+  shot's centre falls (trap 25), so a column that grew as each file landed
+  would move every one of those centres under the reader. `width`/`height`
+  on the `<img>` are the intrinsic pixels — not a rendered size, but the
+  reservation — and `sizeOf` reads them off the file with `sharp`, which is
+  already a dependency and is in Next's own `serverExternalPackages`, so it
+  is required rather than bundled. The project pages are `dynamicParams =
+  false`, which makes this a build-time read of four files. Verified by
+  holding `/_next/image` for 2.5s: the boxes stood at 533.02 and 534.91
+  before a byte arrived and at 533.28 and 534.52 after — **0.26px and
+  -0.39px**, one pixel of document height across the whole page. That
+  residue is the optimizer rounding a resize to whole pixels, and
+  `object-fit: fill` absorbs it.
+- **Not in `src/content/site.ts`.** That file's promise is "drop a file in,
+  set `src`, and nothing else has to change", and a hand-typed height goes
+  stale the first time an image is re-exported. A static `import` would
+  carry the dimensions for free and is exactly what trap 6 forbids there.
+- **`tall` now shapes the EMPTY field and nothing else.** There is nothing
+  to measure on a field with no image in it, so it still needs a declared
+  ratio, and `tall` still breaks the rhythm of a stack of them. Verified on
+  a project with one of each: thumbnail ratios 1.738, 1.683 (measured) and
+  1.600 (declared) in one rail.
+- **A slot keeps its crop, and that is not an inconsistency.** The index's
+  preview aside and the ring's covers are designed boxes that have to hold
+  still whatever is dropped in — the ring's shape is one number by
+  construction (trap 26), and covers of eight different heights would not
+  be a ring. `Shot` takes `size` for the first case and `ratio` for the
+  second: which one is right is a property of the place, not of the image.
+
+The rail was re-verified whole, since the thumbnails now differ in shape:
+108 marker positions with a worst step of **0.25px** on the two-shot page,
+139 and 0.35px on the three-shot one, `aria-current` agreeing with the
+marker at `dTop` 0 / `dH` 0, 13.3ms median with zero frames over 20ms, and
+three distinct positions under `reduce`.
+
+**28. There are two curtains, and a reveal has to wait for both.**
+`useReleased` watched `data-preloading` and nothing else, so on an in-app
+route change it found no attribute and concluded the page had been handed
+back — while the ink panel was closed over it. The reveals ran beautifully
+in a room with the lights off. Measured going from `/works` to `/`: the
+panel finished closing at **461ms**, the intro's `data-in` flipped at
+**635ms**, and the panel did not clear the top of the screen until
+**1223ms**, by which point the 620ms rise was three quarters done. Nothing
+was broken; it was all just spent where nobody could see it.
+
+`PageTransition` now raises its own `data-routing` on `<html>` for as long
+as it is in the way, and `useReleased` waits for the absence of *either*
+flag. Three things about that:
+
+- **It is a second attribute, not a reuse of the first.** `data-preloading`
+  is load-time machinery — `global.css` keys the entry curtain's display,
+  `animation-play-state: paused` on everything, and a scroll lock off it
+  (trap 10). Raising it during a route change would pause every animation
+  on the page and switch on a second scroll lock beside the one this
+  curtain already holds through Lenis. `data-routing` drives nothing but
+  this question.
+- **The release is at the END of the uncover, not the start.** The panel
+  rises to uncover, so it lets go of the bottom of the screen first and the
+  top of it last — and the top is exactly where the block waiting on `load`
+  sits. Releasing when the tween starts would put the rise behind the part
+  of the panel that has not moved yet. Verified: 32 frames with the intro
+  mounted behind a visible panel, every one of them parked at the same
+  `y` of 31.9 with `data-in` false; the panel gone at 1219ms, `data-in`
+  true at 1260ms, the travel from 1401ms to 1762ms — all of it in view.
+- **It comes down everywhere the curtain does**, which is the same promise
+  as "the route curtain must always let go": in `settle`, and in the
+  effect's cleanup for an unmount mid-transition. A flag left up parks every
+  masked block on the page permanently, which is a worse failure than the
+  one it was added to fix. Verified on the slow path (destination held
+  1.8s: held 2986ms, then released, intro revealed) and on the 3s hard cap
+  (attribute gone, scroll lock released, page arrived).
+
+The cold load is untouched by all of this — `data-routing` is never set
+there. Verified: preloader released at 1585ms, `data-in` true at 1600ms,
+parked at 31.9 for 112 held frames, exactly as before.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -821,7 +916,10 @@ Other invariants:
 - **The route curtain must always let go.** `PageTransition` caps the hold
   at 3s and reveals anyway; its cleanup calls `lenis.start()` even if the
   component unmounts mid-transition. A reader stuck behind a panel with
-  scrolling switched off is the worst failure this file can produce.
+  scrolling switched off is the worst failure this file can produce. The
+  `data-routing` flag comes down on every one of those paths too (trap 28),
+  because a reader left with scrolling back but the page's text parked
+  forever is the second worst.
 - **A navigation moves focus.** `preventDefault()` cancels the browser's
   own focus move along with the jump, so the curtain puts focus on
   `#content` (which carries `tabindex="-1"`) before it lifts.

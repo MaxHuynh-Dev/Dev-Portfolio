@@ -2,12 +2,27 @@
 
 import Shot from '@Components/Shot';
 import { useFittedText } from '@Hooks/useFittedText';
+import type { Size } from '@Utils/imageSize';
 import Image from 'next/image';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { Project } from '@/content/site';
 
+/**
+ * The shape of an EMPTY field, and only of an empty field.
+ *
+ * A real shot is laid out at its own proportions — full width, height auto
+ * — because a screenshot cropped to a shape somebody chose is a screenshot
+ * with its edges missing, and the edges are usually where the layout being
+ * shown off actually is. There is nothing to read off a field that has no
+ * image in it, so it still needs a declared shape, and `tall` still breaks
+ * the rhythm of a stack of them.
+ */
 const RATIO = { wide: '16 / 10', tall: '4 / 5' } as const;
+
+/** The shape to give a box that stands in for a shot, measured or not. */
+const shapeOf = (size: Size | null, tall: boolean): string =>
+  size === null ? (tall ? RATIO.tall : RATIO.wide) : `${size.width} / ${size.height}`;
 
 /**
  * The media column, and the rail beside it.
@@ -42,7 +57,19 @@ const RATIO = { wide: '16 / 10', tall: '4 / 5' } as const;
  * technology, but it changes a handful of times per page rather than sixty
  * times a second.
  */
-export default function ShotStack({ project }: { project: Project }): React.ReactElement {
+export default function ShotStack({
+  project,
+  shotSizes
+}: {
+  project: Project;
+  /**
+   * Each shot's real pixels, measured on the server, positional with
+   * `project.shots`. Null where there is no file to measure — an empty
+   * field, or an image that could not be read — and the declared ratio
+   * carries it instead.
+   */
+  shotSizes: (Size | null)[];
+}): React.ReactElement {
   const [active, setActive] = useState(0);
   const stackRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
@@ -202,6 +229,7 @@ export default function ShotStack({ project }: { project: Project }): React.Reac
               <Shot
                 src={shot.src}
                 alt={shot.alt}
+                size={shotSizes[index] ?? null}
                 ratio={shot.tall === true ? RATIO.tall : RATIO.wide}
                 label={`shot ${String(index + 1).padStart(2, '0')}, ${shot.tall === true ? '4:5' : '16:10'}`}
                 sizes="(max-width: 60rem) 100vw, 46rem"
@@ -244,7 +272,11 @@ export default function ShotStack({ project }: { project: Project }): React.Reac
                   onClick={() => {
                     goTo(index);
                   }}
-                  style={{ aspectRatio: shot.tall === true ? RATIO.tall : RATIO.wide }}
+                  // The rail is a miniature of the column, so a thumbnail
+                  // is the shot's own shape too. The marker already
+                  // interpolates its height between two slots, which is
+                  // what lets them differ.
+                  style={{ aspectRatio: shapeOf(shotSizes[index] ?? null, shot.tall === true) }}
                   className="relative block w-[2.4rem] bg-[var(--well)] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--ink)]"
                 >
                   {shot.src !== null ? (

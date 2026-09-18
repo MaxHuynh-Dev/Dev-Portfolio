@@ -15,6 +15,22 @@ const FALLBACK = { cover: 500, reveal: 560 };
  */
 const HARD_CAP_MS = 3000;
 
+/**
+ * Raised on `<html>` for as long as this panel is in the way.
+ *
+ * It is what lets a masked block on the destination page know it is being
+ * committed behind a closed curtain and should stay parked. Nothing in
+ * `global.css` keys off it — it is a statement, not a mechanism, and that
+ * is the point: `data-preloading` is not reused here because it also
+ * pauses every animation on the page and switches on its own scroll lock,
+ * neither of which this curtain wants (it stops Lenis itself).
+ *
+ * Removed in `settle` and in the effect's cleanup, for the same reason the
+ * hold is capped: a reader left behind an invisible flag would be looking
+ * at a page whose text never arrives.
+ */
+const ROUTING_ATTR = 'data-routing';
+
 type Phase = 'idle' | 'covering' | 'holding' | 'revealing';
 
 const readMs = (name: string, fallback: number): number => {
@@ -88,6 +104,13 @@ export default function PageTransition(): React.ReactElement {
       phase.current = 'idle';
       target.current = null;
       window.clearTimeout(capTimer.current);
+      // The page is handed back HERE, at the end of the uncover, and not at
+      // the start of it. The panel rises to uncover, so the top of the
+      // screen is the last thing it clears — and the top of the screen is
+      // where the block waiting on `load` is. Releasing when the tween
+      // starts would play its rise behind the part of the panel that has
+      // not moved yet.
+      document.documentElement.removeAttribute(ROUTING_ATTR);
       panel.style.pointerEvents = 'none';
       panel.style.visibility = 'hidden';
       status.textContent = '';
@@ -167,6 +190,7 @@ export default function PageTransition(): React.ReactElement {
       target.current = url;
 
       window.lenis?.stop();
+      document.documentElement.setAttribute(ROUTING_ATTR, '');
       panel.style.visibility = 'visible';
       panel.style.pointerEvents = 'auto';
       label.textContent = text;
@@ -250,7 +274,10 @@ export default function PageTransition(): React.ReactElement {
       window.clearTimeout(capTimer.current);
       tl.current?.kill();
       tl.current = null;
-      // An unmount mid-transition must not leave scrolling switched off.
+      // An unmount mid-transition must not leave scrolling switched off —
+      // nor leave the flag up, which would park every masked block on the
+      // page for good.
+      document.documentElement.removeAttribute(ROUTING_ATTR);
       window.lenis?.start();
     };
   }, [router]);
