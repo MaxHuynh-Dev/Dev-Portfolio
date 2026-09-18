@@ -97,22 +97,42 @@ is nothing left for it to report. The one size still short is 320x568, by
 one there, verified — the wheel moves it 36px and tabbing to the eighth row
 scrolls it into view.
 
-**Arriving at the index, after whichever curtain brought you.** The line
-under the masthead rises out of its own mask once the page has been handed
-back — by the preloader on a cold load, by the ink panel on a route change
-(trap 28) — and the masthead itself does not, because there is nothing
-there left to reveal:
-the curtain assembles its own copy of the name and hands it over already in
-place, exact to the pixel. Revealing the `<h1>` would break that handover.
+**Arriving, after whichever curtain brought you.** Type rises out of its
+own mask once the page has been handed back — by the preloader on a cold
+load, by the ink panel on a route change (trap 28).
 
-Further down, `About`'s paragraph, the address and the colophon rise as
-they are reached. This is a reversal of something recorded below as
-rejected, and the difference is the point: what was thrown out was the same
-fade-and-slide-up on all seven sections. What is here is a mask per
+What rises is not the same on the two paths, and the difference is one
+thing: **the preloader hands the masthead over and the route curtain does
+not.** The entry curtain assembles its own copy of the name at the
+masthead's own size and position and puts it there, exact to the pixel, so
+on that path there is nothing left to reveal and a mask would be a second
+opinion about where the name belongs. A route change introduces nothing —
+the heading simply appears — so there it comes up out of a mask like
+everything else. `useViaRoute` is what tells them apart, and on the load
+path the mask is not in the document at all (trap 29).
+
+On a project page the name is masked on **both** paths, because there is no
+handover to protect: reloading `/work/<slug>` still gets the curtain, but
+its letters have no masthead to land on, so they solve against the column
+and clear. The spec sheet comes up a row at a time behind the name, and the
+first shot washes in. Before that, a project was the one place on this site
+where the curtain opened onto a still picture.
+
+Further down the index, `About`'s paragraph, the address and the colophon
+rise as they are reached. All of this is a reversal of something recorded
+below as rejected, and the difference is the point: what was thrown out was
+the same fade-and-slide-up on all seven sections. What is here is a mask per
 *measured* line, on chosen pieces of type, in the idiom the site already
 speaks — the preloader's letters, the readout on `/works`, that page's list.
-`Lines` measures where a paragraph actually breaks; `useReveal` decides
-when. Nothing reveals on the project pages.
+`Lines` measures where a paragraph actually breaks, `Headline` masks display
+type, and `useReveal` decides when. The single element that fades rather
+than rises is the first shot, which has no lines to mask.
+
+The shape was measured off the page the owner asked for rather than copied
+by eye: its masked lines sit in a box the height of the line itself and
+travel exactly that far, its stagger is about 50ms, and it masks its
+**headline** type — which is the part this site was missing. Ours had one
+20px paragraph moving 32px on a screen whose largest object was frozen.
 
 **Moving between pages** (`PageTransition`). An ink panel rises to cover
 the page, the next route is fetched and committed behind it, the scroll is
@@ -220,6 +240,7 @@ src/components/Shot.tsx    one image, or the field it will go in
 src/utils/imageSize.ts     a file's real dimensions. SERVER ONLY.
 src/components/Lines.tsx   prose split into its own measured lines, masked
 src/components/Reveal.tsx  the same mask for what is already one line
+src/components/Headline.tsx  the mask for display type, inside the heading
 src/hooks/useReveal.ts     when a masked block is allowed to come up
 src/components/Preloader/  entry curtain + pre-paint boot script (boot.ts)
 src/components/PageTransition/  the route curtain, and the only place
@@ -797,6 +818,93 @@ The cold load is untouched by all of this — `data-routing` is never set
 there. Verified: preloader released at 1585ms, `data-in` true at 1600ms,
 parked at 31.9 for 112 held frames, exactly as before.
 
+**29. Masking display type: push the clip out, take the space back.**
+Trap 28 got the reveals to play in front of the reader instead of behind
+the panel, and it was still not enough, because of what there was to see.
+Measured on arrival at the index, 1440x900: the masthead occupied 293-515
+and did not move, the intro's two lines moved **31.9px** each at 578 and
+609, and `#work` began at exactly 900 — off screen. The whole gesture was
+two lines of a 20px paragraph, no opacity change, on a dead screen. The
+reference masks its **headline** type, 64px lines travelling 64px, fifteen
+of them in a wave. Timing was never the difference; scale was.
+
+So the big type moves now, and `.st-mast` is how it can:
+
+- **The clip is pushed out with padding and the space is taken straight
+  back with a negative margin of the same size.** `.st-display` sets
+  `line-height: 0.9`, tighter than Nippo's ascent plus descent, so the caps
+  and the descenders hang outside the box a mask would cut at. `.st-roll`
+  dodges that on `/works` by taking the face's own box (trap 26) and here
+  that is not available — the 0.9 is load-bearing, because the preloader
+  lands its letters on this exact line. `padding-block: 0.2em` with
+  `margin-block: -0.2em` moves the clip and not the heading. Verified: the
+  `<h1>`'s rect is `46.57,292.72 1331.86x222.30` with the mask and
+  **identical** without it, at 320, 768 and 1440.
+- **The travel has to clear the widened clip, not the line.** At the 105%
+  the prose masks use, the ink still showed through the padding. 145% is
+  the line box plus both paddings plus the overhang — verified by reading
+  where the glyphs actually are: parked, the ink sits **50.6px** below the
+  clip edge.
+- **Check the ink, not a screenshot.** At rest the headroom between the
+  real ink and the clip, measured with `measureText` at each width, is
+  13.0/4.0px at 320, 15.5/4.9 at 375, 17.3/5.5 at 414, 34.0/10.2 at 768 and
+  64.3/19.7 at 1440 (top/bottom). All positive, and the tightest is the
+  descender at 320. A longer name, a deeper descender or Vietnamese
+  diacritics will move those numbers — re-read them before changing
+  `PROFILE`, the way the computed font-size has to be re-read at 320.
+- **The padding is real box and it hangs over what is below.** 49px of it
+  at 1440, across the top of the paragraph under the masthead. Nothing
+  there is clickable — verified, the only overlapped element with a
+  tabindex is `<main>` itself — but a selection drag starting on that
+  paragraph would have begun on the mask. `pointer-events: none` on the
+  mask and `auto` on the line gives the hits back without making the name
+  unselectable.
+- **The load path has no mask in it at all**, rather than a mask that
+  happens to be open. `Headline` returns the bare string when it is not
+  wanted, so the markup the preloader hands over to is byte-for-byte what
+  it always was. Verified: `h1.innerHTML` is `Max Huynh` at every width on
+  a cold load.
+
+**The same 0.185em is also what goes UNDER the masthead**, and for the
+same reason read the other way round: the ink hangs that far past the
+heading's box, and whatever is set after the heading measures its margin
+from the box. The paragraph under the name had a constant 31.5px margin
+against a descender that grows with `--fit-size`, so the gap between the
+two closed as the name got bigger — measured on a 900px viewport, 25.5px
+at 320, 15.7 at 768, **1.8 at 1440** and **-8.6 at 1920**, where the tail
+of the `y` sat in the text. It looked correct at whatever width it was
+built at, which is trap 11 again: one fixed number against a heading whose
+size is solved per width. `mb-[0.185em]` on the `<h1>` is that number
+expressed as the heading's own size, and the gap now runs 24.3 / 32.4 /
+36.0 / 44.1 / 47.5 / 59.3 from 320 up.
+
+A **margin**, not padding, and that is load-bearing: the preloader reads
+`getBoundingClientRect().top` of this element — the border box — to place
+its letters, so padding would move the target out from under a handover
+that is exact to the pixel. A margin leaves the box alone.
+
+It is also the FACE's overhang and not this string's ink, so a name with
+no descender sits the same distance off what follows it rather than
+snapping closed. (When checking that handover, note that a `[data-letter]`
+span's rect is the 0.9 line box and a `Range`'s rect over the same
+character is the face's 1.269em box: comparing them shows a phantom 44.5px
+offset at 1440 that is present with or without this margin. Run the
+control — it was run here, and the numbers were identical.)
+
+And one thing that is not a mask: `.st-wash` fades the first shot in,
+because an image has no lines. That is not the fade-up this file threw out
+— that was one treatment on all seven blocks of a page. This is a single
+element, carrying no movement at all, beside a name that is masked and a
+column that is.
+
+Measured after: **15** elements moving on screen when a project page opens,
+resting 50ms apart from 1763ms to 2016ms with the name's 391.5px rise
+landing at 2003ms; the panel gone at 1229ms, so all of it is in view. Two
+frames over 20ms in the whole navigation, **both behind the closed panel**
+during the route commit, and **zero** after the uncover. Under `reduce` the
+heading takes **2** positions, 0.00 and 1.45 of its own height, against
+**37** with ordinary motion — it arrives, it does not travel.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -856,10 +964,12 @@ Other invariants:
   static, and it still lands on the masthead to the pixel. The paper itself
   still fades in, because an opacity change is not the movement the query
   is about — the same call `PageTransition` makes.
-- The index's reveals are a CSS transition on one property, so the
-  reduced-motion block flattens them to 0.01ms and the text simply arrives.
-  Verified: `transition-duration` 1e-05s and the intro at its resting
-  position, not travelling to it. Nothing there needs its own check.
+- The index's and the project pages' reveals are CSS transitions on one
+  property, so the reduced-motion block flattens them to 0.01ms and the
+  text simply arrives. Verified: `transition-duration` 1e-05s, the intro
+  at its resting position, the masthead at **2** distinct positions across
+  a whole arrival against 37 with ordinary motion, and the first shot at
+  full opacity. Nothing there needs its own check.
 - Five things honour `prefers-reduced-motion` — the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which

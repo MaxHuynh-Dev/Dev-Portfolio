@@ -372,10 +372,86 @@ body {
     transform: translateY(105%);
     transition-property: transform;
     transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    /* Custom properties, because they inherit and transition-delay does
+       not. `Reveal` owns a mask and the call site owns the line inside it,
+       so there is no element the component could put a delay on directly —
+       it sets these on the mask and they reach the line. `Lines` writes its
+       own timing inline, per measured line, which beats both. */
+    transition-duration: var(--in-rise, 620ms);
+    transition-delay: var(--in-delay, 0ms);
   }
 
   [data-in="true"] .st-line-body {
     transform: none;
+  }
+
+  /* The same mask, for DISPLAY type — the masthead and a project's name.
+     Two things make it its own pair rather than a variant of the above.
+
+     .st-display sets line-height 0.9, which is tighter than Nippo's ascent
+     plus descent, so the caps and the descenders hang outside the box a
+     mask would cut at. That is the overhang the preloader has to measure
+     (trap 10) and the thing .st-roll dodges on /works by taking the face's
+     own box instead (trap 26). Neither answer is available here: the 0.9 is
+     load-bearing, because the preloader lands its letters on this exact
+     line. So the clip is pushed out past the glyphs with padding and the
+     space is taken straight back with a negative margin of the same size —
+     the heading's own box does not move by a pixel, and nothing downstream
+     of it can tell the mask is there.
+
+     And the travel has to clear the widened clip, not just the line: at
+     105% the ink would still be showing through the padding. 145% is the
+     line box plus both paddings plus the overhang, verified by reading the
+     rendered ink rather than by arithmetic. */
+  .st-mast {
+    display: block;
+    overflow: clip;
+    padding-block: 0.2em;
+    margin-block: -0.2em;
+    /* Sideways too, so the last glyph of a line fitted to the exact width
+       of its column cannot be shaved by a rounding error. Negative inline
+       margins widen the mask past the heading instead of moving it. */
+    padding-inline: 0.12em;
+    margin-inline: -0.12em;
+    /* The padding is real box, and it hangs over whatever is set below the
+       heading — 49px of it at 1440. Nothing there is clickable, but a
+       selection drag that started on the paragraph under the masthead would
+       have begun on this instead. The line takes its own hits back, so the
+       name is still selectable and its padding is not. */
+    pointer-events: none;
+  }
+
+  .st-mast-line {
+    display: block;
+    pointer-events: auto;
+    transform: translateY(145%);
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-duration: var(--in-rise, 900ms);
+    transition-delay: var(--in-delay, 0ms);
+  }
+
+  [data-in="true"] .st-mast-line {
+    transform: none;
+  }
+
+  /* An image has no lines to mask, so it arrives by opacity alone.
+     This is NOT the fade-up this file threw out: that was the same
+     fade-and-slide on all seven sections of the index, which is the
+     universal generated-page tell. This is one element — the shot the
+     reader is already looking at — carrying no movement at all, beside a
+     name that is masked and a spec sheet that is. */
+  .st-wash {
+    opacity: 0;
+    transition-property: opacity;
+    transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+    transition-duration: var(--in-rise, 760ms);
+    transition-delay: var(--in-delay, 0ms);
+  }
+
+  [data-in="true"].st-wash,
+  [data-in="true"] .st-wash {
+    opacity: 1;
   }
 
   /* The route curtain. Parked and inert until PageTransition wakes it —

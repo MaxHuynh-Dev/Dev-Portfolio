@@ -1,5 +1,7 @@
 'use client';
 
+import Headline from '@Components/Headline';
+import Reveal from '@Components/Reveal';
 import Shot from '@Components/Shot';
 import { useFittedText } from '@Hooks/useFittedText';
 import type { Size } from '@Utils/imageSize';
@@ -210,22 +212,23 @@ export default function ShotStack({
         {/* The name sits over the first shot. It is the page's h1: the
             spec sheet above it is supporting material, and a heading this
             size pretending to be decorative while a hidden one carries the
-            outline would be the worse arrangement. */}
+            outline would be the worse arrangement.
+
+            Masked on BOTH paths, unlike the index's masthead. The exception
+            there is the preloader's pixel-exact handover of the name, and
+            there is no such handover here: reloading a project page still
+            gets the curtain, but its letters have no masthead to land on,
+            so they solve against the column and simply clear (trap 10). */}
         <h1
           ref={nameRef as React.RefObject<HTMLHeadingElement>}
           className="st-display st-fit relative z-10 m-0 whitespace-nowrap text-[var(--ink)]"
         >
-          {project.name}
+          <Headline delay={40}>{project.name}</Headline>
         </h1>
 
         <div className="mt-[-0.22em] flex flex-col gap-[clamp(2rem,6vw,5rem)]">
-          {project.shots.map((shot, index) => (
-            <figure
-              // biome-ignore lint/suspicious/noArrayIndexKey: shots are positional, and two may share a src of null
-              key={index}
-              data-shot={index}
-              className="m-0"
-            >
+          {project.shots.map((shot, index) => {
+            const media = (
               <Shot
                 src={shot.src}
                 alt={shot.alt}
@@ -235,8 +238,33 @@ export default function ShotStack({
                 sizes="(max-width: 60rem) 100vw, 46rem"
                 priority={index === 0}
               />
-            </figure>
-          ))}
+            );
+
+            return (
+              <figure
+                // biome-ignore lint/suspicious/noArrayIndexKey: shots are positional, and two may share a src of null
+                key={index}
+                data-shot={index}
+                className="m-0"
+              >
+                {/* ONLY the first one, and only on arrival. The rest are
+                    reached by scrolling, and a shot that washed in as it
+                    came into view would be the fade-up on every block
+                    wearing a new hat. An image has no lines to mask, so
+                    this one carries no movement at all — the name beside it
+                    is doing that. The others are not wrapped at all rather
+                    than wrapped and switched off, so the stack's markup
+                    says which shot is special. */}
+                {index === 0 ? (
+                  <Reveal on="load" className="st-wash block" delay={260}>
+                    {media}
+                  </Reveal>
+                ) : (
+                  media
+                )}
+              </figure>
+            );
+          })}
         </div>
       </div>
 

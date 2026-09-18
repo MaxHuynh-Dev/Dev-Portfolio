@@ -89,6 +89,34 @@ export const useReleased = (): boolean => {
   return released;
 };
 
+/**
+ * Whether this page arrived by a route change rather than a document load.
+ *
+ * It exists for exactly one thing: the index's masthead. The preloader
+ * assembles its own copy of the name and hands it over already in place,
+ * exact to the pixel (trap 10), so there is nothing left there to reveal
+ * and revealing it anyway would break that handover. A route change has no
+ * preloader and no handover — the heading simply appears — so on that path
+ * it is free to arrive like everything else, and it is by far the largest
+ * thing on the first screen.
+ *
+ * `data-routing` is the signal because it is a POSITIVE one: it is up, put
+ * there by the curtain that is carrying this page in, at the moment the
+ * component mounts. Asking "is `data-preloading` absent" instead would
+ * answer yes in every gap where neither curtain happens to be up.
+ *
+ * Read once. How a page got here cannot change while it is here.
+ */
+export const useViaRoute = (): boolean => {
+  const [viaRoute, setViaRoute] = useState(false);
+
+  useEffect(() => {
+    setViaRoute(document.documentElement.hasAttribute('data-routing'));
+  }, []);
+
+  return viaRoute;
+};
+
 export type Trigger = 'load' | 'scroll';
 
 /**

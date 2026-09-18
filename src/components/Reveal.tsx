@@ -2,7 +2,7 @@
 
 import { type Trigger, useReveal } from '@Hooks/useReveal';
 import type React from 'react';
-import { useState } from 'react';
+import { type CSSProperties, useState } from 'react';
 
 /**
  * A mask that comes up when the block is asked for.
@@ -19,23 +19,33 @@ export default function Reveal({
   children,
   className,
   on = 'scroll',
-  delay = 0
+  delay = 0,
+  rise
 }: {
   children: React.ReactNode;
   className?: string;
   on?: Trigger;
+  /** Held before this one comes up, in ms. Staggering a group lives here. */
   delay?: number;
+  /** How long it takes to clear its mask. Defaults to the primitive's own. */
+  rise?: number;
 }): React.ReactElement {
   const [element, setElement] = useState<HTMLSpanElement | null>(null);
   const shown = useReveal(on, element);
 
+  // Custom properties, not `transitionDelay`. This component owns the MASK
+  // and the call site owns the line inside it, so a delay written here
+  // would land on the wrong element — transition-delay does not inherit and
+  // the mask has no transition of its own to delay. It used to be written
+  // exactly that way, and did nothing at all. Custom properties do inherit,
+  // so `.st-line-body` and `.st-mast-line` read them wherever they sit.
+  const pose = {
+    '--in-delay': `${delay}ms`,
+    ...(rise === undefined ? {} : { '--in-rise': `${rise}ms` })
+  } as CSSProperties;
+
   return (
-    <span
-      ref={setElement}
-      className={className}
-      data-in={shown}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
+    <span ref={setElement} className={className} data-in={shown} style={pose}>
       {children}
     </span>
   );
