@@ -551,7 +551,50 @@ such correction, because it is centred and the centre is the one thing
 scaling holds still. With the term in, the landed cover matches the slot at
 `dx` `dy` `dw` `dh` all 0, at every width.
 
-**23. Four things on the ring are measured, not chosen.**
+**23. An indicator quantised to N places cannot track a continuous scroll.**
+The project page's thumbnail rail outlined whichever shot was nearest the
+middle of the screen, which meant the outline had only as many positions as
+there were shots: on a two-shot project it took exactly **two**, and moved
+in a single **29.5px** jump, while the reader's own position moved at most
+0.08 of a shot per frame. Nothing was dropping frames — the sticky rail
+measured a spread of **0** across 75 frames of scrolling, and the median
+frame was 13.3ms. The stutter was the indicator, not the scroll.
+
+It is now one marker, written per frame from the same kind of continuous
+position the ring uses: where the middle of the screen falls between two
+shot centres, interpolated onto the thumbnails' own boxes. 21 positions on
+that same two-shot page, worst step 2.3px; 45 and 4.16px on a three-shot one
+whose middle shot is a different crop, which is why the marker's height is
+interpolated too.
+
+**And the thumbnails touch, because of what a frame means.** They used to
+sit 0.4rem apart, and a marker that can stand between two of them then
+spends half its time framing a strip of bare paper — measured: at the
+midpoint it sat at 230.8 with thumbnails at 216 and 245.5, correct to the
+pixel and still reading as broken, because a frame claims to be *around
+something*. With the gap closed the rail is one strip and the marker is a
+window onto it: on a shot it is exactly around that thumbnail (`dTop` 0,
+`dH` -0.01), between two it is exactly around the part of each you are
+between, and it is never outside the strip. The outline is drawn with a
+negative offset so it sits inside its own box rather than bleeding two
+pixels onto the neighbours it is not pointing at.
+
+Three things this cost, all worth knowing:
+
+- **Use rects, not `offsetTop` / `offsetHeight`.** Those round to whole
+  pixels, and a thumbnail here is 23.4px tall — the marker parked 0.48px
+  high and 0.28px short of the thumbnail it was meant to be sitting on.
+- **`aria-current` and the marker must round the same number.** Deciding
+  "nearest centre" separately from "where the marker goes" is two answers
+  to one question, and they disagree at the crossover.
+- **A continuous readout and a discrete state need different shapes.** The
+  strip is what makes one outline able to do both jobs here. Reach for a
+  second element before reaching for a frame that can point at nothing.
+
+Under `reduce` the marker stands on whole shots — verified at two distinct
+positions across the scroll, where ordinary motion gives 21.
+
+**24. Four things on the ring are measured, not chosen.**
 
 - **The mask's line-height is `normal`.** `.st-roll` clips, and `.st-display`
   sets `line-height: 0.9`, which is tighter than Nippo's ascent plus
@@ -643,7 +686,12 @@ Other invariants:
   `Shot` field is hidden, so its label never leaks into a link's name —
   that is the trap the old `ImageWell` hit.
 - **State is never carried by appearance alone.** The thumbnail rail's
-  current shot has `aria-current` as well as an outline.
+  current shot has `aria-current` as well as an outline. The outline is one
+  marker placed every frame from a continuous read, not a class on the
+  button — but both are decided by rounding the *same* number, so the
+  outline can never sit on one thumbnail while `aria-current` names
+  another. Verified: the marker matches the current thumbnail at `dTop` 0,
+  `dLeft` 0, `dW` 0.
 - The line is shown **assembled rather than assembling** under
   `prefers-reduced-motion`: nine letters each travelling more than their
   own height is a large movement, which is the query's central case. The
@@ -721,6 +769,15 @@ also reports `document.hidden === true` and fires **zero rAF callbacks**, so
 the preloader never places its line and the curtain looks stuck on blank
 paper. That is the harness, not a bug. Drive those through Playwright, which composites for
 real.
+
+**Read the class off the live element before believing the source.** This
+file records the dev server serving stale CSS, and that is real — but the
+same symptom has also been an edit that never landed. A scripted
+find-and-replace that asserts only "something changed" will happily apply
+one hunk of three and report success, and the browser then correctly shows
+the old markup. Assert every replacement, and check
+`element.className` in the page against what the file says before
+concluding the server is at fault.
 
 The dev server has served stale CSS twice after a rewrite of
 `global.css`. If a token or a new rule appears not to apply, restart it

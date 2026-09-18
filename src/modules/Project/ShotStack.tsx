@@ -18,12 +18,35 @@ const RATIO = { wide: '16 / 10', tall: '4 / 5' } as const;
  *
  * The rail is a real navigation control, not a progress decoration: each
  * thumbnail is a button that scrolls to its shot, and the current one
- * carries aria-current as well as an outline, so the state is not carried
- * by appearance alone.
+ * carries `aria-current`, so the state is not carried by appearance alone.
+ *
+ * The outline around the current thumbnail is NOT on the thumbnail. It is
+ * one marker, placed every frame from a continuous read of where the reader
+ * is between two shots, so it slides with the scroll instead of hopping
+ * when a shot's centre crosses the middle of the screen. Putting it on the
+ * button meant it could only ever be in one of N places: measured on a
+ * two-shot project, the outline took exactly two positions and moved in a
+ * single 29.5px jump, while the reader's real position moved smoothly, at
+ * most 0.08 of a shot per frame. That gap is what reads as a stutter.
+ *
+ * Which is also why the thumbnails touch. They used to sit 0.4rem apart,
+ * and a frame that can stand between two of them then spends half its time
+ * framing a strip of bare paper — it looks misaligned, because a frame
+ * claims to be around something. With the gap gone the rail is one strip
+ * and the marker is a window onto it: at rest it is exactly around a
+ * thumbnail, and in between it is exactly around the part of each you are
+ * between. Nothing it can ever be around is nothing.
+ *
+ * The marker is written directly, not through React state. `active` is
+ * still state, because `aria-current` has to be in the DOM for assistive
+ * technology, but it changes a handful of times per page rather than sixty
+ * times a second.
  */
 export default function ShotStack({ project }: { project: Project }): React.ReactElement {
   const [active, setActive] = useState(0);
   const stackRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLDivElement>(null);
+  const markerRef = useRef<HTMLSpanElement>(null);
 
   // The project name, fitted to the media column rather than guessed at
   // with a clamp. Names here run from four characters to thirty, and a
@@ -37,22 +60,82 @@ export default function ShotStack({ project }: { project: Project }): React.Reac
     );
     if (figures.length === 0) return;
 
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let reduce = motion.matches;
+    const onQuery = (): void => {
+      reduce = motion.matches;
+    };
+    motion.addEventListener('change', onQuery);
+
     let frame = 0;
+    /** Each thumbnail's place in the rail. Layout, so read on resize only. */
+    let slots: { top: number; height: number }[] = [];
+
+    const readSlots = (): void => {
+      const rail = railRef.current;
+      if (rail === null) return;
+      // Rects, not offsetTop/offsetHeight. Those round to whole pixels, and
+      // a thumbnail here is 23.4px tall at desktop — so the marker parked
+      // 0.48px high and 0.28px short of the thumbnail it was supposed to be
+      // sitting on. The rail never moves relative to its own children, so
+      // one reading of both is good until the layout changes.
+      const railBox = rail.getBoundingClientRect();
+      slots = Array.from(rail.querySelectorAll<HTMLElement>('[data-thumb]')).map((thumb) => {
+        const box = thumb.getBoundingClientRect();
+        return { top: box.top - railBox.top, height: box.height };
+      });
+    };
+
+    /**
+     * Where the reader is, in shot units, as a float.
+     *
+     * The middle of the screen falls between two shot centres; how far
+     * between them is the fraction. Outside the first and last it clamps,
+     * so the marker parks on an end rather than running off the rail.
+     */
+    const position = (): number => {
+      const middle = window.innerHeight / 2;
+      const centres = figures.map((figure) => {
+        const box = figure.getBoundingClientRect();
+        return box.top + box.height / 2;
+      });
+      if (middle <= centres[0]) return 0;
+      const last = centres.length - 1;
+      if (middle >= centres[last]) return last;
+      for (let index = 0; index < last; index += 1) {
+        if (middle >= centres[index] && middle <= centres[index + 1]) {
+          const span = centres[index + 1] - centres[index];
+          return span === 0 ? index : index + (middle - centres[index]) / span;
+        }
+      }
+      return last;
+    };
 
     const measure = (): void => {
       frame = 0;
-      const middle = window.innerHeight / 2;
-      let best = 0;
-      let bestDistance = Number.POSITIVE_INFINITY;
-      for (let index = 0; index < figures.length; index += 1) {
-        const box = figures[index].getBoundingClientRect();
-        const distance = Math.abs(box.top + box.height / 2 - middle);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          best = index;
-        }
+      const at = position();
+
+      const marker = markerRef.current;
+      if (marker !== null && slots.length > 0) {
+        // Under `reduce` the marker stands on whole shots. It is answering
+        // the reader's own scroll, so it is allowed to move at all — but a
+        // thing gliding continuously under the pointer is the query's case,
+        // and the discrete version says exactly as much.
+        const on = reduce ? Math.round(at) : at;
+        const first = Math.min(slots.length - 1, Math.floor(on));
+        const next = Math.min(slots.length - 1, first + 1);
+        const part = on - first;
+        const top = slots[first].top + (slots[next].top - slots[first].top) * part;
+        const height = slots[first].height + (slots[next].height - slots[first].height) * part;
+        marker.style.transform = `translateY(${top.toFixed(2)}px)`;
+        marker.style.height = `${height.toFixed(2)}px`;
       }
-      setActive(best);
+
+      // Rounding the same number the marker uses, rather than taking the
+      // nearest centre separately: two ways of deciding which shot is
+      // current can disagree, and then the outline sits on one thumbnail
+      // while aria-current names another.
+      setActive(Math.round(at));
     };
 
     const schedule = (): void => {
@@ -60,14 +143,24 @@ export default function ShotStack({ project }: { project: Project }): React.Reac
       frame = requestAnimationFrame(measure);
     };
 
+    const relayout = (): void => {
+      readSlots();
+      schedule();
+    };
+
+    readSlots();
     measure();
     window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
+    window.addEventListener('resize', relayout);
+    // The fitted name above the stack settles when the face arrives, which
+    // moves every shot on the page and therefore every centre.
+    void document.fonts.ready.then(relayout);
 
     return () => {
+      motion.removeEventListener('change', onQuery);
       if (frame !== 0) cancelAnimationFrame(frame);
       window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
+      window.removeEventListener('resize', relayout);
     };
   }, []);
 
@@ -122,29 +215,46 @@ export default function ShotStack({ project }: { project: Project }): React.Reac
       {/* Below md the rail would be smaller than a touch target and would
           steal width the shots need. */}
       <nav aria-label="Shots" className="hidden shrink-0 md:block">
-        <ol className="sticky top-[24vh] m-0 flex list-none flex-col gap-[0.4rem] p-0">
-          {project.shots.map((shot, index) => (
-            <li
-              // biome-ignore lint/suspicious/noArrayIndexKey: shots are positional
-              key={index}
-            >
-              <button
-                type="button"
-                aria-current={index === active ? 'true' : undefined}
-                aria-label={`Shot ${index + 1} of ${project.shots.length}`}
-                onClick={() => {
-                  goTo(index);
-                }}
-                style={{ aspectRatio: shot.tall === true ? RATIO.tall : RATIO.wide }}
-                className="relative block w-[2.4rem] bg-[var(--well)] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--ink)] aria-[current]:outline-2 aria-[current]:outline-[var(--ink)]"
+        {/* `sticky` is a positioned box, so the marker resolves against this
+            and rides with it — and each thumbnail's offsetTop is measured
+            against it too, which is what the marker is placed from. */}
+        <div ref={railRef} className="sticky top-[24vh]">
+          {/* The position readout. Hidden, because it reports the same
+              thing aria-current already carries, and pointer-transparent,
+              because the buttons underneath are the control. */}
+          {/* The offset is negative so the frame is drawn inside its own
+              box: on a strip with no gaps, an outline sitting outside would
+              bleed two pixels onto the neighbours it is not pointing at. */}
+          <span
+            ref={markerRef}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 outline-2 outline-[var(--ink)] outline-offset-[-2px]"
+          />
+          <ol className="m-0 flex list-none flex-col p-0">
+            {project.shots.map((shot, index) => (
+              <li
+                // biome-ignore lint/suspicious/noArrayIndexKey: shots are positional
+                key={index}
               >
-                {shot.src !== null ? (
-                  <Image src={shot.src} alt="" fill sizes="48px" className="object-cover" />
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ol>
+                <button
+                  type="button"
+                  data-thumb=""
+                  aria-current={index === active ? 'true' : undefined}
+                  aria-label={`Shot ${index + 1} of ${project.shots.length}`}
+                  onClick={() => {
+                    goTo(index);
+                  }}
+                  style={{ aspectRatio: shot.tall === true ? RATIO.tall : RATIO.wide }}
+                  className="relative block w-[2.4rem] bg-[var(--well)] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--ink)]"
+                >
+                  {shot.src !== null ? (
+                    <Image src={shot.src} alt="" fill sizes="48px" className="object-cover" />
+                  ) : null}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
       </nav>
     </div>
   );
