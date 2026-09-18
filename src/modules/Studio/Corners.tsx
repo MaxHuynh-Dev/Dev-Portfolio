@@ -7,8 +7,17 @@ import { usePathname } from 'next/navigation';
 import type React from 'react';
 import { PROFILE } from '@/content/site';
 
-const SECTIONS = [
+/**
+ * A mark is either a band of the index, reached by fragment, or a page of
+ * its own, which is a real navigation from anywhere including the index.
+ * The union is what lets the map below narrow on `'route' in item` instead
+ * of carrying an optional id it would then have to assert.
+ */
+type Mark = { label: string; id: string } | { label: string; route: string };
+
+const SECTIONS: Mark[] = [
   { label: 'work', id: 'work' },
+  { label: 'all work', route: '/works' },
   { label: 'about', id: 'about' },
   { label: 'contact', id: 'contact' }
 ];
@@ -64,26 +73,47 @@ export default function Corners(): React.ReactElement {
 
           <nav aria-label="Sections">
             <ul className="st-meta flex flex-wrap justify-end gap-x-[1.1rem] gap-y-[0.2rem]">
-              {SECTIONS.map((item) =>
-                // These target sections of the home page. On a project page
+              {SECTIONS.map((item) => {
+                // A page of its own. PageTransition reads the label off the
+                // dataset and writes it on the curtain, so the covered
+                // moment says where you are going.
+                if ('route' in item) {
+                  return (
+                    <li key={item.label}>
+                      <Link
+                        className="st-link whitespace-nowrap text-[var(--ink)]"
+                        href={item.route}
+                        data-transition-label={item.label}
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  );
+                }
+
+                // The rest target bands of the home page. On any other page
                 // those elements do not exist, so a bare "#work" would hand
                 // useAnchorNav a fragment with no target and the link would
                 // silently do nothing. Off the home page it has to be a
                 // real navigation.
-                atHome ? (
-                  <li key={item.id}>
-                    <a
-                      className="st-link whitespace-nowrap text-[var(--ink)]"
-                      href={`#${item.id}`}
-                      onClick={(event) => {
-                        onNav(event, `#${item.id}`);
-                      }}
-                    >
-                      {item.label}
-                    </a>
-                  </li>
-                ) : (
-                  <li key={item.id}>
+                if (atHome) {
+                  return (
+                    <li key={item.label}>
+                      <a
+                        className="st-link whitespace-nowrap text-[var(--ink)]"
+                        href={`#${item.id}`}
+                        onClick={(event) => {
+                          onNav(event, `#${item.id}`);
+                        }}
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li key={item.label}>
                     <Link
                       className="st-link whitespace-nowrap text-[var(--ink)]"
                       href={`/#${item.id}`}
@@ -91,8 +121,8 @@ export default function Corners(): React.ReactElement {
                       {item.label}
                     </Link>
                   </li>
-                )
-              )}
+                );
+              })}
             </ul>
           </nav>
         </div>

@@ -12,6 +12,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 1
     },
+    {
+      url: `${DOMAIN_URL}/works`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.9
+    },
     // Every project is its own page now. Leaving them out of the sitemap
     // would mean the only indexable thing on the site is the index.
     ...PROJECTS.map((project) => ({
