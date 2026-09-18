@@ -101,7 +101,7 @@ export const PROJECTS: Project[] = [
     cover: '/images/work/hylix-2.png', // TODO — e.g. '/images/work/project-one/cover.jpg'
     shots: [
       { src: '/images/work/hylix-2.png', alt: 'TODO — describe this shot' },
-      { src: '/images/work/hylix-1.png', alt: 'TODO — describe this shot', tall: true },
+      { src: '/images/work/hylix-1.png', alt: 'TODO — describe this shot' },
       { src: null, alt: 'TODO — describe this shot' }
     ]
   },
