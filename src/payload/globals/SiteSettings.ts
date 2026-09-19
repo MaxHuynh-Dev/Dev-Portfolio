@@ -14,7 +14,7 @@ export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   label: 'Site settings',
   admin: {
-    description: 'The work range, the About and Contact columns, and the colophon.'
+    description: 'The work range and the contact links.'
   },
   fields: [
     {
@@ -46,15 +46,6 @@ export const SiteSettings: GlobalConfig = {
           ]
         }
       ]
-    },
-    {
-      name: 'colophon',
-      type: 'textarea',
-      required: true,
-      admin: {
-        description:
-          'One quiet line at the foot of the page. Every claim in it should be checkable against the source — a colophon that overstates is worse than none.'
-      }
     }
   ]
 };

@@ -214,12 +214,7 @@ const SITE_SETTINGS = {
         { label: 'Instagram', href: 'https://www.instagram.com/maxhuynh__/' }
       ]
     }
-  ],
-  colophon:
-    'Set in Nippo and Switzer, self-hosted. Built with Next.js 16 and React 19, ' +
-    'scroll smoothed by Lenis, motion by GSAP. The name in the masthead is measured ' +
-    'and fitted to its column at run time rather than sized by a fixed scale. ' +
-    'Brand marks are Font Awesome Free, CC BY 4.0.'
+  ]
 };
 
 async function seed(): Promise<void> {

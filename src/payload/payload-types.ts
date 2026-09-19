@@ -495,7 +495,7 @@ export interface About {
   createdAt?: string | null;
 }
 /**
- * The work range, the About and Contact columns, and the colophon.
+ * The work range and the contact links.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings".
@@ -517,10 +517,6 @@ export interface SiteSetting {
         id?: string | null;
       }[]
     | null;
-  /**
-   * One quiet line at the foot of the page. Every claim in it should be checkable against the source — a colophon that overstates is worse than none.
-   */
-  colophon: string;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -580,7 +576,6 @@ export interface SiteSettingsSelect<T extends boolean = true> {
             };
         id?: T;
       };
-  colophon?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

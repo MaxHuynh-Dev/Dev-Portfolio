@@ -108,7 +108,6 @@ export interface LinkColumn {
 export interface SiteSettings {
   workRange: string;
   contactLinks: LinkColumn[];
-  colophon: string;
 }
 
 /**
