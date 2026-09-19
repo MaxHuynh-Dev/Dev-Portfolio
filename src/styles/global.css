@@ -72,7 +72,14 @@
      than a wash, which also lets its label be --ink at 12.87:1 instead of
      --ink-2 at a marginal 4.03:1. */
   --edge: #e4e1dc;
-  --well: #d9d5cf;
+  /* The field an image has not arrived in yet. It was #d9d5cf at 1.25:1
+     against paper, which is a wash — on a screenshot it read as a smudge
+     rather than as a reserved rectangle, and the owner asked for the frame
+     to be clearer. 1.67:1 is a block you can see the edges of without
+     drawing any: this site has no rules, no borders and no shadows, so the
+     fill IS the frame and it has to carry the whole job. The label on it
+     stays --ink, at 9.65:1. */
+  --well: #c0b9ae;
 
   /* Page gutter — every band pads to this. */
   --gut: clamp(1.15rem, 3.4vw, 3rem);

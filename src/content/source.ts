@@ -160,8 +160,7 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
 
   return {
     workRange: doc.workRange,
-    contactLinks,
-    colophon: doc.colophon
+    contactLinks
   };
 });
 

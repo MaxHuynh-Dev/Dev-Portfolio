@@ -1,19 +1,30 @@
 import type React from 'react';
 import type { IconType } from 'react-icons';
 import {
-  FaCodepen,
-  FaFacebookF,
-  FaGithub,
-  FaInstagram,
-  FaLinkedinIn,
-  FaXTwitter
-} from 'react-icons/fa6';
+  TbBrandCodepen,
+  TbBrandFacebook,
+  TbBrandGithub,
+  TbBrandInstagram,
+  TbBrandLinkedin,
+  TbBrandX
+} from 'react-icons/tb';
 
 /**
  * A brand mark for a contact link.
  *
- * **Font Awesome 6 Brands, and the choice was forced rather than
- * preferred.** Two other sets were tried first:
+ * **Tabler, and the LICENCE is why.** These were Font Awesome 6 Brands,
+ * which draw beautifully and are **CC BY 4.0** — the `react-icons` wrapper
+ * is MIT, the artwork is not. That attribution had to ship to a reader, and
+ * the only place it could live was the colophon at the foot of `/about`.
+ * The owner asked for that line to go. Attribution is not a line you can
+ * quietly drop, so the obligation went instead: Tabler is **MIT**, covers
+ * every brand here, and needs no notice anywhere.
+ *
+ * The trade is real and it is worth naming: these are OUTLINE marks, drawn
+ * with a stroke, where Font Awesome's were solid. Lighter on the page, and
+ * at 1.25rem beside 0.95rem text that reads as quieter rather than smaller.
+ *
+ * Two sets that were tried before either of those, and rejected:
  *
  * - **Simple Icons** is the better set in principle — the brands' own
  *   artwork, one solid path each — and it carries github, facebook,
@@ -27,16 +38,9 @@ import {
  *   button next to a link that goes to x.com. That is a wrong answer, not
  *   a plainer one.
  *
- * Font Awesome 6 carries all six in one weight, including the real X mark.
- * The glyph-only variants are used where a brand ships both — `FaLinkedinIn`
- * over `FaLinkedin`, `FaFacebookF` over `FaFacebook` — because the other
- * four are bare glyphs and a boxed mark beside them reads as a different
- * size even when it is not.
- *
- * **Licence: the marks are CC BY 4.0** (the `react-icons` wrapper is MIT,
- * the Font Awesome Free artwork is not). Attribution belongs in the
- * colophon, which is the one place on this site that exists to say what the
- * page is made of.
+ * Tabler's `TbBrandX` is the real X mark and not a close cross, which is
+ * the one thing that had to be checked before trusting a second outline set
+ * after Lucide.
  *
  * **The label decides, and an unknown label gets no icon.** The links come
  * out of the CMS, where anyone can add a row called anything — so this
@@ -45,12 +49,12 @@ import {
  * works; it reads as a word instead of a mark.
  */
 const MARKS: Record<string, IconType> = {
-  github: FaGithub,
-  codepen: FaCodepen,
-  linkedin: FaLinkedinIn,
-  facebook: FaFacebookF,
-  x: FaXTwitter,
-  instagram: FaInstagram
+  github: TbBrandGithub,
+  codepen: TbBrandCodepen,
+  linkedin: TbBrandLinkedin,
+  facebook: TbBrandFacebook,
+  x: TbBrandX,
+  instagram: TbBrandInstagram
 };
 
 /** True when there is a mark for this label. */

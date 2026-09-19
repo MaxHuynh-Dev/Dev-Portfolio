@@ -23,6 +23,23 @@ export interface ShotProps {
    * were each a different height would not be a ring.
    */
   size?: Size | null;
+  /**
+   * Fill the parent's height instead of reserving `ratio`.
+   *
+   * For a box whose height is set by something ELSE — `/about`'s portrait
+   * column, which is stretched to the height of the prose beside it so the
+   * two bottom edges are one line. A ratio cannot express "as tall as that
+   * column", and a width tuned until it looked level would be a number
+   * kept in step by hand (trap 11) against a column that reflows with the
+   * content in it.
+   *
+   * It makes this a SLOT, so `size` is ignored and a real photograph is
+   * cropped into the box with `object-cover`. That is the designed-box case
+   * trap 27 already names — which of the two is right is a property of the
+   * place, not of the image, and a column measured against its neighbour is
+   * a place.
+   */
+  stretch?: boolean;
 }
 
 /**
@@ -58,9 +75,10 @@ export default function Shot({
   label,
   sizes,
   priority = false,
-  size = null
+  size = null,
+  stretch = false
 }: ShotProps): React.ReactElement {
-  if (src !== null && size !== null) {
+  if (src !== null && size !== null && !stretch) {
     return (
       <Image
         src={src}
@@ -75,7 +93,10 @@ export default function Shot({
   }
 
   return (
-    <div className="relative w-full" style={{ aspectRatio: ratio }}>
+    <div
+      className={stretch ? 'relative h-full w-full' : 'relative w-full'}
+      style={stretch ? undefined : { aspectRatio: ratio }}
+    >
       {src === null ? (
         <div aria-hidden="true" className="absolute inset-0 bg-[var(--well)]">
           <span className="st-meta absolute bottom-[0.6rem] left-[0.75rem] text-[var(--ink)]">

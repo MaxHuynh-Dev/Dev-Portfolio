@@ -30,11 +30,12 @@ Four kinds of page:
   right, and the next project at the foot. The shots are shown at their
   own proportions — full width, height auto — and so are the thumbnails
   beside them.
-- **`/about`** — the person. A statement in display type that BREAKS into
-  its own measured lines, then the project page's grammar underneath it:
-  a narrow column of what he does, the prose in the middle, and a portrait
-  where the project page puts its rail. Reached from the corner marks as
-  `about`. See trap 39.
+- **`/about`** — the person, on **one screen** (trap 43). A statement in
+  display type that BREAKS into its own measured lines, then the project
+  page's grammar underneath it: a narrow column of what he does, the prose
+  in the middle, and a portrait where the project page puts its rail. On a
+  phone the lists and the portrait share a row rather than stacking.
+  Reached from the corner marks as `about`. See traps 39 and 43.
 
 ## Motion
 
@@ -300,7 +301,7 @@ src/modules/Studio/
   Open.tsx         the masthead, AND contact — see traps 38 and 41
   Corners.tsx      the fixed chrome at the four edges
 src/modules/About/
-  index.tsx        /about — statement, prose, portrait, colophon
+  index.tsx        /about — statement, prose, portrait. One screen.
 src/modules/Library/
   index.tsx        /works — the ring, its geometry, and the view switch
   Readout.tsx      the rolling number / name / year above it
@@ -475,10 +476,18 @@ opacity on dark became a solid `--ink-3` of `#7d756d` on this paper, only
 all — it is the resting underline colour and nothing else. Re-derive it
 before putting type back on it.
 
-Same reasoning gave `--well` (`#d9d5cf`, the empty-image field) its value.
+Same reasoning gave `--well` (the empty-image field) its value.
 It is *darker* than paper so it reads as a blocked-out area rather than a
-wash, which is also what lets its label be `--ink` at 12.87:1 instead of
-`--ink-2` at a marginal 4.03:1.
+wash, which is also what lets its label be `--ink` rather than `--ink-2` at
+a marginal 4.03:1.
+
+**It was `#d9d5cf` at 1.25:1 and is `#c0b9ae` at 1.67:1.** 1.25 is a wash:
+photographed, the portrait field on `/about` read as a smudge rather than as
+a reserved rectangle, and the owner asked for the frame to be clearer. This
+site has no rules, no borders and no shadows, so **the fill IS the frame**
+and has to carry the whole job alone — which is why the answer was a darker
+fill and not an outline. The label on it is now 9.66:1, down from 12.87 and
+nowhere near a bar.
 
 **8. `useFittedText` measures; it never computes from a coefficient.**
 It sizes the masthead and each project's title to fill their column
@@ -907,6 +916,14 @@ Three things that decides, and one it does not:
   `size` for a shot shown at its own proportions — which one is right is a
   property of the place, not of the image. (The index's preview aside was
   the other `ratio` call site, and it went with the work list, trap 41.)
+
+  **`/about`'s portrait is the second slot, and its shape is not even a
+  number.** `Shot`'s `stretch` makes the box fill a height set from outside
+  — there, the prose column beside it — so `size` is ignored and a real
+  photograph is cropped in with `object-cover`. A column measured against
+  its neighbour is a place, which is the test this bullet already states.
+  Worth knowing before uploading: that portrait WILL be cropped, and the
+  crop is centred.
 
 The rail was re-verified whole, since the thumbnails now differ in shape:
 108 marker positions with a worst step of **0.25px** on the two-shot page,
@@ -1458,19 +1475,23 @@ name and the intro stays under its END, where the eye already finishes.
   has something under all six names, which is the trap: its brand icons are
   deprecated outline glyphs, its `twitter` is still the bird, and its **`x`
   is the close cross** — it would have drawn a dismiss button beside a link
-  to x.com. Font Awesome 6 Brands, via `react-icons`, carries all six in one
-  weight including the real X. The glyph-only variants are used where a
-  brand ships both (`FaLinkedinIn`, `FaFacebookF`), because the other four
-  are bare glyphs and a boxed mark beside them reads as a different size.
-  Tree-shaking was measured, not assumed: **+6,851 bytes** of client JS for
-  the six, not the whole pack.
-- **Font Awesome Free is CC BY 4.0, so the colophon names it.** The MIT
-  wrapper is `react-icons`; the artwork is not MIT. The attribution is a
-  clause in the colophon rather than a line of chrome, because the colophon
-  is the one thing on this site that exists to say what the page is made of.
-  Tabler's brand marks (same package, `react-icons/tb`) are MIT and cover
-  the same six if that clause ever has to go — they are outline rather than
-  solid, which is the trade.
+  to x.com. Font Awesome 6 Brands carried all six in one weight including
+  the real X, and shipped for a while; tree-shaking was measured, not
+  assumed, at **+6,851 bytes** of client JS for the six rather than the
+  whole pack.
+- **They are Tabler now, and the LICENCE is the reason.** Font Awesome Free
+  is **CC BY 4.0** — the `react-icons` wrapper is MIT, the artwork is not —
+  so the attribution had to ship to a reader, and the only place it could
+  live was the colophon at the foot of `/about`. The owner asked for that
+  line to go. An attribution is not a line you can quietly drop, so the
+  OBLIGATION went instead: `react-icons/tb` is MIT, carries every brand
+  here, and needs no notice anywhere. Nothing on this site requires one now.
+
+  The trade is real: these are OUTLINE marks drawn with a stroke where Font
+  Awesome's were solid — lighter on the page, and at 1.25rem beside 0.95rem
+  text they read as quieter rather than smaller. `TbBrandX` is the real X
+  mark and not a close cross, which is the one thing that had to be checked
+  before trusting a second outline set after Lucide.
 - **An unknown label gets no mark, and falls back to its own text.** The
   links come from the CMS, where anyone can add a row called anything. A map
   that guessed would render a link with nothing in it.
@@ -1639,9 +1660,10 @@ and studio about pages rather than guessing:
   here even though it is the loud one elsewhere.
 - **Length correlated INVERSELY with how much a page read as a person.** The
   14-screen one was a sales page whose about URL redirected to the homepage;
-  the four-screen one said more. This page is 1.2 screens with placeholder
-  prose and will grow when the prose is real. It should not grow by adding
-  sections.
+  the four-screen one said more. **This page is now exactly one screen and
+  is not allowed to grow** (trap 43) — not by adding sections, and not by
+  adding prose either: the fit is a property of how much is written, and the
+  budget is recorded there.
 - **Every anti-pattern the sample threw up is already banned here**, which
   was worth confirming rather than assuming: award badge rows, round-number
   combined-experience claims, `01/02/03` over things that are not a
@@ -1660,18 +1682,24 @@ photograph of a stranger. Dropping either in would be a claim about what the
 owner looks like, which is the same rule that forbids inventing where he
 lives or who he has worked for.
 
-**The colophon is at the foot of this page, and it landed here by being
-redundant somewhere else.** It was a band under the index's work list, where
-an account of the typefaces reads as something left over from a longer page.
-Beside an account of who built the site it reads as the end of that account.
+**The colophon was at the foot of this page, and it is gone — but only
+because the thing holding it here went first.** It arrived by being
+redundant somewhere else: a band under the index's work list, where an
+account of the typefaces reads as something left over from a longer page.
+Beside an account of who built the site it read as the end of that account.
 
-**It cannot simply be deleted, and that is worth knowing before someone
-tries.** The Font Awesome attribution lives in it, and Font Awesome Free is
-CC BY 4.0 — the marks in the opening's contact row are why. Deleting the
-colophon means moving the attribution somewhere it still ships to a reader,
-or switching the marks to Tabler (`react-icons/tb`, MIT, same six brands,
-outline rather than solid), which is a one-line change to the map in
-`SocialIcon.tsx`.
+This file used to say it **could not simply be deleted**, and that was
+correct: the Font Awesome attribution lived in it, and Font Awesome Free is
+CC BY 4.0. It named two ways out — move the attribution somewhere it still
+ships to a reader, or switch the marks to Tabler. When the owner asked for
+the line to go, **the second one was taken**: the marks are MIT now (trap
+38), nothing on this site owes anyone a notice, and the colophon could be
+removed rather than relocated.
+
+It was removed whole — the `<footer>`, the prop, the `SiteSettings` field,
+the shape in `site.ts`, the read in `source.ts` and the seeded string. A CMS
+field nothing renders is worse than no field: an editor fills it and waits
+for it to appear.
 
 Verified independently at 320 / 375 / 414 / 768 / 1024 / 1440 / 1920: no
 horizontal overflow and nothing past the viewport edge; **no clickable on
@@ -1941,11 +1969,125 @@ showing it after the cover instead of during it. All of it is spent in the
 hold rather than on the network, and it is the same length as the preloader
 — which the owner accepted for a page LOAD, a rarer event than a click.
 
+**43. Fitting a page to one screen is a subtraction problem, and the first
+thing to subtract is whatever says the same thing twice.**
+`/about` was 1.33 screens at 1440x900 and **2.43 at 320x568**, measured
+before anything was touched. Squeezing the type was never going to close
+that, and it would have paid for the fit with the thing being bought. Four
+things went instead, none of them content:
+
+- **The `about` eyebrow.** A small label reading `about`, directly above an
+  `<h1>`, on a page reached by a corner mark that says `about`, from behind
+  a curtain that spells ABOUT across the entire screen on the way in. Four
+  sayings of one word, and the only one that could be removed at no cost.
+  46px.
+- **The portrait's mobile size.** Full width at 4:5 it was 338–456px tall —
+  **over 60% of a 320x568 screen** for a field with no photograph in it. It
+  is a small fixed column beside the metadata now, which is the size the
+  genre actually uses: trap 39's research found a 129px square doing this
+  job on a page that reads as a person, and three of seven pages with no
+  portrait at all. Stacked, those two blocks cost 556px of a 395px budget.
+- **The air between the bands.** 81px above the columns and 108px above the
+  foot at 1440, both sized when the page could be any length it liked.
+- **A line off the statement**, by taking its measure from 18ch to 26ch —
+  three lines to two, ~94px, **without touching the type scale**. The
+  measure is the knob on a display statement; the size is the point of it.
+
+**And then the portrait was asked to be bigger, and bottom-aligned with the
+last line of the prose.** Widening it at a fixed 4:5 cannot do that, and the
+reason is a feedback loop: a wider portrait narrows the prose, a narrower
+prose is taller, and a taller prose moves the line you were aiming at. At
+768 there were only 111px of free width to spend and the target was 224.
+
+So the height comes from the row instead. `md:items-stretch` makes the
+portrait exactly as tall as the tallest column, which is the prose, whose
+last line is `open to work`. Measured: the two bottom edges are apart by
+**0.00px** at 768, 1024, 1280, 1366, 1440 and 1920 — by construction, and it
+stays true when a paragraph is added. The frame went from 202x252 to
+**228x293** at 1440 and from 233x291 to **269x341** at 1920.
+
+- **No `h-full` on a stretched flex item**, and this one cost a full pass.
+  `height: 100%` resolves against the parent's height, the row's height is
+  `auto`, and an auto height resolving a percentage child that is itself
+  asking for a percentage is circular — it collapses to zero. Measured
+  exactly that way: a 228px-wide frame **0px tall** at every width above
+  `md`, while every other number on the page stayed correct and the page
+  still reported no overflow. `align-items: stretch` has already given the
+  item a definite cross size; asking for it a second time takes it away.
+  Below that item, `h-full` is fine — by then the parent is definite.
+- **A phone stretches to the wrong thing.** There the row is the metadata's,
+  about 100px, so stretching would SHRINK the picture. The mobile box keeps
+  a declared 4:5 and `md:aspect-auto` hands the height over at the
+  breakpoint.
+
+**What did NOT go is the content.** Every paragraph, both lists and the
+availability line all still render in full from the CMS.
+
+**The colophon went in a second pass**, and it is the only thing on this
+list that was content. It could go because the licence obligation inside it
+went first — the contact marks are Tabler and MIT now (trap 38), so nothing
+needed attributing. It was worth 85–102px on a phone and 35px at 1440.
+
+Three things it turned on:
+
+- **`my-auto`, never `justify-center`.** Flex centring overflows in BOTH
+  directions and the half that goes up goes under the fixed corner marks,
+  where it cannot be reached — there is no scrolling above zero. Auto
+  margins collapse to nothing the moment free space runs out, so a page that
+  outgrows its screen simply starts at the top and scrolls like any other.
+  The index can use `justify-center` because its content always fits (trap
+  41); this page's does not, at two widths.
+- **`md:contents` is what lets one markup serve two shapes.** On a phone the
+  metadata and the portrait are a ROW inside a wrapper; above `md` the
+  wrapper stops generating a box and its two children become items of the
+  row above, taking their places as the outer and inner columns of the
+  project page's grammar. It is a plain div with no semantics, so
+  `display: contents` has nothing to drop out of the accessibility tree.
+  Verified: left-to-right order is `meta, prose, portrait` at 768, 1440 and
+  1920.
+- **The colophon lost `.st-measure`, and then lost everything.** Uncapping
+  it took 300 characters from five lines to two; removing it took the rest.
+  Both are recorded because the first was the right move while the block
+  still had to exist, and the reasoning survives it: a reading measure is
+  for prose, and the last and least-read line on a page that must fit a
+  screen can have the full width.
+
+**The budget, and it is the honest part.** One screen holds from **414px
+wide up** — verified at 414x896, 768x1024, 1024x768, 1366x768, 1440x900 and
+1920x1080, `scrollHeight - clientHeight` **0** at every one. Below that it
+does not: **49px over at 375x667** and **230px over at 320x568**, down from
+753 and 810 before any of this. It fails the honest way — the page starts at
+the top and scrolls.
+
+That floor is the CONTENT's, not the layout's. At 375 the three seeded
+paragraphs alone are ~240px of a ~506px budget, and 49px is roughly two of
+their lines. **Do not chase it with type sizes.** Anything that closes the
+last 49px by shrinking the prose is paying for a number with the thing the
+page exists to say, and 320x568 is already the one size this site accepts
+being short at (see the `list` view on `/works`).
+
+Verified besides: no horizontal scroll at any width; the statement's real
+ink has positive headroom in every line box — **13.31px** at 1440, 7.95 at
+768, **4.95** at 414 and 320, the same floor trap 39 recorded; `.st-wash` at
+opacity 1; **0** masked bodies left parked at any width, under `reduce`, or
+arriving via the route curtain, where **21 of 21** blocks travel through up
+to 78 distinct transforms; and **0** contrast failures with the control
+confirming the sweep can still fail — forcing the `stack` label to `--ink-3`
+gave exactly 1 at 3.88:1 and restoring gave 0, at 1440, 414 and 320.
+
+**The first run of that control forced ZERO, and the sweep was worthless
+until it did not.** The element it reached for was a wrapper with no text
+node of its own, so nothing changed and nothing failed — which reads exactly
+like a clean page. Aim a control at a leaf that actually carries text, and
+check what it reported changing. The same sweep also has to resolve the
+NEAREST painted background rather than the body's, or the label sitting on
+`--well` is judged against paper and silently mismarked.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
 16.09:1, `--ink-2` 5.05:1, `--ink-3` 3.88:1, and `--ink` on `--well`
-12.87:1. A full sweep of every text node returns zero failures against the
+9.66:1 (`--well` itself is 1.67:1 against paper — see trap 7). A full sweep of every text node returns zero failures against the
 size-appropriate bar on all three page types — 60 nodes on the ring, 91 on
 the list, at 320 and at 1440, with the control confirming the sweep can
 still fail.
