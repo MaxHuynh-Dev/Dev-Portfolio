@@ -6,8 +6,14 @@ import { getProjects, getSiteSettings } from '@/content/source';
 export async function generateMetadata(): Promise<Metadata> {
   const { workRange } = await getSiteSettings();
   return {
-    // The root layout's title template turns this into "All work | Role".
-    title: 'All work',
+    // The root layout's title template turns this into "Work | Role".
+    //
+    // It was "All work" while the index carried a shortlist and this page
+    // was the rest of it. The index has no work list any more (trap 41), so
+    // `all` is a comparison with nothing — and the corner mark that lands
+    // here says `work`, which a destination naming itself something else
+    // would quietly contradict.
+    title: 'Work',
     description: `Every project, ${workRange}.`
   };
 }

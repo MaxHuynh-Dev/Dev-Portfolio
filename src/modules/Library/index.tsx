@@ -685,7 +685,7 @@ export default function Library({
       <header className="flex items-baseline justify-between gap-6">
         <h1 id="library-heading" className="st-meta m-0 font-[500] text-[var(--ink)]">
           <span className="st-line" data-in={released} style={chrome(0)}>
-            <span className="st-line-body">all work</span>
+            <span className="st-line-body">work</span>
           </span>
         </h1>
         <p className="st-meta tabular-nums">

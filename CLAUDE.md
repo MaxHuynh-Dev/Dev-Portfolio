@@ -9,20 +9,22 @@ site will ever have is the project imagery.
 
 Four kinds of page:
 
-- **`/`** — the index. Masthead **and contact**, and the work list. Nothing
-  else: the colophon went to `/about` with everything else about the person.
-  Contact is not a band at the foot any more: the address and the links sit
-  under the start of the masthead, on the first screen (trap 38). About is
-  not a band any more either — it is `/about` (trap 39). The work list
-  is the way in: one row is live at a time and its cover, summary and
-  position sit beside it at eye level, and the preview wipes from one
-  project to the next rather than cutting (trap 30).
+- **`/`** — the index, and it is **one screen that does not scroll**
+  (trap 41). The masthead **and contact**, and nothing else at all.
+  Everything that used to sit under it has left, a piece at a time and each
+  for its own reason: the colophon and About went to `/about` (trap 39),
+  contact came UP out of the foot to sit under the start of the masthead
+  (trap 38), and the work list went to `/works`, which was already showing
+  the same eight projects. The corner mark that used to scroll the reader
+  down this page is the one that goes there now.
 - **`/works`** — all of it, on a ring. The covers hang on the rim of a
   circle whose centre is far below the page; the wheel, a drag or the
   arrow keys turn it, and a readout above rolls with it — number, name,
   one line and year, all placed from the same continuous position the
   covers are, so half a turn leaves the name half out of its mask. A `list` view beside it shows the same projects as a plain,
-  ordinary-scrolling page. Reached from the corner marks as `all work`.
+  ordinary-scrolling page. Reached from the corner marks as `work`, and it
+  names itself the same: it is the only place the work is listed now, so
+  `all` would be a comparison with nothing.
 - **`/work/<slug>`** — one page per project. A sticky spec sheet on the
   left, a stack of shots down the middle, a rail of thumbnails on the
   right, and the next project at the foot. The shots are shown at their
@@ -128,18 +130,18 @@ and clear. The spec sheet comes up a row at a time behind the name, and the
 first shot washes in. Before that, a project was the one place on this site
 where the curtain opened onto a still picture.
 
-The work list's names rise out of their own masks as the list is reached,
-38ms apart. That is not decoration: the corner marks off the index point at
-`/#work` and `/#about`, not at `/`, so arriving from a project
-page drops the reader **past** the masthead and its line — measured at
-scrollY 1078, with every revealing block above the viewport and nothing at
-all animating in view. The list was the one thing on screen and the one
-thing with no reveal on it.
+**Nothing on this site reveals on `scroll` any more.** Every masked block on
+every page waits for `load` — 18 call sites, and all 18 pass `on="load"`,
+checked rather than assumed. The index cannot scroll at all now (trap 41),
+the address arrives with the opening because that is where it lives (trap
+38), and `/about` is a page where everything arrives on `load` with the
+colophon alongside it (trap 39).
 
-Nothing further down the index rises on `scroll` any more except the work
-list itself. **The address arrives with the opening**, on `load`, because that
-is where it lives (trap 38); About is a page of its own where everything
-arrives on `load`, and the colophon went with it (trap 39).
+`useReveal` still HAS a `scroll` trigger, and `Lines` and `Reveal` still
+default to it. That is left standing deliberately rather than pruned: it is
+the right default for a page that scrolls, the next one may, and trap 24 is
+the record of how to get it wrong.
+
 All of this is a reversal of something recorded
 below as rejected, and the difference is the point: what was thrown out was
 the same fade-and-slide-up on all seven sections. What is here is a mask per
@@ -186,24 +188,13 @@ and `--t-handoff`. Only the first is used by CSS; the other three are read
 off the computed style by the two components, because a CSS animation
 cannot wait for a webfont or a route. Do not invent a fifth at a call site.
 
-**Changing the live project** (the index's work list). Every project's
-preview is mounted at once and stacked in one grid cell, and the live one
-wipes over the top: the layer travels a frame-height while its own contents
-travel the same distance the other way inside it, so the picture never moves
-and only the edge does.
-
-**It is scrubbed, not played.** The edge sits wherever the reader's own
-position between two rows puts it — scroll down and the next project rises
-into the frame, stop half way and it stays half way, scroll back up and it
-lowers out again. There is no duration and no direction to detect: one
-expression of one number covers both ways, which is also why it can never
-be caught stuck part-way when the reader changes their mind. It is the same
-continuous reading the ring's readout and the thumbnail rail are placed
-from, and the same reason none of the three has a transition on it.
-
-The pointer and the keyboard are the exception, because they are not a
-position — pointing at a row eases the edge to it, and leaving the list
-eases it back to wherever the scroll had got to.
+**There used to be a fourth**, and it was the index's work list: every
+project's preview stacked in one grid cell, with the live one wiping over
+the top, scrubbed from the reader's own position between two rows. It went
+with the list (trap 41). Traps 30 and 31 are what it taught and they are
+kept, because the lessons are load-bearing elsewhere — the ring's readout
+and the project page's thumbnail rail are placed from a continuous position
+for exactly the reasons that section records.
 
 ## Things that have been rejected here
 
@@ -284,16 +275,15 @@ app/(payload)/             the admin, and Payload's REST + GraphQL routes.
                            A SECOND root layout — see trap 37.
 payload.config.ts          collections, globals, the Mongo adapter
 src/payload/collections/   Projects | Media | Users
-src/payload/globals/       Profile | SiteSettings
+src/payload/globals/       Profile | About | SiteSettings
 src/payload/cloudinary.ts  the Cloudinary storage adapter. SERVER ONLY.
 src/payload/seed.ts        mock content for an empty database
 src/payload/payload-types.ts   GENERATED. Do not edit.
 src/content/site.ts        the SHAPES the site reads. Types only, no imports.
 src/content/source.ts      the only thing that talks to the CMS. SERVER ONLY.
 src/modules/Studio/
-  index.tsx        composes the two bands of the index
-  Open.tsx         the masthead, AND contact — see trap 38
-  Work.tsx         the work list and its scrubbed preview
+  index.tsx        reads the index's content and hands it to Open
+  Open.tsx         the masthead, AND contact — see traps 38 and 41
   Corners.tsx      the fixed chrome at the four edges
 src/modules/About/
   index.tsx        /about — statement, prose, portrait, colophon
@@ -425,11 +415,18 @@ font-size preference (WCAG 1.4.4).
   the computed style so the two cannot drift. Without it the fixed corner
   marks land on top of whatever you scrolled to.
 
-**4. In-page links must go through `useAnchorNav`, and only on the index.**
-`preventDefault()` cancels the whole navigate-to-fragment step — not just
-the jump, but the hash update *and* the focus move. The hook restores both.
-`Corners` switches to real `/#work` links off the index, because there the
-target elements do not exist and the hook would silently do nothing.
+**4. `preventDefault()` on a fragment link costs more than the jump.**
+It cancels the whole navigate-to-fragment step — not just the scroll, but
+the hash update *and* the focus move. `useAnchorNav` existed to put both
+back, because Lenis owns scrolling (trap 3) and the jump had to be handed
+to it.
+
+**The hook is gone, and only because its last caller is.** The index was
+the only page with in-page fragment links, and it has no bands to link to
+any more (trap 41) — both corner marks are real routes now. Nothing on this
+site calls `preventDefault` on a fragment link, so the browser does the
+whole step natively, the skip link included. Write one and this trap is
+live again: it is in git, and it is 47 lines.
 
 **5. Client boundaries are leaves, not wrappers.**
 There is no page-wide client boundary. The old `Shell.tsx` existed only to
@@ -457,9 +454,12 @@ cannot have one.
 
 **7. Palette values do not survive a change of ground — re-derive, don't nudge.**
 The ground has moved three times (`#0a0a0a` → `#ececec` → `#0d1117` →
-`#efedea`). Dimming pulls text *toward* the ground, so the dim used for the
-unfocused rows of the work list inverts with it: it was 0.42 opacity on
-dark, and on this paper it is a solid `--ink-3` of `#7d756d`, only 3.88:1.
+`#efedea`). Dimming pulls text *toward* the ground, so the dim that was used
+for the unfocused rows of the index's work list inverted with it: 0.42
+opacity on dark became a solid `--ink-3` of `#7d756d` on this paper, only
+3.88:1. That list is gone (trap 41) and `--ink-3` now carries no text at
+all — it is the resting underline colour and nothing else. Re-derive it
+before putting type back on it.
 
 Same reasoning gave `--well` (`#d9d5cf`, the empty-image field) its value.
 It is *darker* than paper so it reads as a blocked-out area rather than a
@@ -598,11 +598,13 @@ route changed in 73ms. `PageTransition` listens with `capture: true`, and
 calls `stopPropagation()` so next/link does not navigate a second time
 underneath the panel.
 
-Running first costs it the one thing bubbling gave for free: it no longer
-knows what `useAnchorNav` decided. The `url.pathname === location.pathname`
-test is what keeps the curtain off the index's own `#work` / `#about` /
-`#about` links now. On that path the event is left completely alone — no
-`preventDefault`, no `stopPropagation` — so the hook still gets it intact.
+Running first costs it the one thing bubbling gave for free: it cannot see
+what anything downstream decided. The `url.pathname === location.pathname`
+test is what keeps the curtain off a same-page fragment — today that is the
+skip link and nothing else, since the index lost its own `#work` / `#about`
+links with its bands (trap 41). On that path the event is left completely
+alone — no `preventDefault`, no `stopPropagation` — so the browser's native
+fragment step runs whole.
 
 **15. GSAP's `yPercent` composes with the transform it finds.**
 It does not replace it. The curtain also carried Tailwind's
@@ -884,12 +886,13 @@ Three things that decides, and one it does not:
   ratio, and `tall` still breaks the rhythm of a stack of them. Verified on
   a project with one of each: thumbnail ratios 1.738, 1.683 (measured) and
   1.600 (declared) in one rail.
-- **A slot keeps its crop, and that is not an inconsistency.** The index's
-  preview aside and the ring's covers are designed boxes that have to hold
-  still whatever is dropped in — the ring's shape is one number by
-  construction (trap 26), and covers of eight different heights would not
-  be a ring. `Shot` takes `size` for the first case and `ratio` for the
-  second: which one is right is a property of the place, not of the image.
+- **A slot keeps its crop, and that is not an inconsistency.** The ring's
+  covers are a designed box that has to hold still whatever is dropped in:
+  its shape is one number by construction (trap 26), and covers of eight
+  different heights would not be a ring. `Shot` takes `ratio` for that and
+  `size` for a shot shown at its own proportions — which one is right is a
+  property of the place, not of the image. (The index's preview aside was
+  the other `ratio` call site, and it went with the work list, trap 41.)
 
 The rail was re-verified whole, since the thumbnails now differ in shape:
 108 marker positions with a worst step of **0.25px** on the two-shot page,
@@ -1034,6 +1037,10 @@ heading takes **2** positions, 0.00 and 1.45 of its own height, against
 **37** with ordinary motion — it arrives, it does not travel.
 
 **31. A scrubbed value is written, not tweened.**
+*(Also found in the removed work list, trap 41 — and kept for a stronger
+reason than trap 30: this is the THIRD time the repo learned it, and the
+two survivors, the ring's readout and the thumbnail rail's marker, are
+still built on it.)*
 The wipe above started life as a 420ms GSAP tween fired whenever the live
 row changed. That is the third time this repo has had to learn the same
 thing — the ring's readout parked on whole projects and transitioned
@@ -1075,6 +1082,9 @@ edge is only ever at 0 — the preview stands on whole projects, the same
 answer the rail gives.
 
 **30. A `key` is an instruction to throw the subtree away.**
+*(The component this was found in — the index's work list — has been
+removed, trap 41. The lesson is kept because it is about React and about
+photographing a gesture, neither of which went anywhere.)*
 The index's preview was one block carrying `key={current.slug}`, so every
 change of the live row destroyed it and built a new one — a new `<img>`
 element, with the fetch, the decode and the empty box that go with it. The
@@ -1186,8 +1196,8 @@ slid away, and it was accurate: the panel uncovers over 560ms but
 `data-routing` was not dropped until `settle()` at the end of that sweep, so
 the reader spent the whole sweep looking at a destination whose un-gated
 parts were already at rest. Most of the page has no arrival — after the
-scroll reset the visible ones are the corner marks, the index's preview
-aside, a project page's thumbnail rail and the readout's static `/ 08`.
+scroll reset the visible ones are the corner marks, a project page's
+thumbnail rail and the readout's static `/ 08`.
 
 The fix is a gate, and what it is NOT matters as much as what it is:
 
@@ -1470,9 +1480,14 @@ name and the intro stays under its END, where the eye already finishes.
   page they had just started on; then the address left the block for the
   corner above it, and what the mark reached was a row of social links
   named `social`. A mark that says one word and arrives somewhere named
-  another is worse than no mark. Three marks now — `work`, `all work`,
-  `about`. The id stays on the block: nothing points at it, but it is a
-  stable anchor for a link written elsewhere, and an id costs nothing.
+  another is worse than no mark. **Two marks now** — `work` and `about`,
+  and both are real routes. The third went when the index's work list did
+  (trap 41): it pointed at `/#work`, and what it named stopped existing.
+  `all work` became simply `work` at the same time, for the same vocabulary
+  reason this bullet is about — `all` was a comparison with the shortlist
+  on the index, and there is no shortlist. The `#contact` id stays on the
+  block: nothing points at it, but it is a stable anchor for a link written
+  elsewhere, and an id costs nothing.
 - **Hover and focus on an icon are carried by ink, not by an underline.**
   The site's rule is an underline, and an underline under a 24px glyph reads
   as a stray rule. `--ink-2` to `--ink` on the same `--t-quick` is the same
@@ -1719,6 +1734,60 @@ there are **zero failed requests**. Nothing new was written to
 `public/media` — the directory held only the four files from the previous
 local run, dated hours earlier, and has been deleted.
 
+**41. One screen with no scroll is a promise about the CONTENT, not a rule
+about the height.**
+The index is now the opening and nothing else. What made it one screen was
+deleting the work list under it — the opening was already `min-h-[100svh]`
+and already fitted inside one, at every width. Nothing about the hero's own
+height had to change, and the measurement is what said so rather than a
+guess.
+
+- **`min-h`, and not `h`.** A fixed height with content that outgrows it
+  either clips or overflows, and both fail silently — the reader gets a
+  page that is quietly missing a line. `min-h` grows, the page scrolls, and
+  the failure is the visible one. The promise is kept by the content having
+  room to spare, not by a rule forbidding it to need any.
+- **`svh`, not `vh` and not `dvh`.** `100svh` is the viewport with the
+  mobile browser's chrome fully EXPANDED, which makes it the only one of
+  the three that can never exceed the visual viewport and so the only one
+  that can never produce a scrollbar of its own. `dvh` would be correct at
+  rest and wrong for the moment the chrome is retracting.
+- **The padding is not slack, and tightening it is invisible until it
+  breaks.** `clamp(7rem, 13vh, 9.5rem)` top and bottom is sized by the
+  fixed corner marks: at 320x568 the floor resolves to 105px against a top
+  chrome of 89.25px, which is **15.75px** of margin. And because it is
+  SYMMETRIC under `justify-center`, it has no effect at all on where
+  anything sits — the content is centred on the viewport either way. All it
+  decides is the width at which the page starts to scroll, so a change here
+  looks like nothing until it puts the masthead under the corner marks.
+- **The headroom is the number to watch, and it is the CMS that spends
+  it.** Content occupies 185px of a 358px box at 320x568 and 431px of 776px
+  at 1920x1080 — 173 to 345px in hand. `profile.intro` is a textarea in
+  `/admin`, so a long enough intro re-introduces the scroll without anyone
+  running a build. Same shape of exposure as the masthead's headroom in
+  trap 29, and it fails the same visible way.
+- **Three things were deleted with the list, none of them optional.**
+  `.st-cover` / `.st-cover-stack` had one consumer; `useAnchorNav` had one
+  caller and it was the `#work` mark (trap 4); `src/constants/router.ts`
+  was already dead and its `#work` entry had become a lie.
+
+Verified at 320x568 / 375x667 / 414x896 / 600x800 / 768x1024 / 900x700 /
+1024x768 / 1280x800 / 1366x768 / 1440x800 / 1440x900 / 1920x1080:
+`scrollHeight - clientHeight` is **0** at every one, the section's height
+equals the document's equals the viewport's, and `window.scrollBy(0, 400)`
+leaves `scrollY` at **0**. No horizontal scroll (−15 everywhere, which is
+`scrollbar-gutter: stable` reserving a gutter the page never needs), no
+clickable on two line boxes counted with a Range, and the `work` mark still
+lands on `/works`.
+
+**What this leaves is a sparse page, and that is a real thing to look at
+rather than a defect to hunt.** Photographed at a fixed viewport: 140–354px
+of empty paper above the content and 157–371px below it, worst on tall
+phones where the masthead is width-bound. The three answers are centre it
+(what it does now), anchor the register to the foot of the screen so the
+two objects span it the way the corner marks do, or let the type grow. It
+is a composition decision and it has not been taken.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -1729,7 +1798,9 @@ the list, at 320 and at 1440, with the control confirming the sweep can
 still fail.
 
 **`--ink-3` is only safe as LARGE text, and "large" for bold type starts
-at 18.66px.** It dims the work list's rows, which are never that small.
+at 18.66px.** It dimmed the index work list's rows, which were never that
+small; with that list gone (trap 41) it carries no text at all and anything
+put back on it has to clear the bar afresh.
 The preloader's pending name is not display-sized: at 320px it computes to
 about 17px, where the bar is 4.5:1 and `--ink-3` fails. It uses `--ink-2`
 instead. Check the computed `font-size` at 320, not the one you designed
@@ -1769,8 +1840,8 @@ Other invariants:
   them; `pointer-events` is off on the gradient and back on for the text,
   or the bands swallow clicks across the full width.
 - **Visual echoes are `aria-hidden`, and what they echo must exist
-  elsewhere.** The index's preview aside is hidden, so each row's summary,
-  category and year live in the link's own accessible name. The empty
+  elsewhere.** The ring's readout is hidden, so each cover link's own
+  accessible name carries the name, summary, category and year. The empty
   `Shot` field is hidden, so its label never leaks into a link's name —
   that is the trap the old `ImageWell` hit.
 - **State is never carried by appearance alone.** The thumbnail rail's
@@ -1825,8 +1896,8 @@ Other invariants:
   thrown out was ONE treatment applied to every block of a page; what is
   allowed is a composed arrival, on chosen type, seen once per page.
   Everything after the arrival still answers an action: the route curtain a
-  click, the ring a wheel, a drag or an arrow key, and the work list's
-  preview the reader's own scroll position.
+  click, the ring a wheel, a drag or an arrow key, and a project page's
+  thumbnail marker the reader's own scroll position.
 - **A page that takes the wheel owes the reader a way out.** `/works` is
   exactly one screen tall in both views and the document never scrolls.
   That is defensible only because the `list` view is one click away, is
@@ -1853,7 +1924,7 @@ Other invariants:
   set skipped entirely.
 - **The ring's readout is `aria-hidden`,** so the name, the one-line
   summary, the category and the year all live in each cover link's own
-  accessible name — the same rule the index's preview aside follows.
+  accessible name — the same rule the empty `Shot` field follows.
 - The list's rows dim to `--ink-2`, not `--ink-3`. At 320 the name computes
   to about 17px, under the 18.66px where bold type counts as large, so the
   bar is 4.5:1 and `--ink-3` (3.88:1) fails it. Only the name dims; the

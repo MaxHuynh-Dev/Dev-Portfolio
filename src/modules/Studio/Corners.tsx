@@ -1,37 +1,35 @@
 'use client';
 
-import { useAnchorNav } from '@Hooks/useAnchorNav';
 import { useLocalClock } from '@Hooks/useLocalClock';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import type React from 'react';
 import type { Profile } from '@/content/site';
 
 /**
- * A mark is either a band of the index, reached by fragment, or a page of
- * its own, which is a real navigation from anywhere including the index.
- * The union is what lets the map below narrow on `'route' in item` instead
- * of carrying an optional id it would then have to assert.
- */
-type Mark = { label: string; id: string } | { label: string; route: string };
-
-/**
- * Three marks, not four.
+ * Two marks, and both of them are real pages.
  *
- * There was a `contact` mark, and it stopped earning its place in two
- * steps. Contact moved up into the opening, so the link scrolled the
- * reader back towards the top of the page they had just started on; then
- * the address left the block entirely for the corner above, and what the
- * link reached was a row of social marks named `social`. A mark that says
- * one word and arrives somewhere named another is worse than no mark.
+ * There were four. `contact` went when contact moved up into the opening
+ * and the address left it for the corner above — a mark that says one word
+ * and arrives somewhere named another is worse than no mark. `work` went
+ * with the index's work list (trap 41): it pointed at `/#work`, and the
+ * fragment it named no longer exists.
  *
- * The `#contact` id stays on that block. Nothing here points at it any
- * more, but it is a stable anchor for a link written somewhere else, and
- * an id costs nothing.
+ * What was `all work` is simply `work` now, for the same vocabulary reason
+ * the `contact` mark was dropped for. `all` was a comparison with the
+ * subset on the index, and there is no subset any more — a mark that calls
+ * itself `all work` beside nothing else would be answering a question
+ * nobody can ask.
+ *
+ * **Both marks are routes, so nothing here navigates by fragment.** That is
+ * why there is no `useAnchorNav` in this file any more, and why the hook
+ * itself is gone: it existed to put back the hash update and the focus move
+ * that `preventDefault()` cancels, and the index was its only caller. The
+ * `#contact` id stays on the opening's contact block — nothing points at it
+ * now, but it is a stable anchor for a link written somewhere else, and an
+ * id costs nothing.
  */
-const SECTIONS: Mark[] = [
-  { label: 'work', id: 'work' },
-  { label: 'all work', route: '/works' },
+const SECTIONS: { label: string; route: string }[] = [
+  { label: 'work', route: '/works' },
   { label: 'about', route: '/about' }
 ];
 
@@ -49,12 +47,14 @@ const SECTIONS: Mark[] = [
  * it is invisible against a flat ground until something passes under it.
  * `pointer-events` is off on the gradient and back on for the text, or the
  * bands would swallow clicks across the full width of the page.
+ *
+ * On the index nothing passes under them at all now — that page is one
+ * screen and does not scroll — but the gradient stays, because these are
+ * the same marks on `/works`, `/about` and every project page, where things
+ * very much do.
  */
 export default function Corners({ profile }: { profile: Profile }): React.ReactElement {
   const time = useLocalClock(profile.timeZone);
-  const onNav = useAnchorNav();
-  const pathname = usePathname();
-  const atHome = pathname === '/';
 
   return (
     <>
@@ -86,56 +86,20 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
 
           <nav aria-label="Sections">
             <ul className="st-meta flex flex-wrap justify-end gap-x-[1.1rem] gap-y-[0.2rem]">
-              {SECTIONS.map((item) => {
-                // A page of its own. PageTransition reads the label off the
-                // dataset and writes it on the curtain, so the covered
-                // moment says where you are going.
-                if ('route' in item) {
-                  return (
-                    <li key={item.label}>
-                      <Link
-                        className="st-link whitespace-nowrap text-[var(--ink)]"
-                        href={item.route}
-                        data-transition-label={item.label}
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  );
-                }
-
-                // The rest target bands of the home page. On any other page
-                // those elements do not exist, so a bare "#work" would hand
-                // useAnchorNav a fragment with no target and the link would
-                // silently do nothing. Off the home page it has to be a
-                // real navigation.
-                if (atHome) {
-                  return (
-                    <li key={item.label}>
-                      <a
-                        className="st-link whitespace-nowrap text-[var(--ink)]"
-                        href={`#${item.id}`}
-                        onClick={(event) => {
-                          onNav(event, `#${item.id}`);
-                        }}
-                      >
-                        {item.label}
-                      </a>
-                    </li>
-                  );
-                }
-
-                return (
-                  <li key={item.label}>
-                    <Link
-                      className="st-link whitespace-nowrap text-[var(--ink)]"
-                      href={`/#${item.id}`}
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                );
-              })}
+              {SECTIONS.map((item) => (
+                // PageTransition reads the label off the dataset and writes
+                // it on the curtain, so the covered moment says where you
+                // are going.
+                <li key={item.label}>
+                  <Link
+                    className="st-link whitespace-nowrap text-[var(--ink)]"
+                    href={item.route}
+                    data-transition-label={item.label}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
         </div>

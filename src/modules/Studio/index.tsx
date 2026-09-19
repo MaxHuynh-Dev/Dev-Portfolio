@@ -1,42 +1,30 @@
 import type React from 'react';
 
-import { getProfile, getProjects, getSiteSettings } from '@/content/source';
+import { getProfile, getSiteSettings } from '@/content/source';
 
 import Open from './Open';
-import Work from './Work';
 
 /**
- * The page.
+ * The index.
  *
- * A server component composing four bands. There is no client boundary
- * wrapping the whole page and no scroll-reveal machinery: content arrives
- * already placed. The only client leaves are the ones that genuinely own
- * state — the opening's fitting engine, the work list's focus tracking,
- * and the corner marks' clock.
+ * **One band, and it is the opening.** The page has been reduced to the
+ * name, what the work is, and where to reach him — held to a single screen
+ * that does not scroll (trap 41). The work list that used to sit under it
+ * is gone; `/works` is where the projects live now, and the corner mark
+ * says so.
  *
- * It is also where the page's content is read. One read, here, handed down
- * — rather than four leaves each reaching into the CMS, two of which are
- * client components and could not anyway. The reads are memoised per
- * request, so the corner marks asking for the profile in the layout and
- * this asking for it again is one query.
+ * A server component, with no client boundary around it and no scroll
+ * machinery: everything on this page arrives on `load`. The one client leaf
+ * is the opening itself, which owns the fitting engine.
  *
- * **Two bands, and both of them are the work.** Contact moved into the
- * opening (trap 38), About became a page (trap 39), and the colophon went
- * with it — an account of how the site was built belongs beside the account
- * of who built it, not under the list of projects. What is left is the name
- * and the work, which is what an index is for.
+ * It is also where this page's content is read — one read, here, handed
+ * down, rather than a leaf reaching into the CMS (it could not: it is a
+ * client component, and the read layer pulls in Payload, Mongo and sharp).
+ * The reads are memoised per request, so the corner marks asking for the
+ * profile in the layout and this asking for it again is one query.
  */
 export default async function Studio(): Promise<React.ReactElement> {
-  const [profile, projects, settings] = await Promise.all([
-    getProfile(),
-    getProjects(),
-    getSiteSettings()
-  ]);
+  const [profile, settings] = await Promise.all([getProfile(), getSiteSettings()]);
 
-  return (
-    <>
-      <Open profile={profile} links={settings.contactLinks} />
-      <Work projects={projects} workRange={settings.workRange} />
-    </>
-  );
+  return <Open profile={profile} links={settings.contactLinks} />;
 }
