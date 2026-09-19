@@ -17,6 +17,94 @@ const FALLBACK = { cover: 500, reveal: 560 };
 const HARD_CAP_MS = 3000;
 
 /**
+ * The destination's name, split into characters and risen out of one mask
+ * each — the same verb the preloader's letters use, at the other end of the
+ * journey.
+ *
+ * **The split is allowed to be naive here, and trap 10 is why that needs
+ * saying.** Splitting a string into one box per character loses its kerning
+ * pairs, and the preloader had to go to a hidden unsplit copy and a Range
+ * per character to get them back, because it lands its letters on the real
+ * masthead exact to the pixel. This word lands on nothing. It only has to
+ * look right, it is set in CAPS — which carry far fewer critical pairs than
+ * lowercase — and the positive tracking caps want has already separated
+ * them. The total advance survives a split regardless; only the pairs do
+ * not.
+ *
+ * `LEAD` is a FRACTION of the cover rather than a duration, so the word
+ * starts at the same point in the sweep whatever `--t-cover` is set to.
+ *
+ * **It is 1, which means the panel lands before a single letter moves.**
+ * It was 0.2, and that read as one event rather than two: the letters rose
+ * inside a panel that was itself still rising, so relative to the screen
+ * they travelled at panel speed plus their own and the word arrived at the
+ * same moment its ground did. Sequenced, the curtain shuts and only then
+ * does the name come up out of it — which is the reading the owner asked
+ * for, and it is also the one the preloader already uses: the paper is
+ * there first, the letters arrive onto it.
+ *
+ * The cost is the whole stagger, added to the transition rather than hidden
+ * inside the cover. That is what the sequence costs; it is not recoverable
+ * by tuning. `LETTER_RISE_MS` and `LETTER_STEP_MS` are the knobs if it ever
+ * needs to come down.
+ */
+const LETTER_STEP_MS = 40;
+const LETTER_RISE_MS = 400;
+const LETTER_LEAD = 1;
+/** Faster out than in. An exit that matches its entrance reads as a rewind. */
+const LETTER_EXIT_MS = 340;
+const LETTER_EXIT_STEP_MS = 28;
+/**
+ * The word must stand still this long before the uncover may start.
+ *
+ * Without it a prefetched route arrives while the letters are still coming
+ * up, and the first of them would begin leaving before the last had landed
+ * — which does not read as a stagger, it reads as a glitch. It is the one
+ * place this curtain deliberately makes the reader wait, and it is bounded:
+ * the hold is over by the time the word is legible, not a beat later.
+ */
+const NAME_HELD_MS = 120;
+
+/**
+ * One element per character, each in its own clip.
+ *
+ * Segmented by GRAPHEME where the browser can: `Array.from` splits on code
+ * points, which separates a combining diacritic from the letter it sits on
+ * and would put the two in different masks. Vietnamese is normally
+ * precomposed and the marks in the corner nav are ASCII, so this is belt
+ * and braces — but it is three lines of it.
+ */
+const splitInto = (host: HTMLElement, text: string): HTMLElement[] => {
+  host.textContent = '';
+  const chars =
+    typeof Intl !== 'undefined' && 'Segmenter' in Intl
+      ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)].map(
+          (part) => part.segment
+        )
+      : Array.from(text);
+
+  const bodies: HTMLElement[] = [];
+  for (const char of chars) {
+    // A space has nothing to clip and no ink to raise. Masking it would
+    // add an empty animated box to the stagger and a gap to the rhythm.
+    if (char.trim() === '') {
+      const gap = document.createElement('span');
+      gap.style.width = '0.34em';
+      host.appendChild(gap);
+      continue;
+    }
+    const mask = document.createElement('span');
+    mask.className = 'st-curtain-letter';
+    const body = document.createElement('span');
+    body.textContent = char;
+    mask.appendChild(body);
+    host.appendChild(mask);
+    bodies.push(body);
+  }
+  return bodies;
+};
+
+/**
  * Raised on `<html>` for as long as this panel is in the way.
  *
  * It is what lets a masked block on the destination page know it is being
@@ -80,6 +168,20 @@ const readMs = (name: string, fallback: number): number => {
  * during the rise and React commits the new page while the top of the
  * screen is still showing the old one, which is the exact jump this exists
  * to remove. The prefetch at click time is what keeps that ordering cheap.
+ *
+ * **The name is centred, in caps, and assembled rather than faded.** It used
+ * to sit in the bottom-left gutter and fade on, which put the one piece of
+ * type on a full-bleed panel in the position type takes when it is a
+ * caption. Centred it is the subject of the screen, so it is set larger and
+ * it arrives the way everything else on this site arrives — out of a mask,
+ * one piece at a time. **The panel lands first and the letters follow**, and
+ * they leave upward through the same masks as it opens: nothing on this
+ * curtain ever travels back the way it came.
+ *
+ * The push still happens the instant the PANEL is shut, not when the word
+ * finishes — the route is fetched behind a closed curtain while the letters
+ * are still landing, so the split costs the reader the tail of the stagger
+ * and not the network.
  */
 export default function PageTransition(): React.ReactElement {
   const router = useRouter();
@@ -93,6 +195,8 @@ export default function PageTransition(): React.ReactElement {
   const phase = useRef<Phase>('idle');
   const target = useRef<URL | null>(null);
   const capTimer = useRef(0);
+  /** Deferral for NAME_HELD_MS. Cleared wherever capTimer is. */
+  const nameTimer = useRef(0);
   const tl = useRef<gsap.core.Timeline | null>(null);
   // `reveal` is called from a GSAP callback, from an effect, and from a
   // timeout. A ref keeps all three pointing at one live function without
@@ -112,7 +216,12 @@ export default function PageTransition(): React.ReactElement {
     // route changed behind a curtain nobody ever saw. Measured at 1800px on
     // a 900px viewport. The class is gone; this owns the transform.
     gsap.set(panel, { yPercent: 100, opacity: 1 });
-    gsap.set(label, { opacity: 0 });
+    label.textContent = '';
+
+    /** The current word's characters. Rebuilt per navigation, torn down in `settle`. */
+    let letters: HTMLElement[] = [];
+    /** When the last of them lands. `reveal` will not start before it. */
+    let nameRestAt = 0;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const coverMs = readMs('--t-cover', FALLBACK.cover);
@@ -126,6 +235,7 @@ export default function PageTransition(): React.ReactElement {
       phase.current = 'idle';
       target.current = null;
       window.clearTimeout(capTimer.current);
+      window.clearTimeout(nameTimer.current);
       // The page is handed back HERE, at the end of the uncover, and not at
       // the start of it. The panel rises to uncover, so the top of the
       // screen is the last thing it clears — and the top of the screen is
@@ -136,9 +246,14 @@ export default function PageTransition(): React.ReactElement {
       panel.style.pointerEvents = 'none';
       panel.style.visibility = 'hidden';
       status.textContent = '';
-      // Parked below the fold again, ready for the next one.
+      // Parked below the fold again, ready for the next one. The word is
+      // torn down rather than hidden: the next navigation builds its own,
+      // and a stale one left behind is the first thing the next cover would
+      // show, already at rest, before its own letters had been placed.
       gsap.set(panel, { yPercent: 100, opacity: 1 });
-      gsap.set(label, { opacity: 0 });
+      label.textContent = '';
+      letters = [];
+      nameRestAt = 0;
       window.lenis?.start();
     };
 
@@ -167,6 +282,25 @@ export default function PageTransition(): React.ReactElement {
 
     const reveal = (): void => {
       if (phase.current !== 'holding') return;
+
+      // A prefetched route can arrive before the word has. Wait out the rest
+      // of the stagger plus a beat, or the first letters begin leaving
+      // before the last have landed — which does not read as a stagger, it
+      // reads as a glitch.
+      //
+      // It cannot become an open-ended wait: `nameRestAt` is computed at
+      // `go` from durations that are all constants, and the 3s cap is armed
+      // underneath this the whole time.
+      const wait = nameRestAt + NAME_HELD_MS - performance.now();
+      if (wait > 0) {
+        window.clearTimeout(nameTimer.current);
+        nameTimer.current = window.setTimeout(() => {
+          nameRestAt = 0;
+          reveal();
+        }, wait);
+        return;
+      }
+
       phase.current = 'revealing';
       // RE-ARMED, not cleared. The uncover is a GSAP tween and GSAP runs on
       // rAF, which a backgrounded tab suspends — so `onComplete` never
@@ -200,10 +334,26 @@ export default function PageTransition(): React.ReactElement {
         return;
       }
 
-      tl.current = gsap
-        .timeline({ onComplete: settle })
-        .to(label, { opacity: 0, duration: 0.18, ease: 'none' }, 0)
-        .to(panel, { yPercent: -100, duration: revealMs / 1000, ease: 'power3.inOut' }, 0.06);
+      // The letters leave THROUGH THE TOP of their own masks, in the order
+      // they arrived and faster than they arrived, while the panel carries
+      // them off the screen underneath. One direction for both, which is the
+      // promise this component exists to keep. An exit that mirrored its
+      // entrance would read as a rewind.
+      const out = gsap.timeline({ onComplete: settle });
+      if (letters.length > 0) {
+        out.to(
+          letters,
+          {
+            yPercent: -105,
+            duration: LETTER_EXIT_MS / 1000,
+            ease: 'power2.in',
+            stagger: LETTER_EXIT_STEP_MS / 1000
+          },
+          0
+        );
+      }
+      out.to(panel, { yPercent: -100, duration: revealMs / 1000, ease: 'power3.inOut' }, 0.08);
+      tl.current = out;
     };
 
     revealRef.current = reveal;
@@ -237,7 +387,10 @@ export default function PageTransition(): React.ReactElement {
       raise('covering');
       panel.style.visibility = 'visible';
       panel.style.pointerEvents = 'auto';
-      label.textContent = text;
+      letters = splitInto(label, text);
+      // The CAPS are a `text-transform`, so what this line hands a screen
+      // reader is still the word as it was written. Announcing it is this
+      // element's whole job — the panel itself is aria-hidden.
       status.textContent = text === '' ? 'Loading' : `Loading ${text}`;
 
       // Warm the destination while the panel is still closing, so the hold
@@ -251,21 +404,55 @@ export default function PageTransition(): React.ReactElement {
 
       tl.current?.kill();
       if (reduced) {
+        // Assembled rather than assembling — the same call the preloader
+        // makes. Every letter travelling more than its own height is
+        // precisely the movement the query is about, and there is no
+        // shortened version of it worth showing.
+        if (letters.length > 0) gsap.set(letters, { yPercent: 0 });
+        nameRestAt = 0;
         tl.current = gsap
           .timeline({ onComplete: covered })
           .fromTo(panel, { yPercent: 0, opacity: 0 }, { opacity: 1, duration: 0.14, ease: 'none' });
         return;
       }
 
-      tl.current = gsap
-        .timeline({ onComplete: covered })
+      // A FRACTION of the cover, so the word starts at the same point in the
+      // sweep whatever --t-cover is set to. At 1 that point is the moment
+      // the panel lands, which is the whole sequence: curtain, then name.
+      const leadMs = coverMs * LETTER_LEAD;
+      nameRestAt =
+        performance.now() +
+        leadMs +
+        Math.max(0, letters.length - 1) * LETTER_STEP_MS +
+        LETTER_RISE_MS;
+
+      // `covered` hangs off the PANEL's own tween, not the timeline's
+      // completion. The timeline outlives the panel by the tail of the
+      // stagger, and hanging the push off the whole thing would hold the
+      // route — and so the fetch — behind an animation the route has nothing
+      // to do with.
+      const cover = gsap
+        .timeline()
         .fromTo(
           panel,
           { yPercent: 100 },
-          { yPercent: 0, duration: coverMs / 1000, ease: 'power3.inOut' },
+          { yPercent: 0, duration: coverMs / 1000, ease: 'power3.inOut', onComplete: covered },
           0
-        )
-        .fromTo(label, { opacity: 0 }, { opacity: 1, duration: 0.26, ease: 'none' }, 0.24);
+        );
+      if (letters.length > 0) {
+        cover.fromTo(
+          letters,
+          { yPercent: 105 },
+          {
+            yPercent: 0,
+            duration: LETTER_RISE_MS / 1000,
+            ease: 'power3.out',
+            stagger: LETTER_STEP_MS / 1000
+          },
+          leadMs / 1000
+        );
+      }
+      tl.current = cover;
     };
 
     const onClick = (event: MouseEvent): void => {
@@ -316,6 +503,7 @@ export default function PageTransition(): React.ReactElement {
     return () => {
       document.removeEventListener('click', onClick, true);
       window.clearTimeout(capTimer.current);
+      window.clearTimeout(nameTimer.current);
       tl.current?.kill();
       tl.current = null;
       // An unmount mid-transition must not leave scrolling switched off —
@@ -359,11 +547,47 @@ export default function PageTransition(): React.ReactElement {
         // <html> takes the gutter out of the viewport-percentage units too,
         // so w-screen measured 1425px on a 1440px window, exactly the same
         // as inset-0. Nothing to win, one more class to explain.
-        className="st-curtain fixed inset-0 z-[150] flex flex-col justify-end bg-[var(--ink)] px-[var(--gut)] pb-[var(--gut)]"
+        className="st-curtain fixed inset-0 z-[150] flex items-center justify-center bg-[var(--ink)] px-[var(--gut)]"
       >
+        {/* Centred, and therefore larger. In the bottom-left gutter this
+            word was in the position type takes when it is a caption, and it
+            was sized like one; in the middle of a full-bleed panel it is the
+            only object on the screen, so it is set at display scale.
+
+            The clamp FLOOR is what mattered, not the ceiling. The vw term
+            takes over above about 486px, so every phone lands on the floor
+            — and at the old 1.35rem the word measured 72.5px of ink in the
+            middle of a 320x568 screen, which photographs as a caption that
+            has wandered into the middle rather than as the subject. 1.75rem
+            is 94px, still less than a third of the column.
+
+            `uppercase` and `tracking-[0.04em]` are UTILITIES on purpose —
+            Tailwind layers them after @layer components, so they beat
+            .st-display's own -0.035em rather than losing to it (trap 1, read
+            the right way round). Caps at a tracking cut for lowercase
+            collide; positive tracking is what caps want.
+
+            `leading-[normal]` is the one that matters most. .st-display
+            sets 0.9, which is tighter than Nippo's ascent plus descent, so
+            the glyphs hang outside their own box and a mask cut to that box
+            shaves them — caps have no descenders, but Vietnamese caps carry
+            diacritics ABOVE, which is the edge that gets cut. `normal` IS
+            the face's own box, 1.269em for Nippo, so nothing can reach past
+            the clip and no number here has to be kept in step with the font
+            (trap 26). It is a utility and not a rule on .st-curtain-word
+            because the two would be equal-specificity siblings, and source
+            order is not a thing to hang a clip on.
+
+            The transform is what makes them caps, not the string: the label
+            the CMS holds stays lowercase, which is what the status line
+            above announces and what `data-transition-label` still carries.
+
+            Empty here. `splitInto` fills it with one clipped span per
+            character at the start of every navigation and `settle` empties
+            it again. */}
         <span
           ref={labelRef}
-          className="st-display whitespace-nowrap text-[clamp(1.15rem,4.6vw,3.2rem)] text-[var(--paper)] opacity-0"
+          className="st-curtain-word st-display whitespace-nowrap text-[clamp(1.75rem,5.4vw,3.6rem)] text-[var(--paper)] uppercase leading-[normal] tracking-[0.04em]"
         />
       </div>
     </>

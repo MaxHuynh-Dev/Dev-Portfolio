@@ -594,6 +594,37 @@ body {
     will-change: transform;
   }
 
+  /* The destination's name on the route curtain, split into one mask per
+     character so the word rises into place rather than fading in.
+
+     The line-height is NOT set here, and that is deliberate — it is a
+     `leading-[normal]` utility at the call site. Both this and .st-display
+     are one class in the same layer, so between them the later in this file
+     wins, and "whichever we wrote second" is not a thing to hang a clipped
+     mask on (trap 39 records the same fragility costing an entire page its
+     type). A utility is layered after every component rule, so it cannot
+     lose. Trap 26 already states that as the intended escape hatch. */
+  .st-curtain-word {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* **`display: block` here is load-bearing, not cosmetic.** CSS transforms
+     do not apply to non-replaced INLINE elements, so with these rules
+     missing the span is inline, GSAP writes a transform onto it every frame,
+     the computed style reports it — and nothing moves. That is exactly how
+     it presented when the dev server served a stale stylesheet: the letters
+     were built, the tweens ran, every measurement of the transform was
+     correct, and the word sat still. */
+  .st-curtain-letter {
+    display: block;
+    overflow: hidden;
+  }
+
+  .st-curtain-letter > span {
+    display: block;
+  }
+
   /* Landmark targets carry tabindex="-1" for focus management and should
      not draw a ring of their own. */
   [tabindex="-1"]:focus {

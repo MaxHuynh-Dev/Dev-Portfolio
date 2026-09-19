@@ -160,9 +160,15 @@ travel exactly that far, its stagger is about 50ms, and it masks its
 **Moving between pages** (`PageTransition`). An ink panel rises to cover
 the page, the next route is fetched and committed behind it, the scroll is
 put back to the top, and the panel carries on upward to uncover. One
-direction throughout — it never comes back down the way it came. The
-destination's name sits on the panel in paper while you wait, which is the
-same foot-left position the preloader puts its name in.
+direction throughout — it never comes back down the way it came, and that
+now goes for what is ON it as well as the panel itself.
+
+The destination's name is centred, set in CAPS, and **split into one
+clipped mask per character**. It is SEQUENCED, not layered: the panel lands
+first, and only then do the letters rise into place, stand for a beat, and
+leave upward through those same masks as it opens. It used to sit in the bottom-left gutter and fade on,
+which put the one piece of type on a full-bleed panel in the position type
+takes when it is a caption. See trap 42.
 
 The inversion is not a new colour. `::selection` has always drawn this
 site's type paper-on-ink, so the curtain is the page's own palette turned
@@ -212,7 +218,15 @@ anti-patterns in the `frontend-design` skill, which is why the owner kept
 reading it as unchanged. Still banned:
 
 - no rules or hairline dividers anywhere
-- no ALL-CAPS labels, no letter-spaced micro-type — labels are lowercase
+- no ALL-CAPS labels, no letter-spaced micro-type — labels are lowercase.
+  **The route curtain's destination name is the one exception**, and it is
+  the exception `.st-display`'s own comment anticipates ("where a line IS
+  set in caps it says so locally"). What is banned is an 11px tracked-out
+  eyebrow in the flow of a page; that word is display-sized, alone on an
+  ink panel, and set in caps at the call site. It also carries POSITIVE
+  tracking, which is not the banned letter-spacing but the thing caps
+  need — `.st-display`'s -0.035em is cut for lowercase and closes caps up
+  until they touch. See trap 42.
 - no `·`-joined meta strings, no `→` appended to link text
 - no cards, no border radius, no drop shadows
 - no monospace
@@ -1788,6 +1802,102 @@ phones where the masthead is width-bound. The three answers are centre it
 two objects span it the way the corner marks do, or let the type grow. It
 is a composition decision and it has not been taken.
 
+**42. A transform on an inline element does nothing, and every measurement
+of it will still look right.**
+The route curtain's destination name is split into one character per clipped
+mask so the word rises rather than fades. The split shipped, GSAP wrote a
+transform onto every letter on every frame, `getComputedStyle` read that
+transform back correctly — and the word sat perfectly still. CSS transforms
+do not apply to non-replaced INLINE elements, and with `.st-curtain-letter`
+missing its `display: block` the spans were inline.
+
+**And the reason it was missing is the one this file already tells you to
+check first.** The dev server was serving a stale `global.css`: the new
+rules were in the source and not in the chunk. It was caught by
+`curl`-ing the built stylesheet and finding **zero** occurrences of
+`st-curtain-word` in a file that had two of `st-display` — trap 17, and the
+tell was there earlier and was misread. Two runs of the same measurement
+disagreed, one showing the letters travelling through 90 distinct
+transforms and one showing a single position. **Two identical runs
+disagreeing is a stale bundle until proven otherwise; it is not a race in
+your own code.** Restart the server before forming any other hypothesis.
+
+Six things the split itself decided:
+
+- **The line-height is a call-site UTILITY, not a rule on the primitive.**
+  `.st-display` sets 0.9, tighter than Nippo's ascent plus descent, so the
+  glyphs hang outside their own box and a mask cut to that box shaves them.
+  `leading-[normal]` is the face's own 1.269em box, so nothing can reach the
+  clip and no number here tracks the font (trap 26). It is a utility because
+  `.st-curtain-word` and `.st-display` sit on the same element at the same
+  specificity, where the later rule in the file wins — and "whichever we
+  wrote second" is not a thing to hang a clipped mask on. Trap 39 records
+  that exact fragility costing a whole page its type.
+- **The split is allowed to be naive here, and trap 10 is why that needs
+  saying.** One box per character loses the kerning pairs, and the preloader
+  had to solve that with a hidden unsplit copy and a Range per character
+  because it lands on the real masthead to the pixel. This word lands on
+  nothing, it is set in CAPS — far fewer critical pairs than lowercase — and
+  the positive tracking has already separated them. The total advance
+  survives a split regardless; only the pairs do not.
+- **The stagger starts where the cover ENDS, and that was a correction.**
+  `LETTER_LEAD` is a fraction of the cover and it is 1. At 0.2 the letters
+  rose inside a panel that was itself still rising, so against the screen
+  they moved at panel speed plus their own and the word arrived at the same
+  instant its ground did — which reads as one event, not two. The owner
+  called it immediately: the curtain shuts, THEN the name comes up out of
+  it. It is also what the preloader does, the paper being there before the
+  letters land on it. **The cost is the whole stagger, added to the
+  transition rather than hidden inside the cover, and it is not recoverable
+  by tuning** — 1810ms against 1407ms. `LETTER_RISE_MS` and
+  `LETTER_STEP_MS` are the knobs if that ever has to come down.
+- **`covered` hangs off the PANEL's tween, not the timeline's.** The
+  timeline outlives the panel by the tail of the stagger, and hanging the
+  route push off the whole thing would hold the fetch behind an animation
+  the route has nothing to do with. The push still happens the instant the
+  panel is shut.
+- **There is a minimum hold, and it is derived rather than chosen.**
+  `nameRestAt` is computed at `go` from the lead, the step and the rise, and
+  `reveal` defers until `NAME_HELD_MS` past it. Without it a prefetched
+  route arrives while the letters are still coming up and the first of them
+  begins leaving before the last has landed — which does not read as a
+  stagger, it reads as a glitch. The 3s cap is armed underneath the whole
+  time, so this cannot become an open-ended wait.
+- **The CAPS are a `text-transform`, never the string.** `data-transition-label`
+  and the `role="status"` line both still carry the word as it was written,
+  verified reading `Loading about` while the panel showed `ABOUT`. Uppercasing
+  in JS would have handed a screen reader a string some of them spell out.
+- **The word measures 7.5px left of `innerWidth`'s centre at every width,
+  and that is correct.** The panel is `inset-0`, which is the page box;
+  `innerWidth` includes the 15px `scrollbar-gutter: stable` reserves. Half a
+  gutter is exactly the difference. Centring against `innerWidth` instead
+  would put the word off-centre on what the reader actually sees. Trap 16
+  is the same measurement mistake in its other costume.
+
+Verified from `/` at 1440x900, from `/` at 320x568 and from a project page
+at 768: **87–89 distinct positions per letter** (against 1 when it was
+inline), **zero frames in which any letter or the panel travelled back the
+way it came**, median frame **8.3ms** and **0 frames over 20ms** across
+169–219 frames.
+
+The sequence itself is measured rather than eyeballed, by counting frames in
+which a letter has left its park while the panel is still short of the top:
+**0**, at both widths. The panel reads as closed at 435ms and the first
+letter moves at 486ms — the 51ms is `power3.inOut` decelerating through its
+last half-pixel, not a gap in the timeline. The letters then land 769 / 810 /
+852 / 885 / 927ms, the 40ms step intact. Real ink
+headroom inside every mask is positive and symmetric: **18.19px** at 1440,
+**6.66px** at 320. Under `reduce` the letters are built and take exactly
+**one** transform — assembled, never assembling, the same call the preloader
+makes. Three navigations in a row each cleared `data-routing`, landed at
+scrollY 0, emptied the word out of the DOM and left focus on `#content`.
+
+**It costs about 650ms.** The curtain runs 1769–1810ms against roughly 1150
+before: ~250ms for a stagger that is actually seen, and ~400ms more for
+showing it after the cover instead of during it. All of it is spent in the
+hold rather than on the network, and it is the same length as the preloader
+— which the owner accepted for a page LOAD, a rarer event than a click.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -1967,6 +2077,14 @@ concluding the source is wrong.
 **Both curtains are too short to watch across a tool round-trip.** They are
 gone before a second call can look at them, so drive each one from inside a
 single Playwright snippet.
+
+The cheapest way to hold either one still is **`gsap.globalTimeline.pause()`
+from inside the snippet**, a fixed delay after the click. Both curtains are
+GSAP, so it freezes the panel and everything on it exactly where they are,
+and a screenshot and a full set of rects can be taken at leisure; resume
+afterwards. That is what the route-delay trick below is for when the
+question is about the WAIT rather than about a pose — it is heavier and it
+is easy to leave a `page.route` handler armed for the next navigation.
 
 - *The route curtain* (~1.15s): `page.route()` the destination with a delay
   — `'**/work/project-five**'` held for 1800ms — and the covered wait
