@@ -26,24 +26,6 @@ export const SiteSettings: GlobalConfig = {
       }
     },
     {
-      name: 'aboutMeta',
-      type: 'array',
-      label: 'About columns',
-      admin: {
-        description:
-          'The short lists beside the bio. Add a column only for something that is true — this is where an awards list would go, and does not.'
-      },
-      fields: [
-        {
-          name: 'label',
-          type: 'text',
-          required: true,
-          admin: { description: 'Lowercase — the site sets no all-caps labels.' }
-        },
-        { name: 'items', type: 'text', hasMany: true, required: true }
-      ]
-    },
-    {
       name: 'contactLinks',
       type: 'array',
       label: 'Contact columns',

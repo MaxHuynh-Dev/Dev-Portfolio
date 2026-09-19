@@ -1,7 +1,16 @@
 import configPromise from '@payload-config';
 import { getPayload } from 'payload';
 import { cache } from 'react';
-import type { LinkColumn, MetaColumn, Profile, Project, Shot, SiteSettings } from '@/content/site';
+import type {
+  About,
+  LinkColumn,
+  MetaColumn,
+  Portrait,
+  Profile,
+  Project,
+  Shot,
+  SiteSettings
+} from '@/content/site';
 import type { Media, Project as ProjectDoc } from '@/payload/payload-types';
 
 /**
@@ -40,14 +49,21 @@ const asMedia = (value: ProjectDoc['cover']): Media | null =>
   value !== null && value !== undefined && typeof value === 'object' ? value : null;
 
 /**
- * Where Next serves the file from.
+ * Where the file actually is.
  *
- * Uploads are stored under `public/media`, so this is a plain static path
- * and an image never travels through a Payload route to reach the page.
- * Payload's own `url` (`/api/media/file/...`) is left to the admin UI.
+ * The document's own `url`, and nothing derived. Uploads live on Cloudinary
+ * and `disablePayloadAccessControl` makes Payload hand out the real URL
+ * rather than a `/api/media/file/*` proxy, so this is a CDN address the
+ * browser fetches in one hop.
+ *
+ * It used to build `/media/<filename>` from the filename, which was correct
+ * while the files were on local disk and is exactly the kind of second guess
+ * that breaks the moment storage moves — Cloudinary normalises formats, so a
+ * URL reconstructed from `a.jpeg` can 404 against an object it stored as
+ * `a.jpg`. The adapter records the URL it was given; this reads it back.
  */
 const pathOf = (media: Media | null): string | null =>
-  media === null || typeof media.filename !== 'string' ? null : `/media/${media.filename}`;
+  media === null || typeof media.url !== 'string' || media.url.length === 0 ? null : media.url;
 
 const shotOf = (row: NonNullable<ProjectDoc['shots']>[number]): Shot => {
   const media = asMedia(row.image);
@@ -137,11 +153,6 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
   const payload = await client();
   const doc = await payload.findGlobal({ slug: 'site-settings', depth: 0, overrideAccess: true });
 
-  const aboutMeta: MetaColumn[] = (doc.aboutMeta ?? []).map((column) => ({
-    label: column.label,
-    items: column.items
-  }));
-
   const contactLinks: LinkColumn[] = (doc.contactLinks ?? []).map((column) => ({
     label: column.label,
     links: (column.links ?? []).map((link) => ({ label: link.label, href: link.href }))
@@ -149,8 +160,49 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
 
   return {
     workRange: doc.workRange,
-    aboutMeta,
     contactLinks,
     colophon: doc.colophon
+  };
+});
+
+/**
+ * The about page's own content.
+ *
+ * The prose arrives as one textarea and leaves as paragraphs: a blank line
+ * is the separator, which is what a writer types anyway. Every run of
+ * whitespace-only lines collapses to one break and empty paragraphs are
+ * dropped, so a stray extra return cannot produce a mask with nothing in it.
+ */
+export const getAbout = cache(async (): Promise<About> => {
+  const payload = await client();
+  const doc = await payload.findGlobal({ slug: 'about', depth: 1, overrideAccess: true });
+
+  const media = asMedia(doc.portrait);
+  const src = pathOf(media);
+  const portrait: Portrait | null =
+    media === null || src === null
+      ? null
+      : {
+          src,
+          alt: media.alt,
+          size:
+            typeof media.width === 'number' && typeof media.height === 'number'
+              ? { width: media.width, height: media.height }
+              : null
+        };
+
+  const columns: MetaColumn[] = (doc.columns ?? []).map((column) => ({
+    label: column.label,
+    items: column.items
+  }));
+
+  return {
+    statement: doc.statement,
+    body: doc.body
+      .split(/\n\s*\n/)
+      .map((paragraph) => paragraph.trim())
+      .filter((paragraph) => paragraph.length > 0),
+    portrait,
+    columns
   };
 });

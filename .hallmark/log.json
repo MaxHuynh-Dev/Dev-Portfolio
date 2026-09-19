@@ -1,5 +1,66 @@
 [
   {
+    "date": "2026-09-18",
+    "scope": "page",
+    "verb": "default (new page)",
+    "macrostructure": "Long Document — prose-led, carries a page with no imagery",
+    "theme": "locked: paper #efedea, four inks, NO accent, Nippo + Switzer",
+    "theme_axes": "light paper / squared-grotesk display / no accent",
+    "nav": "unchanged — corner marks, four edges. The `about` mark became a route.",
+    "footer": "none",
+    "enrichment": "none — typography only. No usable imagery exists and the two template stock images are unusable on principle.",
+    "brief": "Turn the index About band into its own /about page, \"creative like Awwwards\".",
+    "diversification": "INVERTED (CLAUDE.md is the locked system). Macrostructure differs from the index and /works; theme deliberately identical.",
+    "brief_reading": "Read \"Awwwards\" as \"as well made as those pages\", not as their vocabulary — WebGL, accent colour, cards, award badges and invented metrics are all on this repo REJECTED list, and one such build was already torn down here in a day.",
+    "research": "Agent read 7 well-regarded about pages. Findings applied: portrait is never a hero (3 of 7 have none); personal pages run 2.3-3.1x largest-over-body, sales pages 5-10x; length correlates inversely with reading as a person; every anti-pattern found was already banned here.",
+    "caught": "Two real bugs. `.st-wash` on a bare div is permanent invisibility (only `Reveal` sets data-in), and a two-column layout left ~600px of the right third empty at 1440.",
+    "measurement_trap": "Playwright fullPage screenshots resize the viewport, which re-splits every `Lines` and parks it for a frame — the capture shows paragraphs missing that are actually fine.",
+    "revision": {
+      "date": "2026-09-18",
+      "change": "Colophon moved off the index and onto /about (the owner called it redundant under the work list). Index is now two bands: the name with contact, and the work.",
+      "constraint": "It could not simply be deleted — the Font Awesome CC BY 4.0 attribution lives in it. Tabler (react-icons/tb, MIT) remains the one-line escape if the attribution should go.",
+      "verification": "Independent agent pass at 7 widths. Three findings, all fixed: a <p> nested inside an <h1> (Lines gained an as=\"h1\" option so the statement IS the heading); .st-statement .st-line missing pointer-events:none despite a 16.14px overlap between adjacent line masks; and the service/stack lists having no programmatic tie to their labels (now aria-labelledby).",
+      "measurement_traps": "Two more. Any viewport width change replays every reveal (Lines re-split parks the block), so a fullPage screenshot photographs a page mid-reset. And innerText inserts a break between block-level split lines, so a regex across one fails — squash whitespace first."
+    }
+  },
+  {
+    "date": "2026-09-18",
+    "scope": "section",
+    "verb": "redesign",
+    "macrostructure": "left/right pair under a full-width type rule (locked system — no rotation)",
+    "theme": "locked: paper #efedea, four inks, NO accent, Nippo + Switzer",
+    "theme_axes": "light paper / squared-grotesk display / no accent",
+    "nav": "unchanged — corner marks, four edges",
+    "footer": "Ft-none → one-line colophon band (Colophon.tsx)",
+    "enrichment": "none — typography only",
+    "brief": "Homepage hero read as empty. Folded the Contact section up into it; masthead <h1> untouched.",
+    "diversification": "INVERTED. CLAUDE.md is this project design.md in all but filename, so consistency wins over rotation — no theme swap, no macrostructure rotation.",
+    "diagnosis": "Not short of content, short of balance: the fitted masthead ends on the right margin and the intro carried md:ml-auto, so both heavy objects finished against the same edge. Dead rectangle 810x228 lower-left at 1440x900, 1195x187 at 1920.",
+    "removed": "Contact.tsx — the band at the foot. Its colophon survives as Colophon.tsx.",
+    "verified": "preloader handover bit-identical (dTop/dLeft/dHeight all 0) at 320/768/1440/1920; no two-line clickable and no h-overflow at 10 widths; 13/13 masked rows arrive ~50ms apart; reduce 4 vs 76 positions; contrast 0 failures with control 0->1->0.",
+    "revision": {
+      "date": "2026-09-18",
+      "change": "Address removed from the opening (it was on the first screen twice); the six contact links became brand marks instead of words.",
+      "library": "Font Awesome 6 Brands via react-icons. Simple Icons lacks linkedin and codepen (both brands requested removal); Lucide brand icons are deprecated outlines and its `x` is the close cross, which would have drawn a dismiss button beside a link to x.com.",
+      "licence": "Font Awesome Free is CC BY 4.0 — attributed in the colophon. Tabler (react-icons/tb) is the MIT fallback covering the same six, outline rather than solid.",
+      "cost": "+6,851 bytes of client JS, measured before and after.",
+      "caught": "Tailwind `m-0` beside `.st-icon-row` beat the primitive’s negative margin — utilities are layered after components — and the row sat 7.5px inside the margin at every width."
+    },
+    "revision2": {
+      "date": "2026-09-18",
+      "change": "The two link groups ('code' and 'elsewhere') merged into one called 'social', and the hardcoded 'contact' heading went with them — the first group's label is the region heading now.",
+      "where": "Merged in the site-settings global, not flattened in the component: the grouping is content, and a view that disagreed with the admin would make the admin a lie.",
+      "open": "Vocabulary: the corner nav says 'contact' and the region it reaches is named 'social'. Honest that way round — the block holds no address — but one string in Corners.tsx if it should match."
+    },
+    "revision3": {
+      "date": "2026-09-18",
+      "change": "Dropped the CodePen link (CMS content), then dropped the corner nav's 'contact' mark.",
+      "why": "The mark stopped earning its place in two steps: contact moved into the opening, so it scrolled the reader back toward the top of the page they had just started on; then the address left the block for the corner above it, so what the mark reached was a row named 'social'. A mark that says one word and arrives somewhere named another is worse than no mark.",
+      "kept": "The #contact id stays on the block — nothing points at it, but it is a stable anchor for a link written elsewhere.",
+      "nav": "Three marks now: work, all work, about."
+    }
+  },
+  {
     "date": "2026-09-17",
     "macrostructure": "Index-First",
     "theme": "custom",

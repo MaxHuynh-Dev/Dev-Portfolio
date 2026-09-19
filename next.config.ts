@@ -17,6 +17,15 @@ const baseConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com'
+      },
+      // Uploads live on Cloudinary now and Payload hands out their URLs
+      // directly rather than proxying them, so next/image fetches from here.
+      // Scoped to this cloud's own path: a bare `res.cloudinary.com` would
+      // let the optimizer be pointed at any account on the service.
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/dk8vmvvj6/**'
       }
     ]
   }

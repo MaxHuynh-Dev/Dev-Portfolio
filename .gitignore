@@ -42,8 +42,9 @@ next-env.d.ts
 
 # payload
 /media
-# Uploads land here so Next serves them directly at /media/<file>.
-# They are the owner's own image files, restored by running `yarn seed`.
+# Was the upload directory while files lived on local disk. Nothing writes
+# here any more — uploads go to Cloudinary — but the ignore stays so an old
+# checkout cannot commit 10MB of stale copies.
 /public/media
 
 # Playwright MCP scratch output

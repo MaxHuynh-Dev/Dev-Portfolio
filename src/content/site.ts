@@ -107,7 +107,36 @@ export interface LinkColumn {
  */
 export interface SiteSettings {
   workRange: string;
-  aboutMeta: MetaColumn[];
   contactLinks: LinkColumn[];
   colophon: string;
+}
+
+/**
+ * A photograph of the person, or nothing.
+ *
+ * Nothing is a correct state and not a broken one: the page renders a
+ * labelled field at the same shape and its rhythm does not move. It is
+ * deliberately not filled with stock — a portrait is a claim about what
+ * someone looks like, which is the same rule that forbids inventing where
+ * they live or who they have worked for.
+ */
+export interface Portrait {
+  src: string;
+  alt: string;
+  size: Size | null;
+}
+
+/**
+ * The about page.
+ *
+ * `body` is an ARRAY of paragraphs rather than one string, because each
+ * paragraph is measured and masked line by line and `Lines` takes exactly
+ * one of them. The CMS holds it as a textarea split on blank lines, which
+ * keeps the editing plain and the type honest about what arrives.
+ */
+export interface About {
+  statement: string;
+  body: string[];
+  portrait: Portrait | null;
+  columns: MetaColumn[];
 }

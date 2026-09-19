@@ -2,8 +2,6 @@ import type React from 'react';
 
 import { getProfile, getProjects, getSiteSettings } from '@/content/source';
 
-import About from './About';
-import Contact from './Contact';
 import Open from './Open';
 import Work from './Work';
 
@@ -21,6 +19,12 @@ import Work from './Work';
  * client components and could not anyway. The reads are memoised per
  * request, so the corner marks asking for the profile in the layout and
  * this asking for it again is one query.
+ *
+ * **Two bands, and both of them are the work.** Contact moved into the
+ * opening (trap 38), About became a page (trap 39), and the colophon went
+ * with it — an account of how the site was built belongs beside the account
+ * of who built it, not under the list of projects. What is left is the name
+ * and the work, which is what an index is for.
  */
 export default async function Studio(): Promise<React.ReactElement> {
   const [profile, projects, settings] = await Promise.all([
@@ -31,10 +35,8 @@ export default async function Studio(): Promise<React.ReactElement> {
 
   return (
     <>
-      <Open profile={profile} />
+      <Open profile={profile} links={settings.contactLinks} />
       <Work projects={projects} workRange={settings.workRange} />
-      <About bio={profile.bio} meta={settings.aboutMeta} />
-      <Contact email={profile.email} links={settings.contactLinks} colophon={settings.colophon} />
     </>
   );
 }

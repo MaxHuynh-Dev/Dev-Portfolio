@@ -15,11 +15,24 @@ import type { Profile } from '@/content/site';
  */
 type Mark = { label: string; id: string } | { label: string; route: string };
 
+/**
+ * Three marks, not four.
+ *
+ * There was a `contact` mark, and it stopped earning its place in two
+ * steps. Contact moved up into the opening, so the link scrolled the
+ * reader back towards the top of the page they had just started on; then
+ * the address left the block entirely for the corner above, and what the
+ * link reached was a row of social marks named `social`. A mark that says
+ * one word and arrives somewhere named another is worse than no mark.
+ *
+ * The `#contact` id stays on that block. Nothing here points at it any
+ * more, but it is a stable anchor for a link written somewhere else, and
+ * an id costs nothing.
+ */
 const SECTIONS: Mark[] = [
   { label: 'work', id: 'work' },
   { label: 'all work', route: '/works' },
-  { label: 'about', id: 'about' },
-  { label: 'contact', id: 'contact' }
+  { label: 'about', route: '/about' }
 ];
 
 /**

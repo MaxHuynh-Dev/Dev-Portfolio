@@ -7,9 +7,13 @@ ink type and **no accent colour at all**. Emphasis is carried by size,
 weight and position; hover and focus by an underline. The only colour the
 site will ever have is the project imagery.
 
-Three kinds of page:
+Four kinds of page:
 
-- **`/`** — the index. Masthead, work list, about, contact. The work list
+- **`/`** — the index. Masthead **and contact**, and the work list. Nothing
+  else: the colophon went to `/about` with everything else about the person.
+  Contact is not a band at the foot any more: the address and the links sit
+  under the start of the masthead, on the first screen (trap 38). About is
+  not a band any more either — it is `/about` (trap 39). The work list
   is the way in: one row is live at a time and its cover, summary and
   position sit beside it at eye level, and the preview wipes from one
   project to the next rather than cutting (trap 30).
@@ -24,6 +28,11 @@ Three kinds of page:
   right, and the next project at the foot. The shots are shown at their
   own proportions — full width, height auto — and so are the thumbnails
   beside them.
+- **`/about`** — the person. A statement in display type that BREAKS into
+  its own measured lines, then the project page's grammar underneath it:
+  a narrow column of what he does, the prose in the middle, and a portrait
+  where the project page puts its rail. Reached from the corner marks as
+  `about`. See trap 39.
 
 ## Motion
 
@@ -121,14 +130,17 @@ where the curtain opened onto a still picture.
 
 The work list's names rise out of their own masks as the list is reached,
 38ms apart. That is not decoration: the corner marks off the index point at
-`/#work`, `/#about` and `/#contact`, not at `/`, so arriving from a project
+`/#work` and `/#about`, not at `/`, so arriving from a project
 page drops the reader **past** the masthead and its line — measured at
 scrollY 1078, with every revealing block above the viewport and nothing at
 all animating in view. The list was the one thing on screen and the one
 thing with no reveal on it.
 
-Further down the index, `About`'s paragraph, the address and the colophon
-rise as they are reached. All of this is a reversal of something recorded
+Nothing further down the index rises on `scroll` any more except the work
+list itself. **The address arrives with the opening**, on `load`, because that
+is where it lives (trap 38); About is a page of its own where everything
+arrives on `load`, and the colophon went with it (trap 39).
+All of this is a reversal of something recorded
 below as rejected, and the difference is the point: what was thrown out was
 the same fade-and-slide-up on all seven sections. What is here is a mask per
 *measured* line, on chosen pieces of type, in the idiom the site already
@@ -253,7 +265,8 @@ yarn build        # production build — run before claiming anything works
 yarn lint:fix     # biome check --write
 npx tsc --noEmit  # typecheck (strict)
 
-yarn seed                 # mock content into an EMPTY database (--reset to replace)
+yarn seed                 # mock content into an EMPTY database
+yarn seed:reset           # ...or replace what is there (SEED_RESET=1, NOT a flag)
 yarn generate:types       # src/payload/payload-types.ts, after any field change
 yarn generate:importmap   # app/(payload)/admin/importMap.js, after a config change
 ```
@@ -272,15 +285,18 @@ app/(payload)/             the admin, and Payload's REST + GraphQL routes.
 payload.config.ts          collections, globals, the Mongo adapter
 src/payload/collections/   Projects | Media | Users
 src/payload/globals/       Profile | SiteSettings
+src/payload/cloudinary.ts  the Cloudinary storage adapter. SERVER ONLY.
 src/payload/seed.ts        mock content for an empty database
 src/payload/payload-types.ts   GENERATED. Do not edit.
 src/content/site.ts        the SHAPES the site reads. Types only, no imports.
 src/content/source.ts      the only thing that talks to the CMS. SERVER ONLY.
 src/modules/Studio/
-  index.tsx        composes the four bands of the index
-  Open.tsx         the masthead
-  Work.tsx | About.tsx | Contact.tsx
+  index.tsx        composes the two bands of the index
+  Open.tsx         the masthead, AND contact — see trap 38
+  Work.tsx         the work list and its scrubbed preview
   Corners.tsx      the fixed chrome at the four edges
+src/modules/About/
+  index.tsx        /about — statement, prose, portrait, colophon
 src/modules/Library/
   index.tsx        /works — the ring, its geometry, and the view switch
   Readout.tsx      the rolling number / name / year above it
@@ -340,14 +356,14 @@ Payload config, the Mongo adapter and sharp, so it cannot be imported from
 for the profile, `Studio` for the whole index, the two pages for the rest.
 That is the same rule trap 5 already states for state.
 
-Imagery is uploaded through the admin and stored under `public/media`, so
-Next serves it directly at `/media/<file>` and an image never travels
-through a Payload route to reach the page. The originals in
-`public/images/work/` are kept as the seed's source, not as what the site
-reads. A `null` `src` is not a broken state: `Shot` renders a sized,
-labelled field, so the layout, the scroll length and the thumbnail rail are
-all correct before a single screenshot exists — a shot row with no image
-attached is exactly that.
+Imagery is uploaded through the admin and stored on **Cloudinary** (trap
+40). Payload hands out the real CDN URL rather than proxying bytes through
+`/api/media/file/*`, so a page fetches an image in one hop and nothing is
+written to the app's own filesystem. The originals in `public/images/work/`
+are kept as the seed's source, not as what the site reads. A `null` `src` is
+not a broken state: `Shot` renders a sized, labelled field, so the layout,
+the scroll length and the thumbnail rail are all correct before a single
+screenshot exists — a shot row with no image attached is exactly that.
 
 **`alt` lives on the Media document, not on a shot.** One file, one
 description. The shape it replaced let the same image be given two
@@ -585,7 +601,7 @@ underneath the panel.
 Running first costs it the one thing bubbling gave for free: it no longer
 knows what `useAnchorNav` decided. The `url.pathname === location.pathname`
 test is what keeps the curtain off the index's own `#work` / `#about` /
-`#contact` links now. On that path the event is left completely alone — no
+`#about` links now. On that path the event is left completely alone — no
 `preventDefault`, no `stopPropagation` — so the hook still gets it intact.
 
 **15. GSAP's `yPercent` composes with the transform it finds.**
@@ -1352,9 +1368,356 @@ anywhere in `src` or `app`.
   screen at `/admin` against an empty `users` collection, and that is where
   the password belongs. A credential invented by the script that seeds the
   database is not a credential.
-- **The seed refuses a database that already has content** unless `--reset`
-  is passed, and says what it found. A fixture that silently overwrites is
-  a fixture that eventually overwrites the real thing.
+- **The seed refuses a database that already has content** unless
+  `SEED_RESET=1` is set, and says what it found. A fixture that silently
+  overwrites is a fixture that eventually overwrites the real thing.
+
+  **An env var and not a flag, because `payload run` empties `process.argv`
+  entirely** — it strips the script path as well as everything after it, so
+  `process.argv.includes('--reset')` can never be true. This shipped as a
+  flag, and was written up here as the way out, without the way out ever
+  having been run: the refusal path was tested and the escape from it was
+  not. `yarn seed:reset` is the script that sets it.
+
+**38. An empty-looking hero was not short of content. It was short of
+balance.**
+The complaint was that the opening read as too empty, and the fix people
+reach for is more content. Measured first instead, at 1440x900: the fitted
+masthead runs edge to edge and ends on the RIGHT margin, and the intro under
+it carried `md:ml-auto` — so both of the screen's heavy objects finished
+against the same edge and the lower left was a dead rectangle **810x228**,
+and **1195x187** at 1920. Two objects, one edge.
+
+So contact came up out of the foot of the page and took that quarter. The
+register below the masthead is a left/right pair now, which is the grammar
+the rest of the site already speaks — the corner marks are a left/right pair
+at every edge of the viewport. The address anchors under the START of the
+name and the intro stays under its END, where the eye already finishes.
+
+- **The `<h1>` is a DIRECT CHILD of the section and has to stay one.**
+  `useFittedText` solves against its container's content box (trap 8), so a
+  wrapper between the two would hand the fit a width that is not the
+  column's. Everything added is a sibling. Verified: `--fit-size` is 247px
+  at 1440 before and after, and the preloader's handover is **bit-identical**
+  — `dTop` 0, `dLeft` 0, `dHeight` 0 at 320, 768, 1440 and 1920, with
+  `h1.innerHTML` still exactly `Max Huynh` on the load path. The heading's
+  screen POSITION moved (270 → 206 at 1440, because more content below it
+  changes where `justify-center` puts it) and that costs nothing: the stage
+  re-reads the heading every frame rather than once, so the landing is true
+  by construction (trap 10).
+- **`getClientRects()` counts line boxes on an INLINE element and not on a
+  BLOCK one**, and the a11y sweep for two-line clickables was built on the
+  inline case. `.st-line-body` is `display: block`, so the address returned
+  ONE rect covering both of its lines and the sweep reported a clean zero at
+  every width. It was wrapping at 320. A `Range` over the element's own text
+  node reports one rect per line box either way — that is the measurement,
+  and it found the wrap immediately. **The old foot-of-page Contact wrapped
+  there too** (1.9rem, 398px of ink in a 270px column), so this was an
+  inherited bug that a wrong probe had been hiding, not a new one.
+- **The clamp floor on the address is set by the narrowest column it has to
+  survive, not by taste.** An address is one word to a line-breaker: it fits
+  or it becomes a two-line link. At 320 the column is 270.5px and the string
+  measured 272.2px at 1.3rem — short by **1.7px**. 1.15rem measures 240.8px,
+  leaving 29.7px. Re-read that if the address ever gets longer; it is the
+  same fragility the masthead has, and for the same reason.
+- **The address is NOT repeated here** — it lives in the corner mark and
+  nowhere else on the screen. The first build of this put it in both, argued
+  that the corner was chrome and the opening was content, and the owner read
+  it as what it was: the same address twice, 400px apart. What the opening
+  carries instead is the set of places the work lives, which the corner does
+  not carry at all.
+- **The contact links are brand marks, and the set forced the library.**
+  Simple Icons is the better source in principle — the brands' own artwork,
+  one solid path each — and it has github, facebook, instagram and x. It has
+  neither **linkedin nor codepen**: both brands asked to be removed from it.
+  Four marks and two words is not a row. Lucide is already a dependency and
+  has something under all six names, which is the trap: its brand icons are
+  deprecated outline glyphs, its `twitter` is still the bird, and its **`x`
+  is the close cross** — it would have drawn a dismiss button beside a link
+  to x.com. Font Awesome 6 Brands, via `react-icons`, carries all six in one
+  weight including the real X. The glyph-only variants are used where a
+  brand ships both (`FaLinkedinIn`, `FaFacebookF`), because the other four
+  are bare glyphs and a boxed mark beside them reads as a different size.
+  Tree-shaking was measured, not assumed: **+6,851 bytes** of client JS for
+  the six, not the whole pack.
+- **Font Awesome Free is CC BY 4.0, so the colophon names it.** The MIT
+  wrapper is `react-icons`; the artwork is not MIT. The attribution is a
+  clause in the colophon rather than a line of chrome, because the colophon
+  is the one thing on this site that exists to say what the page is made of.
+  Tabler's brand marks (same package, `react-icons/tb`) are MIT and cover
+  the same six if that clause ever has to go — they are outline rather than
+  solid, which is the trade.
+- **An unknown label gets no mark, and falls back to its own text.** The
+  links come from the CMS, where anyone can add a row called anything. A map
+  that guessed would render a link with nothing in it.
+- **One group, and the merge happened in the CMS rather than in the view.**
+  The links were two columns, `code` and `elsewhere`, and that split earned
+  its place while they were words in two lists. As six marks in one row the
+  labels outnumbered what they named: a hardcoded `contact` heading over a
+  group called `social`, one line apart, naming the same six links twice.
+  They are one column called `social` now — merged in `site-settings`, not
+  flattened in the component, because the grouping is content and a view
+  that disagreed with the admin would make the admin a lie.
+- **The first group's label IS the region's heading.** There is no separate
+  hardcoded word any more: `links[0].label` renders as the `<h2>` that
+  `aria-labelledby` points at, and a second group would render under it with
+  a `<p>` of its own. `#contact` is still on the section, so a link written
+  elsewhere still lands here.
+
+  **The corner nav lost its `contact` mark**, and the vocabulary is the
+  reason. It stopped earning its place in two steps: contact moved up into
+  the opening, so the link scrolled the reader back toward the top of the
+  page they had just started on; then the address left the block for the
+  corner above it, and what the mark reached was a row of social links
+  named `social`. A mark that says one word and arrives somewhere named
+  another is worse than no mark. Three marks now — `work`, `all work`,
+  `about`. The id stays on the block: nothing points at it, but it is a
+  stable anchor for a link written elsewhere, and an id costs nothing.
+- **Hover and focus on an icon are carried by ink, not by an underline.**
+  The site's rule is an underline, and an underline under a 24px glyph reads
+  as a stray rule. `--ink-2` to `--ink` on the same `--t-quick` is the same
+  idea in the same palette — no new colour, no new duration. Resting 5.05:1,
+  past the 3:1 WCAG asks of a graphic that carries meaning, which this one
+  does because it is the link's only visible content.
+- **The mark's box is bigger than the mark.** 2.25rem against 1.25rem keeps
+  every target past the 24px minimum at every width the fluid root resolves
+  to — measured 33.8px at 320 and 40.3px at 1920 — and the row is pulled
+  back by exactly that padding so the first mark's ink still starts on the
+  column's left edge. Verified at 0.00px against the label above it, at five
+  widths.
+- **`.st-icon-row` must not be given Tailwind's `m-0`, and that is trap 1
+  read backwards.** Both rules are layered; utilities come after components,
+  so the utility wins. The first version shipped with `m-0` beside the
+  primitive and the row sat **7.5px inside the margin at every width** — the
+  pull-back was in the stylesheet, computing correctly, and losing.
+- **The intro is first in the DOM and second on screen.** The two can
+  disagree here at no cost because a paragraph holds no focus: every tab stop
+  on the screen is inside the contact block and they are in order. What the
+  DOM order buys is the reading sequence — name, what the work is, how to
+  reach him.
+- **The colophon did not come up with contact.** It is not contact; it is an
+  account of how the page was made, and that belongs at the end of a
+  document. It is its own quiet band now, in `Colophon.tsx`.
+
+Verified at 320 / 375 / 414 / 600 / 768 / 900 / 1024 / 1280 / 1440 / 1920:
+no clickable on two lines, no horizontal overflow, and the opening is
+exactly one viewport tall at every one of them — the tightest clearance
+between the content and the fixed bottom marks is **37.4px at 320x568**, the
+same viewport that is already the site's known floor. 13 masked rows in the
+opening, **all 13** moving, first at +57ms after the panel clears and last at
+882ms, ~50ms apart against the 52ms step. Under `reduce`, **4** distinct
+positions per row against **76** with ordinary motion. Contrast sweep over
+the opening: zero failures at 320, with the control confirming the sweep can
+still fail (0 → 1 → 0).
+
+Re-verified after the marks replaced the words and the two groups became
+one: six links, whose accessible names are still GitHub, CodePen, LinkedIn,
+Facebook, X and Instagram, in that tab order; **one** visible label at every
+width and all six marks on **one line**, including 320; the first mark's ink
+on the label's own left edge to **0.00px** at five widths; **10** masked rows
+all moving, the first at +57ms and the last at 724ms; and under
+`prefers-reduced-motion` **4** distinct positions per row against 76 with
+ordinary motion. Icon rest colour 5.05:1, hover and focus 16.09:1, focus ring
+2px at 3px offset from the global rule. The `#contact` mark still lands: it
+scrolls 417px, stops 16.1px clear of the chrome, moves focus to the region,
+and leaves the masthead in view.
+
+**39. A band can be quiet. A page cannot.**
+About was the quietest thing on the index — one paragraph and two short
+lists — and it could afford to be, because the work list above it was doing
+the talking. Lifted out to `/about` it had to carry itself, and one
+paragraph does not.
+
+- **The grammar is the project page's, on purpose.** A narrow column of
+  metadata, the content, and a narrow column of picture is exactly what
+  `/work/<slug>` already sets up. Reusing it is what makes `/about` read as
+  another page of this site rather than a second template; what changes is
+  what fills the three columns — prose instead of shots, a portrait instead
+  of a rail of thumbnails. The first build had only TWO columns and left
+  roughly **600px of the right third empty at 1440**, which is the same
+  fault the opening had before contact came up into it (trap 38).
+- **`.st-statement` masks display type that BREAKS.** `.st-mast` masks one
+  fitted line that never wraps; a sentence wraps, and `Lines` is the only
+  thing here that knows where. So the geometry is `.st-mast`'s — clip pushed
+  out with padding, space taken straight back with a negative margin — but
+  applied by DESCENDING into `.st-line`, because `Lines` writes that class
+  itself and a call site cannot add to it.
+
+  **The parked pose has to out-specify the released one.** `.st-statement
+  .st-line-body` and `[data-in="true"] .st-line-body` are both two
+  class-level selectors, and the later of two equals wins — park it after
+  the release rule and the type never arrives. `.st-statement[data-in]` is
+  three, which settles it. Verified: real ink headroom inside every line
+  box is positive at every width, tightest **4.9px at 320**, 15.4px at 1920.
+- **`.st-wash` on a bare `<div>` is permanent invisibility, not a fade.**
+  The class is `opacity: 0` until something sets `data-in` on it, and only
+  `Reveal` does. It shipped here for a few minutes as a plain div and the
+  portrait field simply never painted — while every measurement of it (rect,
+  size, label text) came back correct, because the element was there and
+  laid out. **If an element measures right and cannot be seen, check what is
+  supposed to be turning it on.**
+- **The statement IS the `<h1>`; it is not wrapped in one.** `Lines` takes
+  an `as` prop and it grew an `'h1'` option for this. Wrapping put a `<p>`
+  inside an `<h1>` — `h1` takes phrasing content and `p` is flow content —
+  which every browser keeps, which produces the right accessible name, and
+  which is invalid all the same. It shipped that way until an independent
+  pass read the SSR output rather than the rendered page.
+- **`.st-statement .st-line` needs `pointer-events: none`, for the reason
+  `.st-mast` does.** At this size the extended clip is taller than the gap
+  between lines: measured at 1440, a **104.93px clip around a 72.65px line
+  box**, so each mask overlaps its neighbour by **16.14px** and the later of
+  two would take the hits for both. It cost nothing while the only thing
+  under the last line's overhang was `<main>`; it costs the moment anything
+  clickable is set below the statement. The line takes its own hits back
+  with `pointer-events: auto`, so the type stays selectable.
+- **Any change of viewport width replays every reveal on the page.** A
+  `Lines` re-split sets the block back to plain, which parks it, which makes
+  it rise again (trap 32). Measured deliberately: resizing 1440 → 1100 at
+  rest re-parks **17 of 27** masked bodies, flips `data-in` true → false →
+  true within 8ms, and leaves something parked across **176 frames, 16ms to
+  1474ms**, before settling correctly. It is not new and it is not wrong —
+  it is what re-measuring costs — but `/about` is where it shows most,
+  because every reveal there is `on="load"` and above the fold.
+
+  **Which is why a `fullPage` screenshot of this site is not evidence.**
+  Playwright's full-page capture changes the viewport to stitch the image,
+  so it photographs a page mid-reset with paragraphs missing. That happened
+  here and read exactly like a bug. **Photograph this site at a fixed
+  viewport and scroll it yourself.**
+- **`innerText` inserts a line break between block-level split lines, and a
+  regex across one will fail.** Testing the colophon for its Font Awesome
+  attribution at 320 returned false, because the split put "Brand marks are
+  Font " and "Awesome Free, CC BY 4.0." in separate blocks. The text is
+  intact — each line keeps its own trailing space, so a screen reader reads
+  it correctly (trap 23) — and `textContent` with whitespace squashed finds
+  it at every width. **Squash whitespace before matching any string that
+  `Lines` has been through.**
+
+**What the genre actually does**, from reading seven well-regarded personal
+and studio about pages rather than guessing:
+
+- **The portrait is never a hero.** Not one of the seven opened on a
+  full-bleed face. Where a portrait exists it is inline punctuation (a 129px
+  square), a column beside the heading (324x486), or a background image in a
+  column (586x830). **Three of the seven have no portrait at all and lose
+  nothing** — which is what makes shipping this page with a labelled field
+  a real state rather than a gap waiting to be filled.
+- **Scale splits cleanly.** Largest type over body text runs **2.3–3.1x on
+  pages that read as a person** and 5–10x on pages that read as a sales
+  deck. This page is **3.75x** (81px over 21.6px at 1440), deliberately at
+  the top of that band rather than inside it: this site's own masthead is
+  11.4x, so a statement at a third of the masthead is the restrained choice
+  here even though it is the loud one elsewhere.
+- **Length correlated INVERSELY with how much a page read as a person.** The
+  14-screen one was a sales page whose about URL redirected to the homepage;
+  the four-screen one said more. This page is 1.2 screens with placeholder
+  prose and will grow when the prose is real. It should not grow by adding
+  sections.
+- **Every anti-pattern the sample threw up is already banned here**, which
+  was worth confirming rather than assuming: award badge rows, round-number
+  combined-experience claims, `01/02/03` over things that are not a
+  sequence, team headshots, a small tracked label above every section, and
+  partial monospace. **Not one of the seven had a metrics row.**
+
+**There is deliberately no closing call to action**, and that is a stated
+deviation rather than an oversight: the genre's commonest shape closes on an
+invitation set at the opening's size, and this site puts the address in the
+corner mark on every page. A second copy at the foot of `/about` is the same
+mistake the opening made with the email and had to have taken back out.
+
+**The two images in `public/images` are template stock and neither may be
+used here.** One is an AI-generated office interior; the other is a
+photograph of a stranger. Dropping either in would be a claim about what the
+owner looks like, which is the same rule that forbids inventing where he
+lives or who he has worked for.
+
+**The colophon is at the foot of this page, and it landed here by being
+redundant somewhere else.** It was a band under the index's work list, where
+an account of the typefaces reads as something left over from a longer page.
+Beside an account of who built the site it reads as the end of that account.
+
+**It cannot simply be deleted, and that is worth knowing before someone
+tries.** The Font Awesome attribution lives in it, and Font Awesome Free is
+CC BY 4.0 — the marks in the opening's contact row are why. Deleting the
+colophon means moving the attribution somewhere it still ships to a reader,
+or switching the marks to Tabler (`react-icons/tb`, MIT, same six brands,
+outline rather than solid), which is a one-line change to the map in
+`SocialIcon.tsx`.
+
+Verified independently at 320 / 375 / 414 / 768 / 1024 / 1440 / 1920: no
+horizontal overflow and nothing past the viewport edge; **no clickable on
+two line boxes** (counted with a Range, not `getClientRects().length`); the
+statement's real ink has positive headroom in every line box at every width,
+tightest **4.95px at 320**; **0 of 27** masked bodies left parked and the
+wash at opacity 1; **0** contrast failures with the control confirming the
+sweep can still fail (forcing the label to `--ink-3` gave exactly 1 at
+3.88:1, restoring gave 0); and **0** of the eight banned pattern classes
+anywhere in `#content`.
+
+On the route path, 642 sampled frames: **22 of 23 masked items travel**, up
+to 151 distinct transforms each, and the twenty-third is `.st-wash`, which
+is an opacity fade with no transform and moves through 92 distinct
+opacities. Median frame 8ms, **zero frames over 20ms**. Under `reduce`, at
+most **4** distinct positions per element against 151 — it arrives, it does
+not travel.
+
+The clip was also checked by photograph rather than by arithmetic: the
+`<h1>` rendered as shipped and again with `overflow: visible` forced on the
+line masks is **byte-identical at all seven widths**, and a pixel scan finds
+no ink touching the top or bottom edge of the heading box. (Deriving the
+baseline from canvas `fontBoundingBoxAscent` instead reports −3.3 to −9.05px
+— that model is wrong against a `line-height: 0.9` box, which is trap 36's
+lesson arriving a second time.)
+
+**40. Uploads live on Cloudinary, and the app's filesystem is not a place
+to put them.**
+They were under `public/media`, which worked and could not deploy: a
+serverless filesystem is thrown away at the end of the request, so every
+image uploaded in production would have been gone before anyone asked for
+it. The four seeded files were only ever there because the seed puts them
+there on the way past.
+
+- **The adapter is hand-written, and the alternatives were checked first.**
+  Payload ships first-party adapters for S3, Vercel Blob, Azure, GCS and
+  UploadThing, and none for Cloudinary. The community `payload-cloudinary`
+  package is **Payload 2 only** — its peer range is `^2.0.0`, so it cannot
+  load here at all. `@payloadcms/plugin-cloud-storage` is the supported
+  extension point; `src/payload/cloudinary.ts` implements its `Adapter`
+  contract against the official SDK.
+- **The URL is STORED, not reconstructed.** The obvious implementation
+  rebuilds the URL from a public id on every read, and it breaks the moment
+  Cloudinary normalises a format: upload `a.jpeg`, it stores `a.jpg`, and a
+  reconstructed `.jpeg` URL 404s. `handleUpload` writes the `secure_url`
+  Cloudinary actually returned onto the document — version segment and all —
+  and `generateURL` hands it straight back. The public id is stored beside
+  it because a delete has to address the exact object.
+- **`src/content/source.ts` reads that URL and derives nothing.** `pathOf`
+  used to build `/media/<filename>`, which was right while the files were on
+  disk and is exactly the second guess that a change of storage invalidates.
+- **`disablePayloadAccessControl` is what makes it one hop.** Without it,
+  every image would be proxied through `/api/media/file/*` — a Node process
+  in front of a CDN. With it, `doc.url` is the Cloudinary address, which is
+  why `next.config.ts` has to name `res.cloudinary.com` as a remote pattern.
+  That pattern is **scoped to this cloud's own path**: a bare hostname would
+  let the image optimizer be pointed at any account on the service.
+- **`sharp` still runs first, so trap 27 is untouched.** Payload reads width
+  and height off the buffer before the storage adapter sees it, so a shot is
+  still laid out at its own proportions before a byte is fetched. Verified
+  across the move: `/work/soluis` renders at **1.7483 and 1.7442**, the same
+  two numbers trap 27 recorded when the files were local, from intrinsics of
+  3012x1722 and 3017x1731.
+- **One secret, in `CLOUDINARY_URL`.** The SDK reads that variable by itself
+  and derives the cloud name, key and secret from it. The loose
+  `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` pair that was in `.env`
+  alongside it is gone: two copies of one secret in one file is a drift
+  waiting to happen, and the SDK was only reading one of them anyway.
+
+Verified after the move: all four media documents carry full Cloudinary URLs
+with their version segments, the index's covers and both project shots fetch
+through `/_next/image` from `res.cloudinary.com`, every image decodes, and
+there are **zero failed requests**. Nothing new was written to
+`public/media` — the directory held only the four files from the previous
+local run, dated hours earlier, and has been deleted.
 
 ## Accessibility invariants
 
@@ -1378,12 +1741,21 @@ value, confirm the count goes 0 → 1, then restore it.
 
 **Two measurement traps, both of which produced wrong answers here:**
 
-- **Counting `getClientRects()` to detect a two-line clickable is wrong.**
-  A single-line inline element returns one rect *per text node*, so
-  `{first} {last}` in JSX yields three rects on one line and every run
-  flagged the masthead link. Count **distinct rounded `y` values** instead.
-  (The version before that compared height to line-height, which counted
-  padding as a second line. Both were false positives at every width.)
+- **Counting `getClientRects()` to detect a two-line clickable is wrong, in
+  BOTH directions.** On an inline element it over-counts: a single-line
+  inline returns one rect *per text node*, so `{first} {last}` in JSX yields
+  three rects on one line and every run flagged the masthead link. Counting
+  **distinct rounded `y` values** fixes that — and then silently under-counts
+  on a BLOCK element, which returns exactly one rect however many lines it
+  holds. `.st-line-body` is `display: block`, so that probe reported a clean
+  zero while the address was wrapping at 320 (trap 38).
+
+  **The measurement that works on both is a `Range` over the element's own
+  text node**, which reports one rect per line box either way (and touch
+  `el.getBoundingClientRect()` first, per trap 18). The version before all of
+  these compared height to line-height, which counted padding as a second
+  line. Two probes, two opposite failures, and the second one is the
+  dangerous kind: it fails quiet.
 - Do not filter screenshot pixels by luminance to find a backdrop. Text
   antialiasing covers every intermediate value, so "the brightest mid-tone"
   is a letter edge and the number comes back identical everywhere.

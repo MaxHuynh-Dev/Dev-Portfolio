@@ -11,8 +11,8 @@ const imageDir = path.resolve(dirname, '../../public/images/work');
  * Mock content for a fresh database.
  *
  * What it is NOT: a fixture that runs on every boot. It refuses to touch a
- * database that already has projects or media in it unless `--reset` is
- * passed, and says what it found instead. A seed that silently overwrites
+ * database that already has projects or media in it unless `SEED_RESET=1`
+ * is set, and says what it found instead. A seed that silently overwrites
  * is a seed that eventually overwrites the real thing.
  *
  * It also creates no user. Payload serves its own create-first-user screen
@@ -171,23 +171,43 @@ const PROFILE = {
   bio: 'Replace this with a short paragraph about how you work, who you work with, and what you are open to.'
 };
 
-const SITE_SETTINGS = {
-  workRange: '2022 — 2026',
-  aboutMeta: [
+/**
+ * The about page.
+ *
+ * Instructions, not claims. Every line below says what to put there and
+ * none of it says anything about the owner — an about page is the one place
+ * where inventing a biography is easiest and worst, so the placeholder
+ * refuses to start one. Three paragraphs because the page is composed for
+ * three; write fewer and it still reads, write more and it still reads.
+ */
+const ABOUT = {
+  // SHORT. It is set at display size and breaks into its own lines, so a
+  // paragraph of instructions here renders as a wall of 80px type — six
+  // lines at 1440, measured. The long version of this guidance lives in the
+  // field's description in the admin, which is where an editor reads it.
+  statement: 'Replace this with one sentence on what you do.',
+  body: [
+    'Replace this with how you work: what you are good at, what you reach for first, and what you will not do. Two or three sentences is plenty.',
+    'Then the people and the projects — who you build for, what kind of brief suits you, and what working with you actually looks like from the other side.',
+    'And what you are open to now: the kind of work you want next, and how someone should start the conversation.'
+  ].join('\n\n'),
+  columns: [
     { label: 'services', items: ['Front-end build', 'Motion', 'Design systems'] },
     { label: 'stack', items: ['React / Next', 'TypeScript', 'GSAP'] }
-  ],
+  ]
+};
+
+const SITE_SETTINGS = {
+  workRange: '2022 — 2026',
+  // ONE column. It was two — 'code' and 'elsewhere' — and that split earned
+  // its place while these were words in two lists. As marks in one row the
+  // labels outnumbered the groups they named, so the grouping went and the
+  // row kept the order the two lists had run in.
   contactLinks: [
     {
-      label: 'code',
+      label: 'social',
       links: [
         { label: 'GitHub', href: 'https://github.com/MaxHuynh-Dev' },
-        { label: 'CodePen', href: 'https://codepen.io' }
-      ]
-    },
-    {
-      label: 'elsewhere',
-      links: [
         { label: 'LinkedIn', href: 'https://www.linkedin.com/in/maxhuynh-dev' },
         { label: 'Facebook', href: 'https://www.facebook.com/maxhuynh1204/' },
         { label: 'X', href: 'https://x.com/LeeDev0805' },
@@ -198,11 +218,17 @@ const SITE_SETTINGS = {
   colophon:
     'Set in Nippo and Switzer, self-hosted. Built with Next.js 16 and React 19, ' +
     'scroll smoothed by Lenis, motion by GSAP. The name in the masthead is measured ' +
-    'and fitted to its column at run time rather than sized by a fixed scale.'
+    'and fitted to its column at run time rather than sized by a fixed scale. ' +
+    'Brand marks are Font Awesome Free, CC BY 4.0.'
 };
 
 async function seed(): Promise<void> {
-  const reset = process.argv.includes('--reset');
+  // An ENV VAR and not a flag, because `payload run` empties process.argv
+  // completely — it strips the script path as well as everything after it,
+  // so an argv check here can never be true. This shipped as `--reset` and
+  // the escape hatch simply did not exist: the refusal path was tested, the
+  // way out of it was not.
+  const reset = process.env.SEED_RESET === '1';
   const payload = await getPayload({ config });
 
   const [existingProjects, existingMedia] = await Promise.all([
@@ -212,13 +238,13 @@ async function seed(): Promise<void> {
 
   if ((existingProjects.totalDocs > 0 || existingMedia.totalDocs > 0) && !reset) {
     payload.logger.error(
-      `Refusing to seed: the database already holds ${existingProjects.totalDocs} project(s) and ${existingMedia.totalDocs} media item(s). Re-run with --reset to replace them.`
+      `Refusing to seed: the database already holds ${existingProjects.totalDocs} project(s) and ${existingMedia.totalDocs} media item(s). Re-run with SEED_RESET=1 to replace them.`
     );
     process.exit(1);
   }
 
   if (reset) {
-    payload.logger.info('--reset: clearing projects and media.');
+    payload.logger.info('SEED_RESET=1: clearing projects and media.');
     await payload.delete({ collection: 'projects', where: { id: { exists: true } } });
     await payload.delete({ collection: 'media', where: { id: { exists: true } } });
   }
@@ -262,8 +288,9 @@ async function seed(): Promise<void> {
   }
 
   await payload.updateGlobal({ slug: 'profile', data: PROFILE });
+  await payload.updateGlobal({ slug: 'about', data: ABOUT });
   await payload.updateGlobal({ slug: 'site-settings', data: SITE_SETTINGS });
-  payload.logger.info('globals: profile, site-settings');
+  payload.logger.info('globals: profile, about, site-settings');
 
   payload.logger.info(
     `Seeded ${PROJECTS.length} projects and ${Object.keys(MEDIA).length} images. Open /admin to create the first user.`

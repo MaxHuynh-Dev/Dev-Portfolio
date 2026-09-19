@@ -243,6 +243,57 @@ body {
     text-decoration-color: var(--ink);
   }
 
+  /* A link that is a brand mark instead of a word — the contact row under
+     the opening.
+
+     This site carries hover and focus on an underline, and an underline
+     drawn under a 24px glyph reads as a stray rule rather than an
+     affordance. So the same idea is carried in the same palette instead:
+     the mark itself goes from --ink-2 to --ink, on the same --t-quick this
+     file gives every other hover. No new colour, and no new duration.
+
+     The resting --ink-2 is 5.05:1 against paper, past the 3:1 WCAG asks of
+     a graphic that carries meaning — which this one does, because it IS the
+     link's only visible content.
+
+     The BOX is deliberately bigger than the mark. 2.25rem against a 1.25rem
+     mark leaves 0.5rem of padding all round, which keeps every target past
+     the 24px minimum at every width the fluid root resolves to (33.75px at
+     320, 47px at 1920). The row is pulled back by exactly that padding so
+     the first mark still starts on the column's left edge rather than
+     hanging half a pad inside it. */
+  .st-icon-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    color: var(--ink-2);
+    transition: color var(--t-quick) ease;
+  }
+
+  .st-icon-link:hover,
+  .st-icon-link:focus-visible {
+    color: var(--ink);
+  }
+
+  .st-icon-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0;
+    /* The box's own padding, given back, so the first mark's ink lines up
+       with the label above it and with everything else in the column.
+
+       The call site must NOT also carry Tailwind's `m-0`. Both rules are
+       layered, utilities come after components, and the utility wins — the
+       first version of this shipped with `m-0` beside it and the row sat
+       7.5px inside the margin at every width. That is trap 1 read the other
+       way round: there the danger is an unlayered rule beating a utility,
+       here it is a utility quietly beating the primitive. */
+    margin-inline-start: -0.5rem;
+  }
+
   .st-fade {
     animation: st-fade 0.9s ease both;
   }
@@ -462,6 +513,51 @@ body {
   }
 
   [data-in="true"] .st-mast-line {
+    transform: none;
+  }
+
+  /* Display type that BREAKS — the statement at the head of /about.
+     `.st-mast` masks one fitted line that never wraps; this masks a
+     sentence, which wraps into as many lines as the column gives it, and
+     `Lines` is the only thing here that knows where those breaks fall.
+
+     It reaches the per-line mask by descending into it, because `Lines`
+     writes `.st-line` itself and the call site cannot add to that class.
+     The geometry is `.st-mast`'s and for the same reason: .st-display sets
+     line-height 0.9, tighter than Nippo's ascent plus descent, so the clip
+     is pushed past the glyphs with padding and the space taken straight
+     back with a negative margin of the same size. Nothing below the
+     paragraph moves.
+
+     The parked pose has to be MORE specific than the released one or it
+     would win in both states — both are two class-level selectors, and the
+     later of two equals wins. `.st-statement[data-in]` is three, so the
+     released rule stays on top. `data-in` sits on this element: `Lines`
+     puts the class and the attribute on the same node. */
+  .st-statement .st-line {
+    padding-block: 0.2em;
+    margin-block: -0.2em;
+    padding-inline: 0.12em;
+    margin-inline: -0.12em;
+    /* The padding is real box, and at this size it is bigger than the gap
+       between lines: measured at 1440, a 104.93px clip around a 72.65px
+       line box, so each mask OVERLAPS its neighbour by 16.14px. Whichever
+       is later in the DOM would take the hits for both.
+
+       `.st-mast` sets this for exactly the same geometry (trap 29). It was
+       missing here and cost nothing yet, because the only thing under the
+       last line's overhang is <main>; it would cost the moment anything
+       clickable is set below the statement. The line takes its own hits
+       back, so the type is still selectable. */
+    pointer-events: none;
+  }
+
+  .st-statement .st-line-body {
+    pointer-events: auto;
+    transform: translateY(145%);
+  }
+
+  .st-statement[data-in="true"] .st-line-body {
     transform: none;
   }
 

@@ -1,22 +1,14 @@
 {
-  "date": "2026-09-17",
-  "fonts": "Schibsted Grotesk + JetBrains Mono (next/font, src/constants/fonts.ts:1)",
-  "palette": "60 custom properties in :root (src/styles/global.css) — converted hex -> OKLCH by this run",
-  "motion": "gsap 3.13 + @gsap/react + lenis 1.3 + framer-motion 12 (motion-on)",
+  "date": "2026-09-18",
+  "note": "Refreshed. The cached scan was from 2026-09-17 and had gone stale on every line: it named Schibsted Grotesk + JetBrains Mono, and the \"studies\" section it assumed no longer exists.",
+  "design_system": "CLAUDE.md — this project locked system in all but filename. It overrides the catalog.",
+  "fonts": "Nippo (display) + Switzer (text), self-hosted via next/font/local (src/constants/fonts.ts). NO monospace, deliberately.",
+  "palette": "hex custom properties in :root (src/styles/global.css): --paper #efedea, --ink, --ink-2, --ink-3, --edge, --well. NO accent colour at all.",
+  "motion": "gsap 3.13 + @gsap/react + lenis 1.3 + framer-motion 12 (motion-on). Five sources, each with its own reduced-motion answer.",
   "spacing": "--gut token + Tailwind arbitrary clamps; no --space-* scale",
-  "framework": "Next.js 16.3.5 app router, React 19.2.8",
-  "routes": 1,
-  "preserved": [
-    "font stack",
-    "GSAP/Lenis motion stack",
-    "section IA",
-    "brand palette (hue-preserved)"
-  ],
-  "introduced": [
-    "Index-First macrostructure",
-    "N8 nav",
-    "Ft4 colophon",
-    "OKLCH tokens",
-    "tokens.css"
-  ]
+  "framework": "Next.js 16.3.5 app router, React 19.2.8, Tailwind v4, Biome",
+  "cms": "Payload 3.90 on MongoDB Atlas; src/content/source.ts is the only reader",
+  "routes": 3,
+  "preserved": ["everything — this is a locked system"],
+  "introduced": ["nothing new; the hero was recomposed inside it"]
 }

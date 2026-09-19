@@ -301,7 +301,7 @@ export default function PageTransition(): React.ReactElement {
       // Off-site, and mailto: / tel: — not ours to animate.
       if (url.origin !== window.location.origin) return;
       // Same page — and this is now the ONLY thing keeping the curtain off
-      // the index's own #work / #about / #contact links, since running in
+      // the index's own #work / #about links, since running in
       // capture means useAnchorNav has not had its say yet. Leave the event
       // completely alone here: no preventDefault, no stopPropagation, so it
       // reaches that hook untouched.

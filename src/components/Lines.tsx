@@ -57,7 +57,15 @@ interface Props {
   on?: Trigger;
   /** Held before the first line, in ms. */
   delay?: number;
-  as?: 'p' | 'h2' | 'div';
+  /**
+   * The element the split is written into.
+   *
+   * 'h1' is here because the statement on /about IS the page heading, and
+   * wrapping this in one instead produced a <p> inside an <h1> — h1 takes
+   * phrasing content and p is flow content, so the nesting was invalid even
+   * though every browser kept it and the accessible name came out right.
+   */
+  as?: 'h1' | 'h2' | 'p' | 'div';
 }
 
 interface Line {

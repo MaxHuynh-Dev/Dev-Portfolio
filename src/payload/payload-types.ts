@@ -91,10 +91,12 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     profile: Profile;
+    about: About;
     'site-settings': SiteSetting;
   };
   globalsSelect: {
     profile: ProfileSelect<false> | ProfileSelect<true>;
+    about: AboutSelect<false> | AboutSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
   };
   locale: null;
@@ -191,6 +193,9 @@ export interface Media {
    * What the image actually shows — not "screenshot of the homepage". This is the only description a screen reader gets.
    */
   alt: string;
+  cloudinaryURL?: string | null;
+  cloudinaryPublicId?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -341,6 +346,9 @@ export interface ProjectsSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  cloudinaryURL?: T;
+  cloudinaryPublicId?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -451,6 +459,42 @@ export interface Profile {
   createdAt?: string | null;
 }
 /**
+ * The /about page. Everything on it, in the order it is read.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about".
+ */
+export interface About {
+  id: string;
+  /**
+   * The largest line on the page, and the first thing read. One sentence — it is set at display size and a paragraph will not fit.
+   */
+  statement: string;
+  /**
+   * The prose. Separate paragraphs with a BLANK LINE — each one is measured and masked line by line, so plain text only.
+   */
+  body: string;
+  /**
+   * Optional, and empty is a correct state rather than a broken one — the page renders a labelled field and its rhythm is unchanged. Only ever your own photograph: a stock portrait is a claim about what you look like.
+   */
+  portrait?: (string | null) | Media;
+  /**
+   * The short lists beside the prose — what you do, what you work with. This is where an awards list would go, and does not: add a column only for something that is true.
+   */
+  columns?:
+    | {
+        /**
+         * Lowercase — the site sets no all-caps labels.
+         */
+        label: string;
+        items: string[];
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * The work range, the About and Contact columns, and the colophon.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -462,19 +506,6 @@ export interface SiteSetting {
    * Shown beside the work list and in the /works description — e.g. 2022 — 2026.
    */
   workRange: string;
-  /**
-   * The short lists beside the bio. Add a column only for something that is true — this is where an awards list would go, and does not.
-   */
-  aboutMeta?:
-    | {
-        /**
-         * Lowercase — the site sets no all-caps labels.
-         */
-        label: string;
-        items: string[];
-        id?: string | null;
-      }[]
-    | null;
   contactLinks?:
     | {
         label: string;
@@ -513,17 +544,29 @@ export interface ProfileSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "site-settings_select".
+ * via the `definition` "about_select".
  */
-export interface SiteSettingsSelect<T extends boolean = true> {
-  workRange?: T;
-  aboutMeta?:
+export interface AboutSelect<T extends boolean = true> {
+  statement?: T;
+  body?: T;
+  portrait?: T;
+  columns?:
     | T
     | {
         label?: T;
         items?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  workRange?: T;
   contactLinks?:
     | T
     | {
