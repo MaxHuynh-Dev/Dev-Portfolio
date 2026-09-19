@@ -87,8 +87,16 @@ const splitInto = (host: HTMLElement, text: string): HTMLElement[] => {
   for (const char of chars) {
     // A space has nothing to clip and no ink to raise. Masking it would
     // add an empty animated box to the stagger and a gap to the rhythm.
+    //
+    // The character itself still goes IN, and the width only fixes its
+    // advance. A spacer sized but empty reads back as `MaxHuynh` from the
+    // DOM — trap 23's "I build it tohold up." in its other costume. It
+    // costs nothing here today, because the panel is aria-hidden and the
+    // status line carries the real string, and it would cost the moment
+    // either of those changed or anyone selected the text.
     if (char.trim() === '') {
       const gap = document.createElement('span');
+      gap.textContent = char;
       gap.style.width = '0.34em';
       host.appendChild(gap);
       continue;

@@ -1864,13 +1864,21 @@ Six things the split itself decided:
   instead of naming the destination — the same bug, in the half nobody
   looks at.
 
-  The word is **`index`**, not the name. The name was the obvious candidate:
-  it is that link's own text and it is what `/`'s own `<h1>` says. It was
-  rejected because the preloader already spells that exact name letter by
-  letter and hands it to that exact masthead, so a route change doing the
-  same thing to arrive at the same place would make a navigation look like a
-  reload — and document-load versus route-change is the division the whole
-  curtain system is built on.
+  The word is **the name**, and it is the SAME string the mark shows —
+  built once in `Corners` and handed to both, the way `MainLayout` already
+  builds it once for the preloader's handover. It was `index` for one round,
+  on the argument that the preloader already spells that exact name onto
+  that exact masthead and a route change repeating it might read as a
+  reload. The owner asked for the name; it is also what `/`'s own `<h1>`
+  says, and the rule this file keeps is that a mark arrives somewhere named
+  what it said.
+
+  **A word space is not a masked letter**, but the character still goes into
+  the DOM. It gets a sized spacer with no clip and no place in the stagger —
+  and `splitInto` puts the space itself inside it, because a spacer that is
+  only a width reads back as `MaxHuynh`. That is trap 23's "I build it
+  tohold up." in another costume; it costs nothing while the panel is
+  aria-hidden and would cost the moment that changed.
 - **An empty word must not be waited for.** `nameRestAt` was computed from
   the lead and the rise whatever the letter count, so a labelless navigation
   held for the full stagger with nothing to show: measured at **708ms** of a
@@ -1918,7 +1926,16 @@ headroom inside every mask is positive and symmetric: **18.19px** at 1440,
 makes. Three navigations in a row each cleared `data-routing`, landed at
 scrollY 0, emptied the word out of the DOM and left focus on `#content`.
 
-**It costs about 650ms.** The curtain runs 1769–1810ms against roughly 1150
+**It costs about 650ms, and now it varies with the word.** A fixed 40ms step
+means a longer name is a longer transition: **1766ms** for `work` (4
+letters), 1925ms for `Max Huynh` (8), and **2098ms** for `Project Eight`
+(12) — the longest label the seed can produce. If that ceiling ever needs
+holding down, cap the TOTAL stagger and let the step tighten for long names
+rather than adding the difference to every navigation. It is untouched for
+now because a fixed step is this repo's idiom everywhere else — the
+preloader's 70ms, the spec sheet's 50ms, the list's 38ms.
+
+The curtain runs 1766–2098ms against roughly 1150
 before: ~250ms for a stagger that is actually seen, and ~400ms more for
 showing it after the cover instead of during it. All of it is spent in the
 hold rather than on the network, and it is the same length as the preloader
