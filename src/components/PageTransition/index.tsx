@@ -420,11 +420,16 @@ export default function PageTransition(): React.ReactElement {
       // sweep whatever --t-cover is set to. At 1 that point is the moment
       // the panel lands, which is the whole sequence: curtain, then name.
       const leadMs = coverMs * LETTER_LEAD;
+      // No word, nothing to wait for. Without this the hold still ran the
+      // full lead plus rise — measured at 708ms of a reader sitting behind
+      // a blank panel while the curtain waited out a stagger that did not
+      // exist. Every Link in the app carries a label now, so this should be
+      // unreachable; it is here because "should be unreachable" is how that
+      // 708ms got there in the first place.
       nameRestAt =
-        performance.now() +
-        leadMs +
-        Math.max(0, letters.length - 1) * LETTER_STEP_MS +
-        LETTER_RISE_MS;
+        letters.length === 0
+          ? 0
+          : performance.now() + leadMs + (letters.length - 1) * LETTER_STEP_MS + LETTER_RISE_MS;
 
       // `covered` hangs off the PANEL's own tween, not the timeline's
       // completion. The timeline outlives the panel by the tail of the

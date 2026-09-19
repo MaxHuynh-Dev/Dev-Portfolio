@@ -55,14 +55,37 @@ const SECTIONS: { label: string; route: string }[] = [
  */
 export default function Corners({ profile }: { profile: Profile }): React.ReactElement {
   const time = useLocalClock(profile.timeZone);
+  // One string, two consumers: what the mark shows and what the route
+  // curtain spells out on its way here.
+  const fullName = `${profile.firstName} ${profile.lastName}`;
 
   return (
     <>
       <div className="st-fade pointer-events-none fixed inset-x-0 top-0 z-50 bg-[linear-gradient(to_bottom,var(--paper)_0%,var(--paper)_72%,transparent_100%)] pb-[2.5rem]">
         <div className="pointer-events-auto flex items-start justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pt-[var(--gut)]">
           <p className="st-meta">
-            <Link className="text-[var(--ink)]" href="/">
-              {profile.firstName} {profile.lastName}
+            {/* EVERY internal Link on this site needs `data-transition-label`.
+                The route curtain reads it off the dataset and spells it out
+                in the middle of the panel; a Link without one raises a
+                curtain with nothing on it, which is what this one did until
+                it was noticed.
+
+                **The name, and the SAME string this link shows.** The other
+                two marks are lowercase common nouns, and this one briefly
+                was too — `index` — on the argument that the preloader
+                already spells this exact name onto this exact masthead, so
+                a route change doing it again might read as a reload. The
+                owner asked for the name, which is also what `/`'s own <h1>
+                says: the curtain names its destination, and the index's
+                name is his.
+
+                It is built ONCE, above, and used for both the label and the
+                visible text. Two independently-written copies of a name is
+                the thing MainLayout already avoids for the preloader's
+                handover, and for the same reason: they agree until the day
+                they do not. */}
+            <Link className="text-[var(--ink)]" href="/" data-transition-label={fullName}>
+              {fullName}
             </Link>
             <br />
             {profile.role.toLowerCase()}

@@ -1851,6 +1851,32 @@ Six things the split itself decided:
   transition rather than hidden inside the cover, and it is not recoverable
   by tuning** — 1810ms against 1407ms. `LETTER_RISE_MS` and
   `LETTER_STEP_MS` are the knobs if that ever has to come down.
+- **EVERY internal `Link` needs `data-transition-label`, and one did not.**
+  The curtain spells that attribute out; a Link without one raises a panel
+  with nothing on it. The masthead mark in the top-left corner — the one
+  that goes home — was the single exception in the app, so every navigation
+  BACK to the index opened a blank black screen. The ring's covers, the
+  list's rows, the next-project link and the two bottom marks all carried
+  one, which is exactly why it went unnoticed: the missing one is the link
+  that looks least like navigation.
+
+  It also cost the `role="status"` line, which announced a bare `Loading`
+  instead of naming the destination — the same bug, in the half nobody
+  looks at.
+
+  The word is **`index`**, not the name. The name was the obvious candidate:
+  it is that link's own text and it is what `/`'s own `<h1>` says. It was
+  rejected because the preloader already spells that exact name letter by
+  letter and hands it to that exact masthead, so a route change doing the
+  same thing to arrive at the same place would make a navigation look like a
+  reload — and document-load versus route-change is the division the whole
+  curtain system is built on.
+- **An empty word must not be waited for.** `nameRestAt` was computed from
+  the lead and the rise whatever the letter count, so a labelless navigation
+  held for the full stagger with nothing to show: measured at **708ms** of a
+  reader sitting behind a blank panel. Fixed by returning 0 for an empty
+  split. Every Link carries a label now, so it should be unreachable — which
+  is how the 708ms got there in the first place.
 - **`covered` hangs off the PANEL's tween, not the timeline's.** The
   timeline outlives the panel by the tail of the stagger, and hanging the
   route push off the whole thing would hold the fetch behind an animation
