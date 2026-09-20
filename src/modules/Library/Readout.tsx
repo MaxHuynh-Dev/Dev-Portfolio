@@ -16,13 +16,23 @@ import type { Project } from '@/content/site';
  * projects is not one; what this reports is where in the list you are
  * standing, which is exactly what the index's own `01 / 08` reports.
  *
- * It takes the projects and nothing else, and never re-renders: the array
- * arrives from a server component by way of `Library`, so its reference is
- * the same on every client re-render and `memo` still holds. The lines are
- * placed every frame by `Library`'s `draw`, off the same continuous position the covers are
- * placed from, so they roll *with* the ring rather than after it. React
- * only writes the pose below, which is that same law at position 0 — the
- * frame the server renders, and the one the first `draw` overwrites.
+ * **It stays out of React's way, and `memo` is how.** The lines are placed
+ * every frame by `Library`'s `draw`, off the same continuous position the
+ * covers are placed from, so they roll *with* the ring rather than after
+ * it. React only writes the pose below, which is that same law at position
+ * 0 — the frame the server renders, and the one the first `draw`
+ * overwrites. All three props are chosen to keep that true: `projects`
+ * comes from a server component so its reference never changes, `released`
+ * flips exactly once, and `counterPose` is memoised in `Library` against
+ * `viaRoute`. A mode switch re-renders `Library` and not this.
+ *
+ * `released` and `counterPose` are here for ONE cell — the `/ 08`. It is
+ * the only thing in this grid with no per-frame owner, so it was also the
+ * only thing that simply appeared when the curtain lifted while everything
+ * around it rolled or rose. It could not be lifted out to join the rest of
+ * the cascade at its own call site either: trap 36 is the record of why
+ * these are six cells of ONE grid and not three columns of stacks, and
+ * `items-baseline` groups by row.
  */
 
 /** Where line `index` sits when the ring stands at position 0. */
@@ -53,7 +63,17 @@ function Rolled({ projects, className, render }: RolledProps): React.ReactElemen
   );
 }
 
-function Readout({ projects }: { projects: Project[] }): React.ReactElement {
+function Readout({
+  projects,
+  released,
+  counterPose
+}: {
+  projects: Project[];
+  /** True once neither curtain is in the way — see `useReleased`. */
+  released: boolean;
+  /** Step 4 of `Library`'s chrome cascade, memoised there. */
+  counterPose: React.CSSProperties;
+}): React.ReactElement {
   return (
     <div
       aria-hidden="true"
@@ -98,8 +118,17 @@ function Readout({ projects }: { projects: Project[] }): React.ReactElement {
         />
       </span>
 
-      <span className="st-meta block tabular-nums">
-        / {String(projects.length).padStart(2, '0')}
+      {/* The mask is the CELL, not something inside it. A `.st-line`
+          nested one level down would put a clipping box between this
+          cell and its text, and a box with `overflow` other than visible
+          does not propagate its child's baseline — it offers its own
+          bottom margin edge instead. That is exactly the alignment trap 36
+          measured to bit-identical across twelve widths. As the cell
+          itself, the clip sits where the summary's own `.st-roll` sits in
+          the cell beside it, so the two rows are still built the same way.
+          Re-measure row two after touching this. */}
+      <span className="st-meta st-line block tabular-nums" data-in={released} style={counterPose}>
+        <span className="st-line-body">/ {String(projects.length).padStart(2, '0')}</span>
       </span>
 
       <span className="block min-w-0">

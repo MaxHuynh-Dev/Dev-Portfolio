@@ -1228,7 +1228,8 @@ slid away, and it was accurate: the panel uncovers over 560ms but
 the reader spent the whole sweep looking at a destination whose un-gated
 parts were already at rest. Most of the page has no arrival — after the
 scroll reset the visible ones are the corner marks, a project page's
-thumbnail rail and the readout's static `/ 08`.
+thumbnail rail and the readout's `/ 08` — which no longer simply appears;
+see trap 44.
 
 The fix is a gate, and what it is NOT matters as much as what it is:
 
@@ -2082,6 +2083,64 @@ like a clean page. Aim a control at a leaf that actually carries text, and
 check what it reported changing. The same sweep also has to resolve the
 NEAREST painted background rather than the body's, or the label sitting on
 `--well` is judged against paper and silently mismarked.
+
+**44. The one element with no per-frame owner and no mask is the one that
+will look broken.**
+`/works` arrives as a cascade: the ring turns, its readout rolls with it,
+and five small pieces of chrome rise out of masks behind them. The
+readout's `/ 08` counter was in none of those groups. It cannot roll —
+there is only one of it, where every other readout line is a stack of eight
+— and nobody had given it a mask, so it was simply *there* the instant the
+curtain lifted, beside a summary still rolling in on the same baseline. It
+had been listed in trap 34 for two rounds as a thing with no arrival, which
+is a description that reads as a decision until someone looks at it.
+
+- **It belongs to the chrome cascade, not the roll.** It is static
+  `.st-meta` with no per-frame owner, which is precisely the category
+  `chrome(step)` exists for. It is step 4, one 60ms beat after `drag or
+  scroll`, so the cascade still runs top to bottom down the page.
+- **It could not be lifted out to reach its own call site.** Trap 36 is the
+  record of why the readout is six cells of ONE grid rather than three
+  columns of stacks: `items-baseline` groups by row. Moving the counter up
+  into `Library` to sit beside the other four would put it in a different
+  formatting context from the summary it is supposed to align with. So the
+  pose is handed DOWN instead, and `Readout` gained two props.
+- **`memo` still holds, and that was the constraint on the props.**
+  `Readout` is memoised so React stays out of the way of `draw`, which
+  writes every line's transform per frame (trap 21). `released` flips
+  exactly once; `counterPose` is `useMemo`'d in `Library` against
+  `viaRoute`, and `chromePose` moved to module scope so it could be. A
+  fresh object per render would have re-rendered the readout on every mode
+  switch. Verified: 130 distinct readout transforms across a wheel gesture
+  and two mode switches, and the counter at exactly one position — `0.0` —
+  throughout.
+- **The mask is the CELL, not a span inside it.** A box with `overflow`
+  other than visible does not propagate its child's baseline; it offers its
+  own bottom margin edge. Nesting a `.st-line` one level down would have
+  put such a box between the grid cell and its text and moved the baseline
+  trap 36 measured. As the cell itself, the clip sits exactly where the
+  summary's own `.st-roll` sits in the cell beside it.
+- **`ENTRY_TOTAL_MS` had to grow with the group.** It hard-coded `3 *
+  ENTRY_CHROME_STAGGER_MS` for four items. `arrived.current` flips on that
+  total, so an undercount declares the arrival finished while its last item
+  is still moving. It reads `ENTRY_CHROME_COUNT - 1` now.
+
+Verified at 1440x900 on the route path: all five chrome items park at
+**18.4px** and travel through **46** distinct positions each, landing at
+3944 / 4011 / 4070 / 4128 / **4186**ms — 59ms apart against the 60ms beat,
+with `/ 08` last. Under `reduce` it ends at rest; it rides the same
+`.st-line-body` transition as the other four, which the global block
+flattens to 0.01ms.
+
+**And row two was re-measured with trap 36's HARDER control, because the
+easy one proves nothing here.** Both row-two items are the same size, so
+top-alignment and baseline-alignment agree by coincidence: forcing
+`items-start` moved nothing, and a first run reported a clean 0.00 that
+meant only that the probe was blind. Blown up to 34px the counter stays
+coincident at **0.00** under `items-baseline` at 375, 768, 1024, 1440 and
+1920, and splits by **22–24.5px** under `items-start`. The alignment
+survived the mask by construction, and now there is a measurement that
+could have said otherwise.
 
 ## Accessibility invariants
 

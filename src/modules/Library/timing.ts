@@ -105,12 +105,23 @@ export const ENTRY_CHROME_STAGGER_MS = 60;
 /** How far the readout's lines start below their masks, in percent. */
 export const ENTRY_ROLL_PCT = 100;
 
+/**
+ * How many things the chrome cascade carries. `work`, the work range, the
+ * view switch, `drag or scroll`, and the readout's `/ 08`.
+ *
+ * It is here rather than inline in the sum below because the sum is the
+ * only thing that reads it, and it was wrong the moment a fifth was added:
+ * `arrived.current` flips on `ENTRY_TOTAL_MS`, so an undercount declares
+ * the arrival finished while its last item is still moving.
+ */
+export const ENTRY_CHROME_COUNT = 5;
+
 /** Everything, end to end. */
 export const ENTRY_TOTAL_MS =
   ENTRY_LEAD_MS +
   ENTRY_LINES_AT_MS +
   ENTRY_CHROME_AT_MS +
-  3 * ENTRY_CHROME_STAGGER_MS +
+  (ENTRY_CHROME_COUNT - 1) * ENTRY_CHROME_STAGGER_MS +
   ENTRY_CHROME_MS;
 
 /**

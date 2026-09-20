@@ -5,7 +5,7 @@ import { shortest, useCarousel } from '@Hooks/useCarousel';
 import { useReleased, useViaRoute } from '@Hooks/useReveal';
 import Link from 'next/link';
 import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Project } from '@/content/site';
 import Readout from './Readout';
 import Roll from './Roll';
@@ -242,6 +242,28 @@ const phase = (elapsed: number, at: number, span: number): number =>
 
 type Mode = 'wheel' | 'list';
 
+/**
+ * The chrome's cascade, as CSS custom properties.
+ *
+ * These five are the only things on the page with no per-frame owner, so
+ * they are the only ones a transition may drive — everything else has a
+ * pose written every frame and a transition on it would be a second
+ * opinion (traps 15 and 21). The delay is absolute, counted from the
+ * moment the curtain let go, because that is what `data-in` flips on.
+ *
+ * The reference runs this group 250ms after its first readout line, on the
+ * same curve, at a slightly slower beat than the lines — which is what
+ * makes eleven staggered moves read as one cascade instead of two.
+ *
+ * At MODULE scope, not inside the component, so step 4's object can be
+ * memoised against `viaRoute` alone and handed to a memoised child.
+ */
+const chromePose = (step: number, viaRoute: boolean): React.CSSProperties =>
+  ({
+    '--in-delay': `${(viaRoute ? 0 : ENTRY_LEAD_MS) + ENTRY_LINES_AT_MS + ENTRY_CHROME_AT_MS + step * ENTRY_CHROME_STAGGER_MS}ms`,
+    '--in-rise': `${ENTRY_CHROME_MS}ms`
+  }) as React.CSSProperties;
+
 export default function Library({
   projects,
   workRange
@@ -323,24 +345,16 @@ export default function Library({
    */
   const viaRoute = useViaRoute();
 
+  const chrome = (step: number): React.CSSProperties => chromePose(step, viaRoute);
+
   /**
-   * The chrome's cascade, as CSS custom properties.
-   *
-   * These four are the only things on the page with no per-frame owner, so
-   * they are the only ones a transition may drive — everything else has a
-   * pose written every frame and a transition on it would be a second
-   * opinion (traps 15 and 21). The delay is absolute, counted from the
-   * moment the curtain let go, because that is what `data-in` flips on.
-   *
-   * The reference runs this group 250ms after its first readout line, on
-   * the same curve, at a slightly slower beat than the lines — which is
-   * what makes eleven staggered moves read as one cascade instead of two.
+   * Step 4 lives inside `Readout`, so it has to be handed over rather than
+   * written at its own call site — and it is memoised because `Readout` is
+   * `memo`'d on purpose. A fresh object every render would defeat that and
+   * re-render the readout on every mode switch, which is the one thing
+   * trap 21 bought by keeping it out of React's way.
    */
-  const chrome = (step: number): React.CSSProperties =>
-    ({
-      '--in-delay': `${(viaRoute ? 0 : ENTRY_LEAD_MS) + ENTRY_LINES_AT_MS + ENTRY_CHROME_AT_MS + step * ENTRY_CHROME_STAGGER_MS}ms`,
-      '--in-rise': `${ENTRY_CHROME_MS}ms`
-    }) as React.CSSProperties;
+  const counterPose = useMemo(() => chromePose(4, viaRoute), [viaRoute]);
 
   const draw = useCallback(
     (position: number): void => {
@@ -741,7 +755,7 @@ export default function Library({
       </div>
 
       <div ref={setReadout} className="mt-[clamp(1.2rem,4vh,2.8rem)]">
-        <Readout projects={projects} />
+        <Readout projects={projects} released={released} counterPose={counterPose} />
       </div>
 
       {/* One stage, both views. They are overlaid rather than laid out one
