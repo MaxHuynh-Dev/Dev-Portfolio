@@ -1,8 +1,8 @@
-import Lines from '@Components/Lines';
-import Reveal from '@Components/Reveal';
-import Shot from '@Components/Shot';
-import type React from 'react';
-import type { About as AboutContent, Profile } from '@/content/site';
+import Lines from "@Components/Lines";
+import Reveal from "@Components/Reveal";
+import Shot from "@Components/Shot";
+import type React from "react";
+import type { About as AboutContent, Profile } from "@/content/site";
 
 /**
  * How the page arrives, in one place.
@@ -63,14 +63,16 @@ const PROSE_MS = 90;
  */
 export default function About({
   about,
-  profile
+  profile,
 }: {
   about: AboutContent;
   profile: Profile;
 }): React.ReactElement {
   /** Where a column's label sits, counted across every column. */
   const columnStep = (index: number): number =>
-    about.columns.slice(0, index).reduce((total, column) => total + 1 + column.items.length, 0);
+    about.columns
+      .slice(0, index)
+      .reduce((total, column) => total + 1 + column.items.length, 0);
 
   return (
     <article className="flex min-h-[100svh] flex-col px-[var(--gut)] pt-[clamp(6.5rem,14vh,9rem)] pb-[clamp(5rem,12vh,8rem)]">
@@ -139,7 +141,8 @@ export default function About({
                 delay={LEAD_MS + STATEMENT_MS + about.body.length * PROSE_MS}
               >
                 <span className="st-line-body">
-                  {profile.availability.toLowerCase()}, {profile.location.toLowerCase()}
+                  {profile.availability.toLowerCase()},{" "}
+                  {profile.location.toLowerCase()}
                 </span>
               </Reveal>
             </p>
@@ -182,11 +185,18 @@ export default function About({
                         className="m-0 mt-[0.3rem] list-none p-0"
                       >
                         {column.items.map((item, position) => (
-                          <li key={item} className="text-[0.95rem] leading-[1.55]">
+                          <li
+                            key={item}
+                            className="text-[0.95rem] leading-[1.55]"
+                          >
                             <Reveal
                               on="load"
                               className="st-line block"
-                              delay={LEAD_MS + STATEMENT_MS + (start + 1 + position) * COLUMN_MS}
+                              delay={
+                                LEAD_MS +
+                                STATEMENT_MS +
+                                (start + 1 + position) * COLUMN_MS
+                              }
                             >
                               <span className="st-line-body">{item}</span>
                             </Reveal>
@@ -232,11 +242,15 @@ export default function About({
                 `Shot`'s box is fine, because by then the parent is
                 definite. */}
             <div className="aspect-[4/5] w-[clamp(5.5rem,26vw,8rem)] shrink-0 md:order-3 md:aspect-auto md:w-[clamp(9rem,16vw,15rem)]">
-              <Reveal on="load" className="st-wash block h-full" delay={LEAD_MS + STATEMENT_MS}>
+              <Reveal
+                on="load"
+                className="st-wash block h-full"
+                delay={LEAD_MS + STATEMENT_MS}
+              >
                 <Shot
                   stretch
                   src={about.portrait === null ? null : about.portrait.src}
-                  alt={about.portrait === null ? '' : about.portrait.alt}
+                  alt={about.portrait === null ? "" : about.portrait.alt}
                   ratio="4 / 5"
                   label="portrait"
                   sizes="(max-width: 48rem) 26vw, 15rem"

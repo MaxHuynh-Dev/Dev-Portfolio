@@ -1,12 +1,12 @@
-import GridDebug from '@Components/GridDebug';
-import PageTransition from '@Components/PageTransition';
-import Preloader from '@Components/Preloader';
-import SmoothScroll from '@Components/SmoothScroll';
-import Corners from '@Modules/Studio/Corners';
-import { uiHelper } from '@Utils/uiHelper';
-import type React from 'react';
-import type { PropsWithChildren } from 'react';
-import { getFullName, getProfile } from '@/content/source';
+import GridDebug from "@Components/GridDebug";
+import PageTransition from "@Components/PageTransition";
+import Preloader from "@Components/Preloader";
+import SmoothScroll from "@Components/SmoothScroll";
+import Corners from "@Modules/Studio/Corners";
+import { uiHelper } from "@Utils/uiHelper";
+import type React from "react";
+import type { PropsWithChildren } from "react";
+import { getFullName, getProfile } from "@/content/source";
 
 /**
  * The frame every page sits in.
@@ -24,7 +24,7 @@ import { getFullName, getProfile } from '@/content/source';
  * coincidence waiting to stop being true.
  */
 export default async function MainLayout({
-  children
+  children,
 }: PropsWithChildren): Promise<React.ReactElement> {
   const [profile, fullName] = await Promise.all([getProfile(), getFullName()]);
 

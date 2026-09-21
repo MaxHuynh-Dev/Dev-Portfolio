@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /** The probe is measured at this size and the result scaled. */
 const PROBE_PX = 100;
@@ -51,13 +51,13 @@ export function useFittedText(text: string, options: FitOptions = {}): Fitted {
     maxViewportFraction,
     lineHeight = 0.9,
     maxPx = Number.POSITIVE_INFINITY,
-    minPx = 10
+    minPx = 10,
   } = options;
 
   const ref = useRef<HTMLElement | null>(null);
   const [state, setState] = useState<{ size: number; available: number }>({
     size: 0,
-    available: 0
+    available: 0,
   });
 
   const fit = useCallback((): void => {
@@ -75,14 +75,14 @@ export function useFittedText(text: string, options: FitOptions = {}): Fitted {
     const style = getComputedStyle(el);
     const currentPx = parseFloat(style.fontSize) || PROBE_PX;
 
-    const probe = document.createElement('span');
+    const probe = document.createElement("span");
     probe.textContent = text;
-    probe.style.position = 'absolute';
-    probe.style.left = '-99999px';
-    probe.style.top = '0';
-    probe.style.whiteSpace = 'pre';
-    probe.style.visibility = 'hidden';
-    probe.style.pointerEvents = 'none';
+    probe.style.position = "absolute";
+    probe.style.left = "-99999px";
+    probe.style.top = "0";
+    probe.style.whiteSpace = "pre";
+    probe.style.visibility = "hidden";
+    probe.style.pointerEvents = "none";
     probe.style.fontFamily = style.fontFamily;
     probe.style.fontWeight = style.fontWeight;
     probe.style.fontStyle = style.fontStyle;
@@ -91,8 +91,8 @@ export function useFittedText(text: string, options: FitOptions = {}): Fitted {
     // carrying the px value onto a 100px probe would apply the wrong
     // tracking. Re-express it as a ratio first.
     probe.style.letterSpacing =
-      style.letterSpacing === 'normal'
-        ? 'normal'
+      style.letterSpacing === "normal"
+        ? "normal"
         : `${parseFloat(style.letterSpacing) / currentPx}em`;
 
     document.body.appendChild(probe);
@@ -102,16 +102,21 @@ export function useFittedText(text: string, options: FitOptions = {}): Fitted {
 
     let next = available / (natural / PROBE_PX);
     if (maxViewportFraction !== undefined) {
-      next = Math.min(next, (window.innerHeight * maxViewportFraction) / lineHeight);
+      next = Math.min(
+        next,
+        (window.innerHeight * maxViewportFraction) / lineHeight,
+      );
     }
     next = Math.floor(Math.max(minPx, Math.min(next, maxPx)));
 
     // Always written, never skipped as redundant. The whole hero once
     // rendered at exactly the probe size because a "nothing changed" guard
     // returned before this line.
-    el.style.setProperty('--fit-size', `${next}px`);
+    el.style.setProperty("--fit-size", `${next}px`);
     setState((prev) =>
-      prev.size === next && prev.available === available ? prev : { size: next, available }
+      prev.size === next && prev.available === available
+        ? prev
+        : { size: next, available },
     );
   }, [text, maxViewportFraction, lineHeight, maxPx, minPx]);
 

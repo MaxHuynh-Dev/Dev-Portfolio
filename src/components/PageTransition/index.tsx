@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { markRouted } from '@Hooks/useReveal';
-import gsap from 'gsap';
-import { usePathname, useRouter } from 'next/navigation';
-import type React from 'react';
-import { useEffect, useRef, useTransition } from 'react';
+import { markRouted } from "@Hooks/useReveal";
+import gsap from "gsap";
+import { usePathname, useRouter } from "next/navigation";
+import type React from "react";
+import { useEffect, useRef, useTransition } from "react";
 
 /** Fallbacks if the tokens in global.css are renamed out from under us. */
 const FALLBACK = { cover: 500, reveal: 560 };
@@ -75,12 +75,14 @@ const NAME_HELD_MS = 120;
  * and braces — but it is three lines of it.
  */
 const splitInto = (host: HTMLElement, text: string): HTMLElement[] => {
-  host.textContent = '';
+  host.textContent = "";
   const chars =
-    typeof Intl !== 'undefined' && 'Segmenter' in Intl
-      ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)].map(
-          (part) => part.segment
-        )
+    typeof Intl !== "undefined" && "Segmenter" in Intl
+      ? [
+          ...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(
+            text,
+          ),
+        ].map((part) => part.segment)
       : Array.from(text);
 
   const bodies: HTMLElement[] = [];
@@ -94,16 +96,16 @@ const splitInto = (host: HTMLElement, text: string): HTMLElement[] => {
     // costs nothing here today, because the panel is aria-hidden and the
     // status line carries the real string, and it would cost the moment
     // either of those changed or anyone selected the text.
-    if (char.trim() === '') {
-      const gap = document.createElement('span');
+    if (char.trim() === "") {
+      const gap = document.createElement("span");
       gap.textContent = char;
-      gap.style.width = '0.34em';
+      gap.style.width = "0.34em";
       host.appendChild(gap);
       continue;
     }
-    const mask = document.createElement('span');
-    mask.className = 'st-curtain-letter';
-    const body = document.createElement('span');
+    const mask = document.createElement("span");
+    mask.className = "st-curtain-letter";
+    const body = document.createElement("span");
     body.textContent = char;
     mask.appendChild(body);
     host.appendChild(mask);
@@ -126,7 +128,7 @@ const splitInto = (host: HTMLElement, text: string): HTMLElement[] => {
  * hold is capped: a reader left behind an invisible flag would be looking
  * at a page whose text never arrives.
  */
-const ROUTING_ATTR = 'data-routing';
+const ROUTING_ATTR = "data-routing";
 
 /**
  * The value the attribute carries, which is how `global.css` can hold the
@@ -143,14 +145,16 @@ const ROUTING_ATTR = 'data-routing';
  * it away underneath them is the jump this whole component exists to
  * remove.
  */
-type Curtain = 'covering' | 'holding' | 'leaving';
+type Curtain = "covering" | "holding" | "leaving";
 
-type Phase = 'idle' | 'covering' | 'holding' | 'revealing';
+type Phase = "idle" | "covering" | "holding" | "revealing";
 
 const readMs = (name: string, fallback: number): number => {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  if (raw.endsWith('ms')) return parseFloat(raw) || fallback;
-  if (raw.endsWith('s')) return (parseFloat(raw) || fallback / 1000) * 1000;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  if (raw.endsWith("ms")) return parseFloat(raw) || fallback;
+  if (raw.endsWith("s")) return (parseFloat(raw) || fallback / 1000) * 1000;
   return fallback;
 };
 
@@ -200,7 +204,7 @@ export default function PageTransition(): React.ReactElement {
   const labelRef = useRef<HTMLSpanElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
 
-  const phase = useRef<Phase>('idle');
+  const phase = useRef<Phase>("idle");
   const target = useRef<URL | null>(null);
   const capTimer = useRef(0);
   /** Deferral for NAME_HELD_MS. Cleared wherever capTimer is. */
@@ -224,23 +228,25 @@ export default function PageTransition(): React.ReactElement {
     // route changed behind a curtain nobody ever saw. Measured at 1800px on
     // a 900px viewport. The class is gone; this owns the transform.
     gsap.set(panel, { yPercent: 100, opacity: 1 });
-    label.textContent = '';
+    label.textContent = "";
 
     /** The current word's characters. Rebuilt per navigation, torn down in `settle`. */
     let letters: HTMLElement[] = [];
     /** When the last of them lands. `reveal` will not start before it. */
     let nameRestAt = 0;
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const coverMs = readMs('--t-cover', FALLBACK.cover);
-    const revealMs = readMs('--t-reveal', FALLBACK.reveal);
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const coverMs = readMs("--t-cover", FALLBACK.cover);
+    const revealMs = readMs("--t-reveal", FALLBACK.reveal);
 
     const raise = (at: Curtain): void => {
       document.documentElement.setAttribute(ROUTING_ATTR, at);
     };
 
     const settle = (): void => {
-      phase.current = 'idle';
+      phase.current = "idle";
       target.current = null;
       window.clearTimeout(capTimer.current);
       window.clearTimeout(nameTimer.current);
@@ -251,15 +257,15 @@ export default function PageTransition(): React.ReactElement {
       // starts would play its rise behind the part of the panel that has
       // not moved yet.
       document.documentElement.removeAttribute(ROUTING_ATTR);
-      panel.style.pointerEvents = 'none';
-      panel.style.visibility = 'hidden';
-      status.textContent = '';
+      panel.style.pointerEvents = "none";
+      panel.style.visibility = "hidden";
+      status.textContent = "";
       // Parked below the fold again, ready for the next one. The word is
       // torn down rather than hidden: the next navigation builds its own,
       // and a stale one left behind is the first thing the next cover would
       // show, already at rest, before its own letters had been placed.
       gsap.set(panel, { yPercent: 100, opacity: 1 });
-      label.textContent = '';
+      label.textContent = "";
       letters = [];
       nameRestAt = 0;
       window.lenis?.start();
@@ -267,7 +273,7 @@ export default function PageTransition(): React.ReactElement {
 
     /** Under the panel, where none of this is visible. */
     const toTop = (): void => {
-      const hash = target.current?.hash ?? '';
+      const hash = target.current?.hash ?? "";
       // An explicit fragment is a destination the reader asked for by name,
       // so it wins over the top of the page. Everything else starts at the
       // top: that is the whole point of covering the swap.
@@ -275,8 +281,11 @@ export default function PageTransition(): React.ReactElement {
 
       if (anchor instanceof HTMLElement) {
         const padding =
-          parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-        const top = anchor.getBoundingClientRect().top + window.scrollY - padding;
+          parseFloat(
+            getComputedStyle(document.documentElement).scrollPaddingTop,
+          ) || 0;
+        const top =
+          anchor.getBoundingClientRect().top + window.scrollY - padding;
         window.scrollTo(0, top);
         window.lenis?.scrollTo(top, { immediate: true, force: true });
         return;
@@ -289,7 +298,7 @@ export default function PageTransition(): React.ReactElement {
     };
 
     const reveal = (): void => {
-      if (phase.current !== 'holding') return;
+      if (phase.current !== "holding") return;
 
       // A prefetched route can arrive before the word has. Wait out the rest
       // of the stagger plus a beat, or the first letters begin leaving
@@ -309,7 +318,7 @@ export default function PageTransition(): React.ReactElement {
         return;
       }
 
-      phase.current = 'revealing';
+      phase.current = "revealing";
       // RE-ARMED, not cleared. The uncover is a GSAP tween and GSAP runs on
       // rAF, which a backgrounded tab suspends — so `onComplete` never
       // fires, `settle` never runs, and the attribute stays up. That used to
@@ -326,19 +335,19 @@ export default function PageTransition(): React.ReactElement {
       // reveals themselves still wait for `settle` at the end, which is
       // what keeps them from playing behind the part of the panel that has
       // not moved yet.
-      raise('leaving');
+      raise("leaving");
       toTop();
 
       // Focus follows the navigation. preventDefault cancelled the
       // browser's own focus move along with the jump, and without this a
       // keyboard reader stays on a link that no longer exists.
-      document.getElementById('content')?.focus({ preventScroll: true });
+      document.getElementById("content")?.focus({ preventScroll: true });
 
       tl.current?.kill();
       if (reduced) {
         tl.current = gsap
           .timeline({ onComplete: settle })
-          .to(panel, { opacity: 0, duration: 0.14, ease: 'none' });
+          .to(panel, { opacity: 0, duration: 0.14, ease: "none" });
         return;
       }
 
@@ -354,25 +363,29 @@ export default function PageTransition(): React.ReactElement {
           {
             yPercent: -105,
             duration: LETTER_EXIT_MS / 1000,
-            ease: 'power2.in',
-            stagger: LETTER_EXIT_STEP_MS / 1000
+            ease: "power2.in",
+            stagger: LETTER_EXIT_STEP_MS / 1000,
           },
-          0
+          0,
         );
       }
-      out.to(panel, { yPercent: -100, duration: revealMs / 1000, ease: 'power3.inOut' }, 0.08);
+      out.to(
+        panel,
+        { yPercent: -100, duration: revealMs / 1000, ease: "power3.inOut" },
+        0.08,
+      );
       tl.current = out;
     };
 
     revealRef.current = reveal;
 
     const covered = (): void => {
-      if (phase.current !== 'covering') return;
-      phase.current = 'holding';
+      if (phase.current !== "covering") return;
+      phase.current = "holding";
       // The panel is shut, so the page underneath can be emptied without
       // anyone seeing it go. Everything the destination mounts behind this
       // is invisible until the uncover starts.
-      raise('holding');
+      raise("holding");
 
       const url = target.current;
       if (url === null) {
@@ -386,27 +399,27 @@ export default function PageTransition(): React.ReactElement {
     };
 
     const go = (url: URL, text: string): void => {
-      if (phase.current !== 'idle') return;
-      phase.current = 'covering';
+      if (phase.current !== "idle") return;
+      phase.current = "covering";
       target.current = url;
 
       window.lenis?.stop();
       markRouted();
-      raise('covering');
-      panel.style.visibility = 'visible';
-      panel.style.pointerEvents = 'auto';
+      raise("covering");
+      panel.style.visibility = "visible";
+      panel.style.pointerEvents = "auto";
       letters = splitInto(label, text);
       // The CAPS are a `text-transform`, so what this line hands a screen
       // reader is still the word as it was written. Announcing it is this
       // element's whole job — the panel itself is aria-hidden.
-      status.textContent = text === '' ? 'Loading' : `Loading ${text}`;
+      status.textContent = text === "" ? "Loading" : `Loading ${text}`;
 
       // Warm the destination while the panel is still closing, so the hold
       // at the end of the rise is as close to nothing as the network allows.
       router.prefetch(url.pathname);
 
       capTimer.current = window.setTimeout(() => {
-        phase.current = 'holding';
+        phase.current = "holding";
         revealRef.current();
       }, HARD_CAP_MS);
 
@@ -420,7 +433,11 @@ export default function PageTransition(): React.ReactElement {
         nameRestAt = 0;
         tl.current = gsap
           .timeline({ onComplete: covered })
-          .fromTo(panel, { yPercent: 0, opacity: 0 }, { opacity: 1, duration: 0.14, ease: 'none' });
+          .fromTo(
+            panel,
+            { yPercent: 0, opacity: 0 },
+            { opacity: 1, duration: 0.14, ease: "none" },
+          );
         return;
       }
 
@@ -437,7 +454,10 @@ export default function PageTransition(): React.ReactElement {
       nameRestAt =
         letters.length === 0
           ? 0
-          : performance.now() + leadMs + (letters.length - 1) * LETTER_STEP_MS + LETTER_RISE_MS;
+          : performance.now() +
+            leadMs +
+            (letters.length - 1) * LETTER_STEP_MS +
+            LETTER_RISE_MS;
 
       // `covered` hangs off the PANEL's own tween, not the timeline's
       // completion. The timeline outlives the panel by the tail of the
@@ -449,8 +469,13 @@ export default function PageTransition(): React.ReactElement {
         .fromTo(
           panel,
           { yPercent: 100 },
-          { yPercent: 0, duration: coverMs / 1000, ease: 'power3.inOut', onComplete: covered },
-          0
+          {
+            yPercent: 0,
+            duration: coverMs / 1000,
+            ease: "power3.inOut",
+            onComplete: covered,
+          },
+          0,
         );
       if (letters.length > 0) {
         cover.fromTo(
@@ -459,10 +484,10 @@ export default function PageTransition(): React.ReactElement {
           {
             yPercent: 0,
             duration: LETTER_RISE_MS / 1000,
-            ease: 'power3.out',
-            stagger: LETTER_STEP_MS / 1000
+            ease: "power3.out",
+            stagger: LETTER_STEP_MS / 1000,
           },
-          leadMs / 1000
+          leadMs / 1000,
         );
       }
       tl.current = cover;
@@ -482,15 +507,16 @@ export default function PageTransition(): React.ReactElement {
       // navigating a second time underneath the curtain.
       if (event.defaultPrevented) return;
       if (event.button !== 0) return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
 
-      const anchor = (event.target as Element | null)?.closest?.('a');
+      const anchor = (event.target as Element | null)?.closest?.("a");
       if (!(anchor instanceof HTMLAnchorElement)) return;
-      if (anchor.hasAttribute('download')) return;
-      if (anchor.target !== '' && anchor.target !== '_self') return;
+      if (anchor.hasAttribute("download")) return;
+      if (anchor.target !== "" && anchor.target !== "_self") return;
 
-      const href = anchor.getAttribute('href');
-      if (href === null || href === '') return;
+      const href = anchor.getAttribute("href");
+      if (href === null || href === "") return;
 
       let url: URL;
       try {
@@ -509,12 +535,12 @@ export default function PageTransition(): React.ReactElement {
 
       event.preventDefault();
       event.stopPropagation();
-      go(url, anchor.dataset.transitionLabel ?? '');
+      go(url, anchor.dataset.transitionLabel ?? "");
     };
 
-    document.addEventListener('click', onClick, true);
+    document.addEventListener("click", onClick, true);
     return () => {
-      document.removeEventListener('click', onClick, true);
+      document.removeEventListener("click", onClick, true);
       window.clearTimeout(capTimer.current);
       window.clearTimeout(nameTimer.current);
       tl.current?.kill();
@@ -532,7 +558,7 @@ export default function PageTransition(): React.ReactElement {
   // conditions matter: isPending alone flickers false between the push and
   // the commit on a cached route.
   useEffect(() => {
-    if (phase.current !== 'holding') return;
+    if (phase.current !== "holding") return;
     if (isPending) return;
     if (target.current !== null && target.current.pathname !== pathname) return;
     revealRef.current();

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Container, GridContainer } from '@Components/Container';
-import type React from 'react';
-import { Activity, useCallback, useEffect, useState } from 'react';
+import { Container, GridContainer } from "@Components/Container";
+import type React from "react";
+import { Activity, useCallback, useEffect, useState } from "react";
 
 const GridColumn = (): React.ReactElement => (
   <div className="col-span-1">
@@ -14,8 +14,8 @@ export default function GridDebug(): React.ReactElement {
   const [isGrid, setIsGrid] = useState<boolean>(false);
 
   useEffect(() => {
-    const storedValue = localStorage.getItem('isGrid');
-    if (storedValue === 'true') {
+    const storedValue = localStorage.getItem("isGrid");
+    if (storedValue === "true") {
       setIsGrid(true);
     }
   }, []);
@@ -24,24 +24,24 @@ export default function GridDebug(): React.ReactElement {
     (ev: KeyboardEvent) => {
       const isShift = ev.shiftKey;
       const key = ev.key.toLowerCase();
-      if (isShift && key === 'g') {
+      if (isShift && key === "g") {
         const nextValue = !isGrid;
-        localStorage.setItem('isGrid', String(nextValue));
+        localStorage.setItem("isGrid", String(nextValue));
         setIsGrid(nextValue);
       }
     },
-    [isGrid]
+    [isGrid],
   );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return (): void => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [handleKeyDown]);
 
   return (
-    <Activity mode={isGrid ? 'visible' : 'hidden'} name="Grid Debug">
+    <Activity mode={isGrid ? "visible" : "hidden"} name="Grid Debug">
       <div className="pointer-events-none fixed top-0 left-1/2 z-[99999999999] h-full w-full -translate-x-1/2">
         <Container>
           <GridContainer>

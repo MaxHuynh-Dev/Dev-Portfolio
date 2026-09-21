@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 /** Placeholder rendered on the server and during hydration. */
-const IDLE = '--:--';
+const IDLE = "--:--";
 
 /**
  * 24h wall-clock time in an IANA zone, ticking every 15s.
@@ -17,19 +17,19 @@ export function useLocalClock(timeZone: string): string {
   useEffect(() => {
     let formatter: Intl.DateTimeFormat;
     try {
-      formatter = new Intl.DateTimeFormat('en-GB', {
+      formatter = new Intl.DateTimeFormat("en-GB", {
         timeZone,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
     } catch {
       // Invalid IANA zone in the content file — fall back to local time
       // rather than taking the page down.
-      formatter = new Intl.DateTimeFormat('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+      formatter = new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
     }
 

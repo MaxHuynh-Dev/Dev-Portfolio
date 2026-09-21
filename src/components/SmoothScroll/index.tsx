@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
-import type React from 'react';
-import { useEffect, useRef } from 'react';
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Lenis from "lenis";
+import type React from "react";
+import { useEffect, useRef } from "react";
 
 // Register GSAP ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
 
 export default function SmoothScroll({
-  children
+  children,
 }: {
   children: React.ReactNode;
 }): React.JSX.Element {
@@ -21,22 +21,22 @@ export default function SmoothScroll({
     // inertia on every wheel tick is the largest piece of vestibular motion
     // on the page. useAnchorNav already falls back to native scrolling when
     // window.lenis is absent, so opting out here is safe end to end.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     // Initialize Lenis
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - 2 ** (-10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true
+      orientation: "vertical",
+      gestureOrientation: "vertical",
+      smoothWheel: true,
     });
 
     lenisRef.current = lenis;
     window.lenis = lenis;
 
     // Connect Lenis to GSAP ScrollTrigger
-    lenis.on('scroll', () => {
+    lenis.on("scroll", () => {
       ScrollTrigger.update();
     });
 

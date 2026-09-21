@@ -20,6 +20,6 @@
 
 /** Set on `<html>`. Drives the curtain's first paint, the animation hold
  *  and the scroll lock — all in `global.css`. */
-export const PRELOADING_ATTR = 'data-preloading';
+export const PRELOADING_ATTR = "data-preloading";
 
 export const PRELOADER_BOOT_SCRIPT = `document.documentElement.setAttribute('${PRELOADING_ATTR}','')`;

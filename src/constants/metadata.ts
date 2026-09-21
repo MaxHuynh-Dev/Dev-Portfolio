@@ -1,6 +1,6 @@
-import { APP_KEYWORDS, APP_OG_IMAGE, DOMAIN_URL } from '@Constants/common';
-import type { Metadata } from 'next';
-import { getFullName, getProfile } from '@/content/source';
+import { APP_KEYWORDS, APP_OG_IMAGE, DOMAIN_URL } from "@Constants/common";
+import type { Metadata } from "next";
+import { getFullName, getProfile } from "@/content/source";
 
 /**
  * The site's default metadata, built from the CMS.
@@ -24,54 +24,54 @@ export async function buildDefaultMetadata(): Promise<Metadata> {
     applicationName: fullName,
     title: {
       default: fullName,
-      template: titleTemplate
+      template: titleTemplate,
     },
     metadataBase: new URL(DOMAIN_URL),
     description: profile.intro,
     keywords: APP_KEYWORDS,
-    manifest: '/manifest.json',
+    manifest: "/manifest.json",
     appleWebApp: {
       capable: true,
-      statusBarStyle: 'default',
-      title: fullName
+      statusBarStyle: "default",
+      title: fullName,
     },
     formatDetection: {
-      telephone: false
+      telephone: false,
     },
     openGraph: {
-      type: 'website',
+      type: "website",
       siteName: fullName,
       emails: [profile.email],
       url: DOMAIN_URL,
       title: {
         default: fullName,
-        template: titleTemplate
+        template: titleTemplate,
       },
       images: [
         {
           url: APP_OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: fullName
-        }
+          alt: fullName,
+        },
       ],
-      description: profile.intro
+      description: profile.intro,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: {
         default: fullName,
-        template: titleTemplate
+        template: titleTemplate,
       },
       images: [
         {
           url: APP_OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: fullName
-        }
+          alt: fullName,
+        },
       ],
-      description: profile.intro
-    }
+      description: profile.intro,
+    },
   };
 }

@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload';
+import type { CollectionConfig } from "payload";
 
 /**
  * Who can edit the site.
@@ -10,16 +10,16 @@ import type { CollectionConfig } from 'payload';
  * other than the person who owns it is not a credential.
  */
 export const Users: CollectionConfig = {
-  slug: 'users',
+  slug: "users",
   auth: true,
   admin: {
-    useAsTitle: 'email',
-    defaultColumns: ['name', 'email']
+    useAsTitle: "email",
+    defaultColumns: ["name", "email"],
   },
   fields: [
     {
-      name: 'name',
-      type: 'text'
-    }
-  ]
+      name: "name",
+      type: "text",
+    },
+  ],
 };

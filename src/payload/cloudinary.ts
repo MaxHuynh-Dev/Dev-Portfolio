@@ -1,5 +1,8 @@
-import type { Adapter, GeneratedAdapter } from '@payloadcms/plugin-cloud-storage/types';
-import { v2 as cloudinary } from 'cloudinary';
+import type {
+  Adapter,
+  GeneratedAdapter,
+} from "@payloadcms/plugin-cloud-storage/types";
+import { v2 as cloudinary } from "cloudinary";
 
 /**
  * A Cloudinary storage adapter for Payload's own cloud-storage plugin.
@@ -27,12 +30,12 @@ export const cloudinaryAdapter =
   ({ prefix }): GeneratedAdapter => {
     /** Where an object lives, with no extension — Cloudinary owns that. */
     const publicIdFor = (filename: string): string => {
-      const base = filename.replace(/\.[^/.]+$/, '');
-      return [folder, prefix, base].filter(Boolean).join('/');
+      const base = filename.replace(/\.[^/.]+$/, "");
+      return [folder, prefix, base].filter(Boolean).join("/");
     };
 
     return {
-      name: 'cloudinary',
+      name: "cloudinary",
 
       // Written onto every Media document. They are `admin.hidden` because
       // they are machinery, not content: an editor has no use for a public
@@ -40,41 +43,46 @@ export const cloudinaryAdapter =
       // object it names.
       fields: [
         {
-          name: 'cloudinaryURL',
-          type: 'text',
-          admin: { hidden: true }
+          name: "cloudinaryURL",
+          type: "text",
+          admin: { hidden: true },
         },
         {
-          name: 'cloudinaryPublicId',
-          type: 'text',
-          admin: { hidden: true }
-        }
+          name: "cloudinaryPublicId",
+          type: "text",
+          admin: { hidden: true },
+        },
       ],
 
       handleUpload: async ({ file, data }) => {
         const publicId = publicIdFor(file.filename);
 
-        const uploaded = await new Promise<{ secure_url: string; public_id: string }>(
-          (resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-              {
-                public_id: publicId,
-                resource_type: 'image',
-                // Re-seeding the same four files must not leave orphans, and
-                // `invalidate` is what makes the CDN let go of the old bytes
-                // rather than serving them until the cache expires.
-                overwrite: true,
-                invalidate: true
-              },
-              (error, result) => {
-                if (error !== undefined && error !== null) return reject(error);
-                if (result === undefined) return reject(new Error('Cloudinary returned no result'));
-                resolve({ secure_url: result.secure_url, public_id: result.public_id });
-              }
-            );
-            stream.end(file.buffer);
-          }
-        );
+        const uploaded = await new Promise<{
+          secure_url: string;
+          public_id: string;
+        }>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              public_id: publicId,
+              resource_type: "image",
+              // Re-seeding the same four files must not leave orphans, and
+              // `invalidate` is what makes the CDN let go of the old bytes
+              // rather than serving them until the cache expires.
+              overwrite: true,
+              invalidate: true,
+            },
+            (error, result) => {
+              if (error !== undefined && error !== null) return reject(error);
+              if (result === undefined)
+                return reject(new Error("Cloudinary returned no result"));
+              resolve({
+                secure_url: result.secure_url,
+                public_id: result.public_id,
+              });
+            },
+          );
+          stream.end(file.buffer);
+        });
 
         data.cloudinaryURL = uploaded.secure_url;
         data.cloudinaryPublicId = uploaded.public_id;
@@ -85,19 +93,22 @@ export const cloudinaryAdapter =
         // The stored id first, because it is what Cloudinary actually
         // assigned; the derived one only covers a document written before
         // this adapter existed.
-        const stored = (doc as unknown as Record<string, unknown>).cloudinaryPublicId;
+        const stored = (doc as unknown as Record<string, unknown>)
+          .cloudinaryPublicId;
         const publicId =
-          typeof stored === 'string' && stored.length > 0 ? stored : publicIdFor(filename);
+          typeof stored === "string" && stored.length > 0
+            ? stored
+            : publicIdFor(filename);
 
         await cloudinary.uploader.destroy(publicId, {
-          resource_type: 'image',
-          invalidate: true
+          resource_type: "image",
+          invalidate: true,
         });
       },
 
       generateURL: ({ data, filename }) => {
         const stored = (data as { cloudinaryURL?: unknown }).cloudinaryURL;
-        if (typeof stored === 'string' && stored.length > 0) return stored;
+        if (typeof stored === "string" && stored.length > 0) return stored;
         // Only reached for a document uploaded before this adapter, which
         // has no stored URL to hand back.
         return cloudinary.url(publicIdFor(filename), { secure: true });
@@ -109,8 +120,10 @@ export const cloudinaryAdapter =
       // that if the flag is ever turned off the file still resolves instead
       // of this quietly streaming every image through the Node server.
       staticHandler: (_req, { params }) => {
-        const url = cloudinary.url(publicIdFor(params.filename), { secure: true });
+        const url = cloudinary.url(publicIdFor(params.filename), {
+          secure: true,
+        });
         return Response.redirect(url, 302);
-      }
+      },
     };
   };

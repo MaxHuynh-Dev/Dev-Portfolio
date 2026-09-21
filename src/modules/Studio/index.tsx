@@ -1,8 +1,8 @@
-import type React from 'react';
+import type React from "react";
 
-import { getProfile, getSiteSettings } from '@/content/source';
+import { getProfile, getSiteSettings } from "@/content/source";
 
-import Open from './Open';
+import Open from "./Open";
 
 /**
  * The index.
@@ -24,7 +24,10 @@ import Open from './Open';
  * profile in the layout and this asking for it again is one query.
  */
 export default async function Studio(): Promise<React.ReactElement> {
-  const [profile, settings] = await Promise.all([getProfile(), getSiteSettings()]);
+  const [profile, settings] = await Promise.all([
+    getProfile(),
+    getSiteSettings(),
+  ]);
 
   return <Open profile={profile} links={settings.contactLinks} />;
 }

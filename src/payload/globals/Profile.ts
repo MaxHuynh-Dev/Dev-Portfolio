@@ -1,4 +1,4 @@
-import type { GlobalConfig } from 'payload';
+import type { GlobalConfig } from "payload";
 
 /**
  * Who the site is about.
@@ -19,71 +19,99 @@ import type { GlobalConfig } from 'payload';
  *   the handover be a coincidence by construction rather than by timing.
  */
 export const Profile: GlobalConfig = {
-  slug: 'profile',
+  slug: "profile",
   admin: {
-    description: 'The person. Read by the masthead, the corner marks and the page metadata.'
+    description:
+      "The person. Read by the masthead, the corner marks and the page metadata.",
   },
   fields: [
     {
-      type: 'row',
+      type: "row",
       fields: [
-        { name: 'firstName', type: 'text', required: true, admin: { width: '50%' } },
-        { name: 'lastName', type: 'text', required: true, admin: { width: '50%' } }
-      ]
+        {
+          name: "firstName",
+          type: "text",
+          required: true,
+          admin: { width: "50%" },
+        },
+        {
+          name: "lastName",
+          type: "text",
+          required: true,
+          admin: { width: "50%" },
+        },
+      ],
     },
     {
-      type: 'row',
+      type: "row",
       fields: [
-        { name: 'role', type: 'text', required: true, admin: { width: '50%' } },
-        { name: 'location', type: 'text', required: true, admin: { width: '50%' } }
-      ]
+        { name: "role", type: "text", required: true, admin: { width: "50%" } },
+        {
+          name: "location",
+          type: "text",
+          required: true,
+          admin: { width: "50%" },
+        },
+      ],
     },
     {
-      name: 'timeZone',
-      type: 'text',
+      name: "timeZone",
+      type: "text",
       required: true,
-      defaultValue: 'Asia/Ho_Chi_Minh',
+      defaultValue: "Asia/Ho_Chi_Minh",
       admin: {
-        description: 'An IANA zone — e.g. Asia/Ho_Chi_Minh. Drives the clock in the corner marks.'
+        description:
+          "An IANA zone — e.g. Asia/Ho_Chi_Minh. Drives the clock in the corner marks.",
       },
       validate: (value: string | null | undefined) => {
-        if (typeof value !== 'string' || value.length === 0) return 'A time zone is required.';
+        if (typeof value !== "string" || value.length === 0)
+          return "A time zone is required.";
         try {
           // The platform's own table, asked directly. A zone this throws on
           // is a zone the corner clock would throw on too.
-          new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date());
+          new Intl.DateTimeFormat("en-US", { timeZone: value }).format(
+            new Date(),
+          );
           return true;
         } catch {
           return `"${value}" is not a time zone this runtime knows.`;
         }
-      }
+      },
     },
     {
-      type: 'row',
+      type: "row",
       fields: [
-        { name: 'email', type: 'email', required: true, admin: { width: '50%' } },
         {
-          name: 'availability',
-          type: 'text',
+          name: "email",
+          type: "email",
           required: true,
-          admin: { width: '50%', description: 'e.g. Open to work. Set lowercase in the corner.' }
-        }
-      ]
+          admin: { width: "50%" },
+        },
+        {
+          name: "availability",
+          type: "text",
+          required: true,
+          admin: {
+            width: "50%",
+            description: "e.g. Open to work. Set lowercase in the corner.",
+          },
+        },
+      ],
     },
     {
-      name: 'intro',
-      type: 'textarea',
+      name: "intro",
+      type: "textarea",
       required: true,
       admin: {
         description:
-          'The line under the masthead, and the site description. Split into measured lines, so plain text only.'
-      }
+          "The line under the masthead, and the site description. Split into measured lines, so plain text only.",
+      },
     },
     {
-      name: 'bio',
-      type: 'textarea',
+      name: "bio",
+      type: "textarea",
       required: true,
-      admin: { description: 'The paragraph in About. Plain text.' }
-    }
-  ]
+      admin: { description: "The paragraph in About. Plain text." },
+    },
+  ],
 };

@@ -559,7 +559,7 @@ body {
   }
 
   /* The destination is empty while the panel is SHUT.
-     
+
      `holding` only, and that is the whole design. During `covering` the
      panel is still on its way up and the reader is looking at the page they
      are leaving — taking it away underneath them is the visible jump this

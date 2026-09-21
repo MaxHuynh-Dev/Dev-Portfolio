@@ -6,10 +6,10 @@
  * EXITED: Trang đã được chuyển ra hoàn tất
  */
 export enum PageStatus {
-  IDLE = 'idle',
-  LOADING = 'loading',
-  ENTERING = 'entering',
-  ENTERED = 'entered',
-  EXITING = 'exiting',
-  EXITED = 'exited'
+  IDLE = "idle",
+  LOADING = "loading",
+  ENTERING = "entering",
+  ENTERED = "entered",
+  EXITING = "exiting",
+  EXITED = "exited",
 }

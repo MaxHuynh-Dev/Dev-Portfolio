@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import type React from 'react';
-import type { Project } from '@/content/site';
+import Link from "next/link";
+import type React from "react";
+import type { Project } from "@/content/site";
 import {
   ROW_FALL_MS,
   ROW_FALL_STAGGER_MS,
   ROW_LEAD_MS,
   ROW_RISE_MS,
-  ROW_STAGGER_MS
-} from './timing';
+  ROW_STAGGER_MS,
+} from "./timing";
 
 /**
  * The same projects, as a plain list.
@@ -45,14 +45,14 @@ import {
 /** The cells of one row all move together; the rows are what stagger. */
 const timing = (index: number, shown: boolean): React.CSSProperties => ({
   transitionDuration: `${shown ? ROW_RISE_MS : ROW_FALL_MS}ms`,
-  transitionDelay: `${shown ? ROW_LEAD_MS + index * ROW_STAGGER_MS : index * ROW_FALL_STAGGER_MS}ms`
+  transitionDelay: `${shown ? ROW_LEAD_MS + index * ROW_STAGGER_MS : index * ROW_FALL_STAGGER_MS}ms`,
 });
 
 export default function Roll({
   projects,
   active,
   shown,
-  onActive
+  onActive,
 }: {
   projects: Project[];
   active: number;
@@ -78,8 +78,11 @@ export default function Roll({
               className="grid grid-cols-[2.2rem_minmax(0,1fr)_auto] items-baseline gap-x-[0.75rem] py-[clamp(0.1rem,0.55vh,0.45rem)]"
             >
               <span className="st-reveal">
-                <span className="st-reveal-line st-meta tabular-nums" style={pose}>
-                  {String(index + 1).padStart(2, '0')}
+                <span
+                  className="st-reveal-line st-meta tabular-nums"
+                  style={pose}
+                >
+                  {String(index + 1).padStart(2, "0")}
                 </span>
               </span>
 
@@ -87,7 +90,9 @@ export default function Roll({
                   the line's per-row timing and fades on its own 300ms. */}
               <span
                 className="st-reveal transition-colors duration-300"
-                style={{ color: index === active ? 'var(--ink)' : 'var(--ink-2)' }}
+                style={{
+                  color: index === active ? "var(--ink)" : "var(--ink-2)",
+                }}
               >
                 <span
                   className="st-reveal-line st-display text-[clamp(1rem,2.4vw,1.5rem)]"
@@ -98,8 +103,12 @@ export default function Roll({
               </span>
 
               <span className="st-reveal">
-                <span className="st-reveal-line st-meta whitespace-nowrap" style={pose}>
-                  {project.kind.toLowerCase()}, <span className="tabular-nums">{project.year}</span>
+                <span
+                  className="st-reveal-line st-meta whitespace-nowrap"
+                  style={pose}
+                >
+                  {project.kind.toLowerCase()},{" "}
+                  <span className="tabular-nums">{project.year}</span>
                 </span>
               </span>
 

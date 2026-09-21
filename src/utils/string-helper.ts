@@ -5,7 +5,11 @@ class StringHelper {
    * decomposition does not cover them and they are mapped explicitly.
    */
   removeAccents(str: string): string {
-    return str.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+    return str
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D");
   }
 
   compareString = (a: string, b: string): number => {
@@ -22,7 +26,7 @@ class StringHelper {
       }
     }
 
-    return `${str.slice(0, safeIndex)}${add || ''}${str.slice(safeIndex + count)}`;
+    return `${str.slice(0, safeIndex)}${add || ""}${str.slice(safeIndex + count)}`;
   }
 }
 

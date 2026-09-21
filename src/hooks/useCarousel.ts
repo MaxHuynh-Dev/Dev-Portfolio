@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * The ring's position engine.
@@ -45,7 +45,8 @@ const LINE_PX = 16;
 const QUIET_MS = 320;
 
 /** `value` folded into `[0, span)`. */
-export const wrap = (value: number, span: number): number => ((value % span) + span) % span;
+export const wrap = (value: number, span: number): number =>
+  ((value % span) + span) % span;
 
 /** The signed shorter way round from 0 to `value`, in `(-span/2, span/2]`. */
 export const shortest = (value: number, span: number): number => {
@@ -96,7 +97,7 @@ export function useCarousel({
   onFrame,
   enabled,
   surface,
-  links
+  links,
 }: CarouselOptions): Carousel {
   // onFrame is a fresh closure every render; the effect must not tear the
   // whole engine down and rebuild it for that.
@@ -118,12 +119,12 @@ export function useCarousel({
   const paint = useRef<() => void>(() => undefined);
 
   useEffect(() => {
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     reduce.current = media.matches;
     const onQuery = (): void => {
       reduce.current = media.matches;
     };
-    media.addEventListener('change', onQuery);
+    media.addEventListener("change", onQuery);
 
     const draw = (): void => {
       frame.current(position.current);
@@ -136,7 +137,8 @@ export function useCarousel({
 
     const tick = (now: number): void => {
       raf.current = 0;
-      const delta = previous.current < 0 ? 16.667 : Math.min(now - previous.current, 64);
+      const delta =
+        previous.current < 0 ? 16.667 : Math.min(now - previous.current, 64);
       previous.current = now;
 
       const gap = target.current - position.current;
@@ -192,7 +194,7 @@ export function useCarousel({
     if (!enabled || surface === null) {
       draw();
       return () => {
-        media.removeEventListener('change', onQuery);
+        media.removeEventListener("change", onQuery);
         if (raf.current !== 0) cancelAnimationFrame(raf.current);
         raf.current = 0;
         window.clearTimeout(settle.current);
@@ -203,7 +205,10 @@ export function useCarousel({
 
     const onWheel = (event: WheelEvent): void => {
       // A trackpad swiped sideways is the same gesture as one swiped down.
-      const raw = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      const raw =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+          ? event.deltaX
+          : event.deltaY;
       if (raw === 0) return;
       event.preventDefault();
 
@@ -222,7 +227,11 @@ export function useCarousel({
       // a pixel, and treating them as one makes a notch move the ring by a
       // hundredth of a project.
       const scale =
-        event.deltaMode === 1 ? LINE_PX : event.deltaMode === 2 ? window.innerHeight : 1;
+        event.deltaMode === 1
+          ? LINE_PX
+          : event.deltaMode === 2
+            ? window.innerHeight
+            : 1;
       push((raw * scale) / PITCH_PX);
     };
 
@@ -232,7 +241,7 @@ export function useCarousel({
     let dragged = false;
 
     const release = (): void => {
-      if (links !== null) links.style.pointerEvents = '';
+      if (links !== null) links.style.pointerEvents = "";
     };
 
     const onDown = (event: PointerEvent): void => {
@@ -251,14 +260,14 @@ export function useCarousel({
 
       if (!dragged) {
         dragged = true;
-        surface.style.cursor = 'grabbing';
+        surface.style.cursor = "grabbing";
         // From here the click that ends this gesture must not navigate.
         // PageTransition listens on `document` in the CAPTURE phase, so it
         // sees the click before any listener this hook could add — there is
         // no cancelling it after the fact. Taking the anchors out of the hit
         // test is what keeps the click off them in the first place, and it
         // keeps next/link out of it too.
-        if (links !== null) links.style.pointerEvents = 'none';
+        if (links !== null) links.style.pointerEvents = "none";
       }
 
       if (reduce.current) {
@@ -272,7 +281,7 @@ export function useCarousel({
     const onUp = (event: PointerEvent): void => {
       if (event.pointerId !== pointer) return;
       pointer = -1;
-      surface.style.cursor = '';
+      surface.style.cursor = "";
       if (!dragged) return;
       arm();
       // The click is dispatched right after pointerup and before the next
@@ -285,15 +294,15 @@ export function useCarousel({
 
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
-      if (event.key === 'ArrowRight') {
+      if (event.key === "ArrowRight") {
         target.current = Math.round(target.current) + 1;
-      } else if (event.key === 'ArrowLeft') {
+      } else if (event.key === "ArrowLeft") {
         target.current = Math.round(target.current) - 1;
-      } else if (event.key === 'Home') {
+      } else if (event.key === "Home") {
         jump.current(0);
         event.preventDefault();
         return;
-      } else if (event.key === 'End') {
+      } else if (event.key === "End") {
         jump.current(count - 1);
         event.preventDefault();
         return;
@@ -305,25 +314,25 @@ export function useCarousel({
       run();
     };
 
-    surface.addEventListener('wheel', onWheel, { passive: false });
-    surface.addEventListener('pointerdown', onDown);
-    surface.addEventListener('keydown', onKey);
+    surface.addEventListener("wheel", onWheel, { passive: false });
+    surface.addEventListener("pointerdown", onDown);
+    surface.addEventListener("keydown", onKey);
     // On the window, so a drag survives the pointer leaving the ring — and
     // so it keeps running while the anchors inside are out of the hit test.
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
 
     draw();
 
     return () => {
-      media.removeEventListener('change', onQuery);
-      surface.removeEventListener('wheel', onWheel);
-      surface.removeEventListener('pointerdown', onDown);
-      surface.removeEventListener('keydown', onKey);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
+      media.removeEventListener("change", onQuery);
+      surface.removeEventListener("wheel", onWheel);
+      surface.removeEventListener("pointerdown", onDown);
+      surface.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       if (raf.current !== 0) cancelAnimationFrame(raf.current);
       raf.current = 0;
       window.clearTimeout(settle.current);

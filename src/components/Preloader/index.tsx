@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import gsap from 'gsap';
-import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import gsap from "gsap";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { PRELOADING_ATTR } from './boot';
+import { PRELOADING_ATTR } from "./boot";
 
 /** The curtain holds at least this long so it reads as a deliberate
  *  gesture. The page is prerendered and small; on a warm cache every real
@@ -47,9 +47,11 @@ const FALLBACK_OVERHANG = 0.12;
 const PROBE_PX = 100;
 
 const readMs = (name: string, fallback: number): number => {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  if (raw.endsWith('ms')) return parseFloat(raw) || fallback;
-  if (raw.endsWith('s')) return (parseFloat(raw) || fallback / 1000) * 1000;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  if (raw.endsWith("ms")) return parseFloat(raw) || fallback;
+  if (raw.endsWith("s")) return (parseFloat(raw) || fallback / 1000) * 1000;
   return fallback;
 };
 
@@ -88,7 +90,8 @@ const textWidth = (el: HTMLElement): number => {
  * finds.
  */
 const shouldRun =
-  typeof document !== 'undefined' && document.documentElement.hasAttribute(PRELOADING_ATTR);
+  typeof document !== "undefined" &&
+  document.documentElement.hasAttribute(PRELOADING_ATTR);
 
 interface Geometry {
   /** Left edge of the column, in viewport px. */
@@ -120,7 +123,11 @@ interface Geometry {
  * The hold itself lives in `global.css`, keyed on the `data-preloading`
  * attribute that `boot.ts` sets before first paint.
  */
-export default function Preloader({ fullName }: { fullName: string }): React.ReactElement | null {
+export default function Preloader({
+  fullName,
+}: {
+  fullName: string;
+}): React.ReactElement | null {
   // The name is handed down rather than read here, and it is the SAME
   // string the masthead is built from — see MainLayout. The curtain lands
   // its letters on that heading exact to the pixel, and it finds the
@@ -130,8 +137,12 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
 
   /** One entry per character. The key is stable because the string is. */
   const LETTERS = useMemo(
-    () => Array.from(FULL_NAME).map((char, index) => ({ char, key: `${index}${char}` })),
-    [FULL_NAME]
+    () =>
+      Array.from(FULL_NAME).map((char, index) => ({
+        char,
+        key: `${index}${char}`,
+      })),
+    [FULL_NAME],
   );
 
   // Server and first client render agree: the markup always ships. Whether
@@ -163,15 +174,19 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
     // Asserted, not assumed. On a remount the cleanup below has already
     // released it, and the hold has to go back on before the first frame
     // this pass paints.
-    html.setAttribute(PRELOADING_ATTR, '');
+    html.setAttribute(PRELOADING_ATTR, "");
 
     // From here the panel's visibility is ours, not the attribute's — the
     // exit removes the attribute halfway through and must not yank the
     // curtain out from under its own animation.
-    root.classList.add('st-preloader--running');
+    root.classList.add("st-preloader--running");
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const letters = Array.from(line.querySelectorAll<HTMLElement>('[data-letter]'));
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const letters = Array.from(
+      line.querySelectorAll<HTMLElement>("[data-letter]"),
+    );
 
     /**
      * Exempt the measured elements from implicit transitions.
@@ -196,7 +211,7 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
     // is a frame behind even when the line's is not. Exempting the line
     // alone took the error from 70px down to 3px and no further.
     for (const element of [stage, mask, line, ref, ...letters]) {
-      element.style.setProperty('transition', 'none', 'important');
+      element.style.setProperty("transition", "none", "important");
     }
     const done = { fonts: false, load: false };
     let forced = false;
@@ -219,9 +234,10 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
     // not, because it depends on a webfont that has not arrived, so the
     // line stays hidden until it does.
     const column = (): { left: number; width: number } => {
-      const probe = document.createElement('div');
-      probe.className = 'px-[var(--gut)]';
-      probe.style.cssText = 'position:absolute;left:0;top:0;width:100%;visibility:hidden';
+      const probe = document.createElement("div");
+      probe.className = "px-[var(--gut)]";
+      probe.style.cssText =
+        "position:absolute;left:0;top:0;width:100%;visibility:hidden";
       document.body.appendChild(probe);
       const style = getComputedStyle(probe);
       const left = parseFloat(style.paddingLeft) || 0;
@@ -232,14 +248,17 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
       // scrollbar right now and clientWidth reads one scrollbar too wide
       // for the page that is about to exist. Measure the difference rather
       // than assume it: zero on overlay scrollbars, ~15px on classic ones.
-      const gauge = document.createElement('div');
+      const gauge = document.createElement("div");
       gauge.style.cssText =
-        'position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll';
+        "position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll";
       document.body.appendChild(gauge);
       const scrollbar = gauge.offsetWidth - gauge.clientWidth;
       gauge.remove();
 
-      return { left, width: Math.max(1, html.clientWidth - left - right - scrollbar) };
+      return {
+        left,
+        width: Math.max(1, html.clientWidth - left - right - scrollbar),
+      };
     };
 
     const { left: gutter, width: columnWidth } = column();
@@ -254,10 +273,10 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
      *  a per-character coefficient does not exist. */
     const probeSize = (): number => {
       const style = getComputedStyle(line);
-      const probe = document.createElement('span');
+      const probe = document.createElement("span");
       probe.textContent = FULL_NAME;
       probe.style.cssText =
-        'position:absolute;left:-99999px;top:0;white-space:pre;visibility:hidden;pointer-events:none';
+        "position:absolute;left:-99999px;top:0;white-space:pre;visibility:hidden;pointer-events:none";
       probe.style.fontFamily = style.fontFamily;
       probe.style.fontWeight = style.fontWeight;
       probe.style.fontSize = `${PROBE_PX}px`;
@@ -266,7 +285,9 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
       // tracking. Re-express it as a ratio first.
       const tracking = parseFloat(style.letterSpacing);
       const currentPx = parseFloat(style.fontSize) || PROBE_PX;
-      probe.style.letterSpacing = Number.isNaN(tracking) ? 'normal' : `${tracking / currentPx}em`;
+      probe.style.letterSpacing = Number.isNaN(tracking)
+        ? "normal"
+        : `${tracking / currentPx}em`;
       document.body.appendChild(probe);
       const natural = probe.getBoundingClientRect().width;
       probe.remove();
@@ -289,8 +310,9 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
      * is the question that was meant.
      */
     const faceReady = (): boolean => {
-      const family = getComputedStyle(line).fontFamily.split(',')[0]?.trim() ?? '';
-      if (family === '') return true;
+      const family =
+        getComputedStyle(line).fontFamily.split(",")[0]?.trim() ?? "";
+      if (family === "") return true;
       try {
         return document.fonts.check(`700 100px ${family}`, FULL_NAME);
       } catch {
@@ -300,7 +322,7 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
 
     /** The masthead's line, or null on a page that has no masthead. */
     const heading = (): HTMLElement | null => {
-      const el = document.getElementById('open-heading');
+      const el = document.getElementById("open-heading");
       return el !== null && el.textContent?.trim() === FULL_NAME ? el : null;
     };
 
@@ -318,7 +340,7 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
      * same promise from a different component tree.
      */
     const readHeading = (el: HTMLElement): Geometry | null => {
-      const fit = parseFloat(el.style.getPropertyValue('--fit-size'));
+      const fit = parseFloat(el.style.getPropertyValue("--fit-size"));
       const box = el.getBoundingClientRect();
       if (!Number.isFinite(fit) || fit <= 0 || box.width <= 0) return null;
       return { left: box.left, top: box.top, size: fit, run: textWidth(el) };
@@ -344,7 +366,7 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
         left: gutter,
         top: Math.max(gutter, html.clientHeight / 2 - size * 0.45),
         size,
-        run: 0
+        run: 0,
       };
     };
 
@@ -367,7 +389,7 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
       const style = getComputedStyle(line);
       const size = parseFloat(style.fontSize) || 0;
       const box = parseFloat(style.lineHeight) || size;
-      const context = document.createElement('canvas').getContext('2d');
+      const context = document.createElement("canvas").getContext("2d");
       if (context === null) return size * FALLBACK_OVERHANG;
       context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
       const m = context.measureText(FULL_NAME);
@@ -425,7 +447,7 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
 
       const offsets: number[] = [];
       for (let index = 0; index < FULL_NAME.length; index += 1) {
-        if (FULL_NAME[index] === ' ') continue;
+        if (FULL_NAME[index] === " ") continue;
         range.setStart(node, index);
         range.setEnd(node, index + 1);
         offsets.push(range.getBoundingClientRect().left - whole.left);
@@ -451,7 +473,9 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
       const origin = line.getBoundingClientRect().left;
       return letters.every(
         (element, index) =>
-          Math.abs(element.getBoundingClientRect().left - (origin + offsets[index])) <= 0.5
+          Math.abs(
+            element.getBoundingClientRect().left - (origin + offsets[index]),
+          ) <= 0.5,
       );
     };
 
@@ -467,8 +491,8 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
      * removing rather than explaining.
      */
     const rest = (): void => {
-      gsap.set(letters, { clearProps: 'transform' });
-      for (const element of letters) element.style.willChange = 'auto';
+      gsap.set(letters, { clearProps: "transform" });
+      for (const element of letters) element.style.willChange = "auto";
     };
 
     /** Put the apparatus at the answer, show it, and start the letters.
@@ -489,25 +513,30 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
         // movement the query is about — the same call PageTransition makes.
         rest();
         settled = visible;
-        timeline = gsap.timeline().to(stage, { opacity: 1, duration: 0.24, ease: 'none' });
+        timeline = gsap
+          .timeline()
+          .to(stage, { opacity: 1, duration: 0.24, ease: "none" });
         return;
       }
 
-      const spread = Math.min(STAGGER_MS, MAX_SPREAD_MS / Math.max(1, letters.length - 1));
+      const spread = Math.min(
+        STAGGER_MS,
+        MAX_SPREAD_MS / Math.max(1, letters.length - 1),
+      );
       settled = visible + spread * (letters.length - 1) + LETTER_MS;
 
       timeline = gsap.timeline();
-      timeline.to(stage, { opacity: 1, duration: 0.24, ease: 'none' }, 0);
+      timeline.to(stage, { opacity: 1, duration: 0.24, ease: "none" }, 0);
       timeline.to(
         letters,
         {
           yPercent: 0,
           duration: LETTER_MS / 1000,
-          ease: 'expo.out',
+          ease: "expo.out",
           stagger: spread / 1000,
-          onComplete: rest
+          onComplete: rest,
         },
-        0
+        0,
       );
     };
 
@@ -528,7 +557,9 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
       if (el === null || geom === null) return;
       const read = readHeading(el);
       if (read === null) return;
-      const resized = Math.abs(read.size - geom.size) > 0.5 || Math.abs(read.run - geom.run) > 0.5;
+      const resized =
+        Math.abs(read.size - geom.size) > 0.5 ||
+        Math.abs(read.run - geom.run) > 0.5;
       geom = read;
       if (resized) dress();
       stage.style.left = `${geom.left}px`;
@@ -546,8 +577,8 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
     // There are no <img> in the hero yet, so `load` is the catch-all for
     // every subresource the first screen depends on. It may already have
     // fired by the time this effect runs.
-    if (document.readyState === 'complete') done.load = true;
-    else window.addEventListener('load', onLoad, { once: true });
+    if (document.readyState === "complete") done.load = true;
+    else window.addEventListener("load", onLoad, { once: true });
 
     const capTimer = window.setTimeout(() => {
       forced = true;
@@ -568,7 +599,7 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
       rafId = 0;
       window.clearTimeout(capTimer);
       window.clearTimeout(lenisTimer);
-      window.removeEventListener('load', onLoad);
+      window.removeEventListener("load", onLoad);
       timeline?.kill();
       timeline = null;
     };
@@ -578,9 +609,9 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
      *  mid-dissolve and unmount calls it again. */
     const release = (): void => {
       html.removeAttribute(PRELOADING_ATTR);
-      for (const element of frozen) element.removeAttribute('inert');
+      for (const element of frozen) element.removeAttribute("inert");
       frozen.length = 0;
-      if (statusRef.current !== null) statusRef.current.textContent = '';
+      if (statusRef.current !== null) statusRef.current.textContent = "";
       window.clearTimeout(lenisTimer);
       window.lenis?.start();
     };
@@ -597,17 +628,21 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
         release();
         timeline = gsap
           .timeline({ onComplete: finish })
-          .to(root, { opacity: 0, duration: 0.25, ease: 'none' });
+          .to(root, { opacity: 0, duration: 0.25, ease: "none" });
         return;
       }
 
-      const dissolve = readMs('--t-handoff', FALLBACK_DISSOLVE) / 1000;
+      const dissolve = readMs("--t-handoff", FALLBACK_DISSOLVE) / 1000;
 
       // Nothing else moves. What is on the paper is a line at the size the
       // masthead solved to, sitting exactly where the masthead's is, so
       // the dissolve is a cut between two identical frames.
       timeline = gsap.timeline({ onComplete: finish });
-      timeline.to(root, { opacity: 0, duration: dissolve, ease: 'power2.inOut' }, 0);
+      timeline.to(
+        root,
+        { opacity: 0, duration: dissolve, ease: "power2.inOut" },
+        0,
+      );
       // Released mid-dissolve on purpose: the corner marks' st-fade is held
       // by the attribute, so the frame comes up around the name while the
       // paper is still going. Moving this to the end gives a dead beat.
@@ -636,7 +671,8 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
         // The deadline is the escape hatch for a face that never arrives:
         // past it the string is measured here instead, in whatever is
         // rendering.
-        const settledFont = done.fonts && (faceReady() || visible >= FIT_DEADLINE_MS);
+        const settledFont =
+          done.fonts && (faceReady() || visible >= FIT_DEADLINE_MS);
         const read = settledFont ? resolve() : null;
         if (read !== null) {
           // `--fit-size` being present says useFittedText has written a
@@ -673,19 +709,21 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
     // as well, so a screen reader is not free-roaming a page that is
     // visually covered.
     for (const child of Array.from(document.body.children)) {
-      if (child === root || child.hasAttribute('inert')) continue;
-      child.setAttribute('inert', '');
+      if (child === root || child.hasAttribute("inert")) continue;
+      child.setAttribute("inert", "");
       frozen.push(child);
     }
 
     // Filling the live region after mount is what makes it announce; text
     // present at first render is often missed.
-    if (statusRef.current !== null) statusRef.current.textContent = 'Loading';
+    if (statusRef.current !== null) statusRef.current.textContent = "Loading";
 
     // Parked before the first frame the stage could possibly be visible
     // on. GSAP owns this transform for the whole gesture — there is no
     // class carrying one, because the two compose rather than replace.
-    gsap.set(letters, { yPercent: (i: number) => (i % 2 === 0 ? -DROP_PERCENT : DROP_PERCENT) });
+    gsap.set(letters, {
+      yPercent: (i: number) => (i % 2 === 0 ? -DROP_PERCENT : DROP_PERCENT),
+    });
 
     rafId = requestAnimationFrame(tick);
 
@@ -698,7 +736,10 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
   if (!active) return null;
 
   return (
-    <div ref={rootRef} className="st-preloader fixed inset-0 z-[200] bg-[var(--paper)]">
+    <div
+      ref={rootRef}
+      className="st-preloader fixed inset-0 z-[200] bg-[var(--paper)]"
+    >
       <p ref={statusRef} className="sr-only" role="status" />
 
       {/* Decorative: the status above is the whole accessible content, and
@@ -709,15 +750,21 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
           {/* The mask. Its padding is measured and written by the effect,
               not set here: see `overhang`. */}
           <div ref={maskRef} className="overflow-hidden">
-            <div ref={lineRef} className="st-display relative text-[var(--ink)]">
+            <div
+              ref={lineRef}
+              className="st-display relative text-[var(--ink)]"
+            >
               {/* The line the masthead would set, unsplit, so it still
                   kerns. Never seen — it is only measured, one character at
                   a time, to say where each letter below belongs. */}
-              <span ref={refRef} className="absolute top-0 left-0 whitespace-pre opacity-0">
+              <span
+                ref={refRef}
+                className="absolute top-0 left-0 whitespace-pre opacity-0"
+              >
                 {FULL_NAME}
               </span>
 
-              {LETTERS.filter((letter) => letter.char !== ' ').map((letter) => (
+              {LETTERS.filter((letter) => letter.char !== " ").map((letter) => (
                 <span
                   key={letter.key}
                   data-letter=""

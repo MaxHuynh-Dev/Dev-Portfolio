@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload';
+import type { CollectionConfig } from "payload";
 
 /**
  * Project imagery.
@@ -21,16 +21,16 @@ import type { CollectionConfig } from 'payload';
  * before the file has arrived (trap 27).
  */
 export const Media: CollectionConfig = {
-  slug: 'media',
+  slug: "media",
   admin: {
-    useAsTitle: 'alt',
-    defaultColumns: ['filename', 'alt', 'width', 'height']
+    useAsTitle: "alt",
+    defaultColumns: ["filename", "alt", "width", "height"],
   },
   upload: {
     // No `staticDir`: nothing is written to this filesystem. The plugin's
     // `disableLocalStorage` is what enforces that; this is just the absence
     // of a second opinion about where files go.
-    mimeTypes: ['image/*'],
+    mimeTypes: ["image/*"],
     // No generated sizes: next/image already resizes on demand from the
     // original, and a second set of derivatives would be a second answer
     // to the same question. Cloudinary could transform on the fly as well,
@@ -38,17 +38,17 @@ export const Media: CollectionConfig = {
     imageSizes: [],
     // The document's own URL, which the adapter stored at upload time. A
     // path built here would be a second guess at where the object lives.
-    adminThumbnail: ({ doc }) => (typeof doc.url === 'string' ? doc.url : null)
+    adminThumbnail: ({ doc }) => (typeof doc.url === "string" ? doc.url : null),
   },
   fields: [
     {
-      name: 'alt',
-      type: 'text',
+      name: "alt",
+      type: "text",
       required: true,
       admin: {
         description:
-          'What the image actually shows — not "screenshot of the homepage". This is the only description a screen reader gets.'
-      }
-    }
-  ]
+          'What the image actually shows — not "screenshot of the homepage". This is the only description a screen reader gets.',
+      },
+    },
+  ],
 };

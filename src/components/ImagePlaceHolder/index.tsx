@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Image, { type ImageProps } from 'next/image';
-import type React from 'react';
-import { cn } from '@/lib/utils';
+import Image, { type ImageProps } from "next/image";
+import type React from "react";
+import { cn } from "@/lib/utils";
 
 interface ImagePlaceHolderProps extends ImageProps {
   isFull?: boolean;
@@ -15,12 +15,12 @@ function ImagePlaceHolder({
   width,
   height,
   isFull = false,
-  className
+  className,
 }: ImagePlaceHolderProps): React.JSX.Element {
   return (
     <div className="relative h-full w-full text-[0] leading-0">
       <Image
-        className={cn('h-full w-full object-cover', className)}
+        className={cn("h-full w-full object-cover", className)}
         loading="eager"
         src={src}
         alt={alt}
@@ -31,11 +31,11 @@ function ImagePlaceHolder({
         src={src}
         alt={alt}
         onLoad={(e) => {
-          (e.target as HTMLImageElement).classList.add('opacity-100');
+          (e.target as HTMLImageElement).classList.add("opacity-100");
         }}
         sizes={
           isFull
-            ? '100vw'
+            ? "100vw"
             : `(min-width: ${String(width ?? 100)}px) ${String(width ?? 100)}px, 100vw`
         }
         width={width}

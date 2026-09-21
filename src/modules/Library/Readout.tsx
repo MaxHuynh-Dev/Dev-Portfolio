@@ -1,7 +1,7 @@
-import { shortest } from '@Hooks/useCarousel';
-import type React from 'react';
-import { memo } from 'react';
-import type { Project } from '@/content/site';
+import { shortest } from "@Hooks/useCarousel";
+import type React from "react";
+import { memo } from "react";
+import type { Project } from "@/content/site";
 
 /**
  * What the ring is pointing at: its place in the list, its name, its one
@@ -47,7 +47,11 @@ interface RolledProps {
 }
 
 /** One line of the readout, with every project's version of it stacked. */
-function Rolled({ projects, className, render }: RolledProps): React.ReactElement {
+function Rolled({
+  projects,
+  className,
+  render,
+}: RolledProps): React.ReactElement {
   return (
     <span className="st-roll">
       {projects.map((project, index) => (
@@ -66,7 +70,7 @@ function Rolled({ projects, className, render }: RolledProps): React.ReactElemen
 function Readout({
   projects,
   released,
-  counterPose
+  counterPose,
 }: {
   projects: Project[];
   /** True once neither curtain is in the way — see `useReleased`. */
@@ -98,7 +102,7 @@ function Readout({
         <Rolled
           projects={projects}
           className="st-display block text-[clamp(1.1rem,3.6vw,3rem)] text-[var(--ink)] tabular-nums"
-          render={(_project, index) => String(index + 1).padStart(2, '0')}
+          render={(_project, index) => String(index + 1).padStart(2, "0")}
         />
       </span>
 
@@ -127,8 +131,14 @@ function Readout({
           itself, the clip sits where the summary's own `.st-roll` sits in
           the cell beside it, so the two rows are still built the same way.
           Re-measure row two after touching this. */}
-      <span className="st-meta st-line block tabular-nums" data-in={released} style={counterPose}>
-        <span className="st-line-body">/ {String(projects.length).padStart(2, '0')}</span>
+      <span
+        className="st-meta st-line block tabular-nums"
+        data-in={released}
+        style={counterPose}
+      >
+        <span className="st-line-body">
+          / {String(projects.length).padStart(2, "0")}
+        </span>
       </span>
 
       <span className="block min-w-0">

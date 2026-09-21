@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import Headline from '@Components/Headline';
-import Lines from '@Components/Lines';
-import Reveal from '@Components/Reveal';
-import SocialIcon, { markFor } from '@Components/SocialIcon';
-import { useFittedText } from '@Hooks/useFittedText';
-import { useViaRoute } from '@Hooks/useReveal';
-import type React from 'react';
-import type { LinkColumn, Profile } from '@/content/site';
+import Headline from "@Components/Headline";
+import Lines from "@Components/Lines";
+import Reveal from "@Components/Reveal";
+import SocialIcon, { markFor } from "@Components/SocialIcon";
+import { useFittedText } from "@Hooks/useFittedText";
+import { useViaRoute } from "@Hooks/useReveal";
+import type React from "react";
+import type { LinkColumn, Profile } from "@/content/site";
 
 /**
  * How the opening arrives, in one place.
@@ -61,7 +61,7 @@ const LINKS_STEP = 1;
  */
 export default function Open({
   profile,
-  links
+  links,
 }: {
   profile: Profile;
   links: LinkColumn[];
@@ -73,7 +73,7 @@ export default function Open({
 
   const { ref } = useFittedText(FULL_NAME, {
     maxViewportFraction: 0.36,
-    lineHeight: 0.9
+    lineHeight: 0.9,
   });
 
   // The name is the largest thing on the first screen, and on the load path
@@ -94,7 +94,9 @@ export default function Open({
    */
   const columnStep = (index: number): number =>
     LINKS_STEP +
-    links.slice(0, index).reduce((total, column) => total + 1 + column.links.length, 0);
+    links
+      .slice(0, index)
+      .reduce((total, column) => total + 1 + column.links.length, 0);
 
   return (
     <section
@@ -180,7 +182,11 @@ export default function Open({
             also the only place that knows how many groups there are: the
             first is the heading, and a second would sit under it with a
             label of its own. */}
-        <section id="contact" aria-labelledby="contact-heading" className="md:order-1 md:shrink-0">
+        <section
+          id="contact"
+          aria-labelledby="contact-heading"
+          className="md:order-1 md:shrink-0"
+        >
           {/* The address is NOT repeated here. It sits in the top-right
               corner mark, which is on every page of the site and never
               re-renders across a navigation, and one screen carrying it
@@ -197,18 +203,22 @@ export default function Open({
           <div className="flex flex-wrap gap-x-[clamp(1.75rem,4vw,3.5rem)] gap-y-[clamp(1rem,2vh,1.5rem)]">
             {links.map((column, index) => {
               const start = columnStep(index);
-              const Label = index === 0 ? 'h2' : 'p';
+              const Label = index === 0 ? "h2" : "p";
               return (
                 <div key={column.label}>
                   <Label
                     {...(index === 0
                       ? {
-                          id: 'contact-heading',
-                          className: 'st-meta m-0 font-[500] text-[var(--ink)]'
+                          id: "contact-heading",
+                          className: "st-meta m-0 font-[500] text-[var(--ink)]",
                         }
-                      : { className: 'st-meta m-0' })}
+                      : { className: "st-meta m-0" })}
                   >
-                    <Reveal on="load" className="st-line block" delay={at(start)}>
+                    <Reveal
+                      on="load"
+                      className="st-line block"
+                      delay={at(start)}
+                    >
                       <span className="st-line-body">{column.label}</span>
                     </Reveal>
                   </Label>
@@ -216,8 +226,15 @@ export default function Open({
                     {column.links.map((link, item) => {
                       const mark = markFor(link.label);
                       return (
-                        <li key={link.label} className="text-[0.95rem] leading-[1.6]">
-                          <Reveal on="load" className="st-line block" delay={at(start + 1 + item)}>
+                        <li
+                          key={link.label}
+                          className="text-[0.95rem] leading-[1.6]"
+                        >
+                          <Reveal
+                            on="load"
+                            className="st-line block"
+                            delay={at(start + 1 + item)}
+                          >
                             {mark === null ? (
                               <a
                                 className="st-link st-line-body mx-[0.5rem]"

@@ -16,8 +16,10 @@ class NumberHelper {
   }
 
   convertRemToPx(rem: number): number {
-    if (typeof document === 'undefined') return rem * 16;
-    const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    if (typeof document === "undefined") return rem * 16;
+    const rootFontSize = Number.parseFloat(
+      getComputedStyle(document.documentElement).fontSize,
+    );
     return rem * rootFontSize;
   }
 }

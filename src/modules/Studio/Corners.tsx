@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useLocalClock } from '@Hooks/useLocalClock';
-import Link from 'next/link';
-import type React from 'react';
-import type { Profile } from '@/content/site';
+import { useLocalClock } from "@Hooks/useLocalClock";
+import Link from "next/link";
+import type React from "react";
+import type { Profile } from "@/content/site";
 
 /**
  * Two marks, and both of them are real pages.
@@ -29,8 +29,8 @@ import type { Profile } from '@/content/site';
  * id costs nothing.
  */
 const SECTIONS: { label: string; route: string }[] = [
-  { label: 'work', route: '/works' },
-  { label: 'about', route: '/about' }
+  { label: "work", route: "/works" },
+  { label: "about", route: "/about" },
 ];
 
 /**
@@ -53,7 +53,11 @@ const SECTIONS: { label: string; route: string }[] = [
  * the same marks on `/works`, `/about` and every project page, where things
  * very much do.
  */
-export default function Corners({ profile }: { profile: Profile }): React.ReactElement {
+export default function Corners({
+  profile,
+}: {
+  profile: Profile;
+}): React.ReactElement {
   const time = useLocalClock(profile.timeZone);
   // One string, two consumers: what the mark shows and what the route
   // curtain spells out on its way here.
@@ -84,7 +88,11 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
                 the thing MainLayout already avoids for the preloader's
                 handover, and for the same reason: they agree until the day
                 they do not. */}
-            <Link className="text-[var(--ink)]" href="/" data-transition-label={fullName}>
+            <Link
+              className="text-[var(--ink)]"
+              href="/"
+              data-transition-label={fullName}
+            >
               {fullName}
             </Link>
             <br />
@@ -96,7 +104,10 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
               {profile.location.toLowerCase()}, {time}
             </span>
             <br />
-            <a className="st-link text-[var(--ink)]" href={`mailto:${profile.email}`}>
+            <a
+              className="st-link text-[var(--ink)]"
+              href={`mailto:${profile.email}`}
+            >
               {profile.email}
             </a>
           </p>
