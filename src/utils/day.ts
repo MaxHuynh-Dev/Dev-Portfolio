@@ -1,7 +1,7 @@
-import { format } from "date-fns";
-import dayjs from "dayjs";
-import timezone from "dayjs/plugin/timezone";
-import utc from "dayjs/plugin/utc";
+import { format } from 'date-fns';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 class DAY_UTILS {
   constructor() {
@@ -10,17 +10,17 @@ class DAY_UTILS {
   }
 
   formatDate(date: Date): string {
-    const typeFormat = "MM/dd/yyyy";
+    const typeFormat = 'MM/dd/yyyy';
     return format(date, typeFormat);
   }
 
   formatDateVN(date: Date): string {
-    const typeFormat = "dd/MM/yyyy";
+    const typeFormat = 'dd/MM/yyyy';
     return format(date, typeFormat);
   }
 
   formatDateVNPlusTime(date: Date): string {
-    const typeFormat = "dd/MM/yyyy HH:mm";
+    const typeFormat = 'dd/MM/yyyy HH:mm';
     return format(date, typeFormat);
   }
 
@@ -29,7 +29,7 @@ class DAY_UTILS {
    * Does not mutate the argument.
    */
   convertToVNTimeZone(date: Date): string {
-    return dayjs(date).tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DDTHH:mm:ss");
+    return dayjs(date).tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DDTHH:mm:ss');
   }
 
   // convertToVNTimeZoneMbyMoment(date: string | Date): string {
@@ -39,7 +39,7 @@ class DAY_UTILS {
   // }
 
   getCurrentTime(date: number): string {
-    return dayjs(date).tz("Europe/London").format("HH:mm");
+    return dayjs(date).tz('Europe/London').format('HH:mm');
   }
 }
 

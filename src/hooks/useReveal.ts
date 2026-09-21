@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 /**
  * When a masked block is allowed to come up.
@@ -28,7 +28,7 @@ import { useEffect, useState } from "react";
  * every animation on the page and switch on a second scroll lock beside the
  * one `PageTransition` already holds through Lenis.
  */
-const CURTAINS = ["data-preloading", "data-routing"] as const;
+const CURTAINS = ['data-preloading', 'data-routing'] as const;
 
 /**
  * Whether a curtain has let go of the page.
@@ -69,7 +69,7 @@ export const useReleased = (): boolean => {
     const observer = new MutationObserver(settle);
     observer.observe(html, {
       attributes: true,
-      attributeFilter: [...CURTAINS],
+      attributeFilter: [...CURTAINS]
     });
 
     // Deferred by a frame, and this is not a nicety. StrictMode invokes
@@ -133,15 +133,13 @@ export const useViaRoute = (): boolean => {
   const [viaRoute, setViaRoute] = useState(false);
 
   useEffect(() => {
-    setViaRoute(
-      routed || document.documentElement.hasAttribute("data-routing"),
-    );
+    setViaRoute(routed || document.documentElement.hasAttribute('data-routing'));
   }, []);
 
   return viaRoute;
 };
 
-export type Trigger = "load" | "scroll";
+export type Trigger = 'load' | 'scroll';
 
 /**
  * How far down the screen a block has to reach before it is asked for, as
@@ -161,11 +159,11 @@ export function useReveal(on: Trigger, element: HTMLElement | null): boolean {
   // latch here fails open; this is the only one that could fail closed, and
   // it costs nothing to make it a plain derivation.
   const [scrolledTo, setScrolledTo] = useState(false);
-  const seen = on === "load" || scrolledTo;
+  const seen = on === 'load' || scrolledTo;
   const released = useReleased();
 
   useEffect(() => {
-    if (on !== "scroll" || seen || element === null) return;
+    if (on !== 'scroll' || seen || element === null) return;
 
     let frame = 0;
 
@@ -178,8 +176,7 @@ export function useReveal(on: Trigger, element: HTMLElement | null): boolean {
       // Measured: at 375 the about paragraph stayed hidden for good after
       // one jump to the foot of the page. Text that never appears is a
       // worse failure than a reveal that fires early.
-      if (element.getBoundingClientRect().top >= window.innerHeight * TRIGGER)
-        return;
+      if (element.getBoundingClientRect().top >= window.innerHeight * TRIGGER) return;
       setScrolledTo(true);
     };
 
@@ -192,13 +189,13 @@ export function useReveal(on: Trigger, element: HTMLElement | null): boolean {
     // Lenis scrolls the real document, so a plain scroll listener fires —
     // the same thing `Work` and `ShotStack` rely on rather than taking a
     // dependency on its emitter.
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
 
     return () => {
       if (frame !== 0) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
     };
   }, [on, seen, element]);
 

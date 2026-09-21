@@ -1,4 +1,4 @@
-import type { GlobalConfig } from "payload";
+import type { GlobalConfig } from 'payload';
 
 /**
  * Everything on the index that is not a project and not the person.
@@ -11,52 +11,51 @@ import type { GlobalConfig } from "payload";
  * filled.
  */
 export const SiteSettings: GlobalConfig = {
-  slug: "site-settings",
-  label: "Site settings",
+  slug: 'site-settings',
+  label: 'Site settings',
   admin: {
-    description: "The work range and the contact links.",
+    description: 'The work range and the contact links.'
   },
   fields: [
     {
-      name: "workRange",
-      type: "text",
+      name: 'workRange',
+      type: 'text',
       required: true,
       admin: {
-        description:
-          "Shown beside the work list and in the /works description — e.g. 2022 — 2026.",
-      },
+        description: 'Shown beside the work list and in the /works description — e.g. 2022 — 2026.'
+      }
     },
     {
-      name: "contactLinks",
-      type: "array",
-      label: "Contact columns",
+      name: 'contactLinks',
+      type: 'array',
+      label: 'Contact columns',
       fields: [
-        { name: "label", type: "text", required: true },
+        { name: 'label', type: 'text', required: true },
         {
-          name: "links",
-          type: "array",
+          name: 'links',
+          type: 'array',
           required: true,
           fields: [
             {
-              type: "row",
+              type: 'row',
               fields: [
                 {
-                  name: "label",
-                  type: "text",
+                  name: 'label',
+                  type: 'text',
                   required: true,
-                  admin: { width: "40%" },
+                  admin: { width: '40%' }
                 },
                 {
-                  name: "href",
-                  type: "text",
+                  name: 'href',
+                  type: 'text',
                   required: true,
-                  admin: { width: "60%" },
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
+                  admin: { width: '60%' }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
 };

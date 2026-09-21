@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import Headline from "@Components/Headline";
-import Reveal from "@Components/Reveal";
-import Shot from "@Components/Shot";
-import { useFittedText } from "@Hooks/useFittedText";
-import Image from "next/image";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
-import type { Project, Size } from "@/content/site";
+import Headline from '@Components/Headline';
+import Reveal from '@Components/Reveal';
+import Shot from '@Components/Shot';
+import { useFittedText } from '@Hooks/useFittedText';
+import Image from 'next/image';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { Project, Size } from '@/content/site';
 
 /**
  * The shape of an EMPTY field, and only of an empty field.
@@ -19,15 +19,11 @@ import type { Project, Size } from "@/content/site";
  * image in it, so it still needs a declared shape, and `tall` still breaks
  * the rhythm of a stack of them.
  */
-const RATIO = { wide: "16 / 10", tall: "4 / 5" } as const;
+const RATIO = { wide: '16 / 10', tall: '4 / 5' } as const;
 
 /** The shape to give a box that stands in for a shot, measured or not. */
 const shapeOf = (size: Size | null, tall: boolean): string =>
-  size === null
-    ? tall
-      ? RATIO.tall
-      : RATIO.wide
-    : `${size.width} / ${size.height}`;
+  size === null ? (tall ? RATIO.tall : RATIO.wide) : `${size.width} / ${size.height}`;
 
 /**
  * The media column, and the rail beside it.
@@ -64,7 +60,7 @@ const shapeOf = (size: Size | null, tall: boolean): string =>
  */
 export default function ShotStack({
   project,
-  shotSizes,
+  shotSizes
 }: {
   project: Project;
   /**
@@ -85,21 +81,21 @@ export default function ShotStack({
   // fixed scale is either timid for the short ones or overflowing for the
   // long ones. Same engine as the masthead.
   const { ref: nameRef } = useFittedText(project.name, {
-    maxViewportFraction: 0.3,
+    maxViewportFraction: 0.3
   });
 
   useEffect(() => {
     const figures = Array.from(
-      stackRef.current?.querySelectorAll<HTMLElement>("[data-shot]") ?? [],
+      stackRef.current?.querySelectorAll<HTMLElement>('[data-shot]') ?? []
     );
     if (figures.length === 0) return;
 
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let reduce = motion.matches;
     const onQuery = (): void => {
       reduce = motion.matches;
     };
-    motion.addEventListener("change", onQuery);
+    motion.addEventListener('change', onQuery);
 
     let frame = 0;
     /** Each thumbnail's place in the rail. Layout, so read on resize only. */
@@ -114,9 +110,7 @@ export default function ShotStack({
       // sitting on. The rail never moves relative to its own children, so
       // one reading of both is good until the layout changes.
       const railBox = rail.getBoundingClientRect();
-      slots = Array.from(
-        rail.querySelectorAll<HTMLElement>("[data-thumb]"),
-      ).map((thumb) => {
+      slots = Array.from(rail.querySelectorAll<HTMLElement>('[data-thumb]')).map((thumb) => {
         const box = thumb.getBoundingClientRect();
         return { top: box.top - railBox.top, height: box.height };
       });
@@ -161,11 +155,8 @@ export default function ShotStack({
         const first = Math.min(slots.length - 1, Math.floor(on));
         const next = Math.min(slots.length - 1, first + 1);
         const part = on - first;
-        const top =
-          slots[first].top + (slots[next].top - slots[first].top) * part;
-        const height =
-          slots[first].height +
-          (slots[next].height - slots[first].height) * part;
+        const top = slots[first].top + (slots[next].top - slots[first].top) * part;
+        const height = slots[first].height + (slots[next].height - slots[first].height) * part;
         marker.style.transform = `translateY(${top.toFixed(2)}px)`;
         marker.style.height = `${height.toFixed(2)}px`;
       }
@@ -189,35 +180,31 @@ export default function ShotStack({
 
     readSlots();
     measure();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", relayout);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', relayout);
     // The fitted name above the stack settles when the face arrives, which
     // moves every shot on the page and therefore every centre.
     void document.fonts.ready.then(relayout);
 
     return () => {
-      motion.removeEventListener("change", onQuery);
+      motion.removeEventListener('change', onQuery);
       if (frame !== 0) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", relayout);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', relayout);
     };
   }, []);
 
   const goTo = (index: number): void => {
-    const target = stackRef.current?.querySelector<HTMLElement>(
-      `[data-shot="${index}"]`,
-    );
+    const target = stackRef.current?.querySelector<HTMLElement>(`[data-shot="${index}"]`);
     if (!target) return;
     // Lenis does not honour scroll-padding-top; read the declared value so
     // the two cannot drift.
-    const padding =
-      parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
-      0;
+    const padding = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
     if (window.lenis) {
       window.lenis.scrollTo(target, { offset: -padding });
       return;
     }
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
@@ -248,7 +235,7 @@ export default function ShotStack({
                 alt={shot.alt}
                 size={shotSizes[index] ?? null}
                 ratio={shot.tall === true ? RATIO.tall : RATIO.wide}
-                label={`shot ${String(index + 1).padStart(2, "0")}, ${shot.tall === true ? "4:5" : "16:10"}`}
+                label={`shot ${String(index + 1).padStart(2, '0')}, ${shot.tall === true ? '4:5' : '16:10'}`}
                 sizes="(max-width: 60rem) 100vw, 46rem"
                 priority={index === 0}
               />
@@ -309,7 +296,7 @@ export default function ShotStack({
                 <button
                   type="button"
                   data-thumb=""
-                  aria-current={index === active ? "true" : undefined}
+                  aria-current={index === active ? 'true' : undefined}
                   aria-label={`Shot ${index + 1} of ${project.shots.length}`}
                   onClick={() => {
                     goTo(index);
@@ -319,21 +306,12 @@ export default function ShotStack({
                   // interpolates its height between two slots, which is
                   // what lets them differ.
                   style={{
-                    aspectRatio: shapeOf(
-                      shotSizes[index] ?? null,
-                      shot.tall === true,
-                    ),
+                    aspectRatio: shapeOf(shotSizes[index] ?? null, shot.tall === true)
                   }}
                   className="relative block w-[2.4rem] bg-[var(--well)] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--ink)]"
                 >
                   {shot.src !== null ? (
-                    <Image
-                      src={shot.src}
-                      alt=""
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
+                    <Image src={shot.src} alt="" fill sizes="48px" className="object-cover" />
                   ) : null}
                 </button>
               </li>

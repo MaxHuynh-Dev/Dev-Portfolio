@@ -1,9 +1,9 @@
-import type React from "react";
-import type { Project } from "@/content/site";
+import type React from 'react';
+import type { Project } from '@/content/site';
 
-import NextProject from "./NextProject";
-import ShotStack from "./ShotStack";
-import SpecSheet from "./SpecSheet";
+import NextProject from './NextProject';
+import ShotStack from './ShotStack';
+import SpecSheet from './SpecSheet';
 
 /**
  * A project page.
@@ -25,7 +25,7 @@ import SpecSheet from "./SpecSheet";
  */
 export default function ProjectView({
   project,
-  next,
+  next
 }: {
   project: Project;
   next: Project;

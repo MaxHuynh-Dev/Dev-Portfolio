@@ -41,10 +41,7 @@ export const ROW_FALL_STAGGER_MS = 18;
 
 /** Everything, end to end, for the longest of the two directions. */
 export const switchMs = (rows: number): number =>
-  Math.max(
-    GATHER_MS,
-    ROW_LEAD_MS + Math.max(0, rows - 1) * ROW_STAGGER_MS + ROW_RISE_MS,
-  );
+  Math.max(GATHER_MS, ROW_LEAD_MS + Math.max(0, rows - 1) * ROW_STAGGER_MS + ROW_RISE_MS);
 
 /**
  * The arrival, when the page is first let go.

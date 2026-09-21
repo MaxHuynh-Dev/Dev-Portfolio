@@ -1,7 +1,7 @@
-import Lines from "@Components/Lines";
-import Reveal from "@Components/Reveal";
-import type React from "react";
-import type { Project } from "@/content/site";
+import Lines from '@Components/Lines';
+import Reveal from '@Components/Reveal';
+import type React from 'react';
+import type { Project } from '@/content/site';
 
 /**
  * How the column arrives, in one place.
@@ -16,13 +16,12 @@ const STEP_MS = 52;
 /** Within a field, between its own lines. Tighter — these belong together. */
 const SUB_MS = 22;
 
-const at = (step: number, sub = 0): number =>
-  LEAD_MS + step * STEP_MS + sub * SUB_MS;
+const at = (step: number, sub = 0): number => LEAD_MS + step * STEP_MS + sub * SUB_MS;
 
 function Field({
   label,
   step,
-  children,
+  children
 }: {
   label: string;
   /** Its place in the stagger, counted down the column. */
@@ -36,9 +35,7 @@ function Field({
           <span className="st-line-body">{label}</span>
         </Reveal>
       </p>
-      <div className="mt-[0.25rem] text-[0.95rem] leading-[1.55]">
-        {children}
-      </div>
+      <div className="mt-[0.25rem] text-[0.95rem] leading-[1.55]">{children}</div>
     </div>
   );
 }
@@ -67,11 +64,7 @@ function Field({
  * Awwwards, CSSDA and FWA, and this site does not carry award claims it
  * cannot stand behind.
  */
-export default function SpecSheet({
-  project,
-}: {
-  project: Project;
-}): React.ReactElement {
+export default function SpecSheet({ project }: { project: Project }): React.ReactElement {
   return (
     <div className="flex flex-col gap-[clamp(1.4rem,3vh,2.2rem)]">
       <Field label="about" step={0}>
@@ -86,11 +79,7 @@ export default function SpecSheet({
         <ul className="m-0 list-none p-0">
           {project.role.map((item, index) => (
             <li key={item}>
-              <Reveal
-                on="load"
-                className="st-line block"
-                delay={at(1, index + 1)}
-              >
+              <Reveal on="load" className="st-line block" delay={at(1, index + 1)}>
                 <span className="st-line-body">{item}</span>
               </Reveal>
             </li>
@@ -102,11 +91,7 @@ export default function SpecSheet({
         <ul className="m-0 list-none p-0">
           {project.stack.map((item, index) => (
             <li key={item}>
-              <Reveal
-                on="load"
-                className="st-line block"
-                delay={at(2, index + 1)}
-              >
+              <Reveal on="load" className="st-line block" delay={at(2, index + 1)}>
                 <span className="st-line-body">{item}</span>
               </Reveal>
             </li>

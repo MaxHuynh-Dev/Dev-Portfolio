@@ -1,6 +1,6 @@
-import Link from "next/link";
-import type React from "react";
-import type { Project } from "@/content/site";
+import Link from 'next/link';
+import type React from 'react';
+import type { Project } from '@/content/site';
 
 /**
  * The way out of a project, and into the next one.
@@ -10,20 +10,13 @@ import type { Project } from "@/content/site";
  * be the only centred thing here — an exception that would read as a
  * mistake rather than a decision.
  */
-export default function NextProject({
-  project,
-}: {
-  project: Project;
-}): React.ReactElement {
+export default function NextProject({ project }: { project: Project }): React.ReactElement {
   return (
     <section
       aria-labelledby="next-heading"
       className="px-[var(--gut)] pt-[clamp(3.5rem,10vh,7rem)] pb-[clamp(8rem,17vh,11rem)]"
     >
-      <h2
-        id="next-heading"
-        className="st-meta m-0 font-[500] text-[var(--ink)]"
-      >
+      <h2 id="next-heading" className="st-meta m-0 font-[500] text-[var(--ink)]">
         next project
       </h2>
 
@@ -36,8 +29,7 @@ export default function NextProject({
           {project.name}
         </span>
         <span className="st-meta mt-[0.4rem] block">
-          {project.kind.toLowerCase()},{" "}
-          <span className="tabular-nums">{project.year}</span>
+          {project.kind.toLowerCase()}, <span className="tabular-nums">{project.year}</span>
         </span>
       </Link>
     </section>

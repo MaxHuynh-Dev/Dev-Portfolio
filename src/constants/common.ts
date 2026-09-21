@@ -10,15 +10,15 @@
  * Keep these synchronous. `app/robots.ts` and `app/sitemap.ts` read
  * DOMAIN_URL at module scope.
  */
-export const DOMAIN_URL = "https://example.com"; // TODO: your deployed domain
+export const DOMAIN_URL = 'https://example.com'; // TODO: your deployed domain
 export const APP_KEYWORDS = [
-  "Front-End Developer",
-  "Creative Developer",
-  "UI Engineer",
-  "Next.js",
-  "GSAP",
-  "Three.js",
-  "WebGL",
-  "Portfolio",
+  'Front-End Developer',
+  'Creative Developer',
+  'UI Engineer',
+  'Next.js',
+  'GSAP',
+  'Three.js',
+  'WebGL',
+  'Portfolio'
 ];
-export const APP_OG_IMAGE = "/images/og-image.png"; // TODO: add this file
+export const APP_OG_IMAGE = '/images/og-image.png'; // TODO: add this file

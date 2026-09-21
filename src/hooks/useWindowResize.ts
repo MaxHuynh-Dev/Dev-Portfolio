@@ -1,14 +1,9 @@
-"use client";
+'use client';
 
-import { useGSAP } from "@gsap/react";
-import {
-  type Signal,
-  useComputed,
-  useSignal,
-  useSignalEffect,
-} from "@preact/signals-react";
-import { useEffect, useState } from "react";
-import { useDebounceCallback } from "usehooks-ts";
+import { useGSAP } from '@gsap/react';
+import { type Signal, useComputed, useSignal, useSignalEffect } from '@preact/signals-react';
+import { useEffect, useState } from 'react';
+import { useDebounceCallback } from 'usehooks-ts';
 
 interface IDimension {
   width: Signal<number>;
@@ -48,13 +43,13 @@ const useWindowResize = (): IDimension => {
 
   useEffect(() => {
     deBounceListener();
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return;
     }
 
-    window.addEventListener("resize", deBounceListener);
+    window.addEventListener('resize', deBounceListener);
     return (): void => {
-      window.removeEventListener("resize", deBounceListener);
+      window.removeEventListener('resize', deBounceListener);
     };
   }, [deBounceListener]);
 
@@ -75,7 +70,7 @@ const useWindowResize = (): IDimension => {
     isMobile,
     isTablet,
     isDesktop,
-    scrollHeight,
+    scrollHeight
   };
 };
 

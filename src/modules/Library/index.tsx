@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import Shot from "@Components/Shot";
-import { shortest, useCarousel } from "@Hooks/useCarousel";
-import { useReleased, useViaRoute } from "@Hooks/useReveal";
-import Link from "next/link";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Project } from "@/content/site";
-import Readout from "./Readout";
-import Roll from "./Roll";
+import Shot from '@Components/Shot';
+import { shortest, useCarousel } from '@Hooks/useCarousel';
+import { useReleased, useViaRoute } from '@Hooks/useReveal';
+import Link from 'next/link';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Project } from '@/content/site';
+import Readout from './Readout';
+import Roll from './Roll';
 import {
   ENTRY_CHROME_AT_MS,
   ENTRY_CHROME_MS,
@@ -21,8 +21,8 @@ import {
   ENTRY_ROLL_PCT,
   ENTRY_TOTAL_MS,
   ENTRY_TURN_MS,
-  GATHER_MS,
-} from "./timing";
+  GATHER_MS
+} from './timing';
 
 /**
  * Every project, on a ring.
@@ -119,8 +119,7 @@ const fadeFor = (count: number): number => Math.min(FADE_FROM, (count - 1) / 2);
 
 /** How far along the rim the cover `steps` out has dropped, per unit width. */
 const dipFor = (steps: number): number =>
-  (PITCH_RATIO * (1 - Math.cos(steps * STEP_DEG * RAD))) /
-  Math.sin(STEP_DEG * RAD);
+  (PITCH_RATIO * (1 - Math.cos(steps * STEP_DEG * RAD))) / Math.sin(STEP_DEG * RAD);
 
 /**
  * Half the bounding box of a cover `steps` out, per unit width.
@@ -138,7 +137,7 @@ const halfFor = (steps: number): { tall: number; wide: number } => {
   const scale = Math.max(0.2, 1 - steps * SHRINK) / 2;
   return {
     tall: scale * (TALL * Math.cos(angle) + Math.sin(angle)),
-    wide: scale * (Math.cos(angle) + TALL * Math.sin(angle)),
+    wide: scale * (Math.cos(angle) + TALL * Math.sin(angle))
   };
 };
 
@@ -162,8 +161,7 @@ const verticalFor = (reach: number): number => {
 
 /** Is the cover `steps` out from the middle still on screen at all? */
 const reaches = (width: number, steps: number, screen: number): boolean =>
-  (width * PITCH_RATIO * Math.sin(steps * STEP_DEG * RAD)) /
-    Math.sin(STEP_DEG * RAD) -
+  (width * PITCH_RATIO * Math.sin(steps * STEP_DEG * RAD)) / Math.sin(STEP_DEG * RAD) -
     width * halfFor(steps).wide <
   screen / 2;
 
@@ -194,13 +192,7 @@ const solveCover = (box: DOMRect): { width: number; fitted: number } => {
   const peek = capFor(box.width, PEEK);
   const whole = capFor(box.width, WHOLE);
   const solve = (steps: number): number =>
-    Math.min(
-      peek,
-      Math.max(
-        COVER_READABLE,
-        Math.min(whole, box.height / verticalFor(steps)),
-      ),
-    );
+    Math.min(peek, Math.max(COVER_READABLE, Math.min(whole, box.height / verticalFor(steps))));
 
   let fitted = 1;
   let width = solve(fitted);
@@ -248,7 +240,7 @@ const quart = (t: number): number => 1 - (1 - t) ** 4;
 const phase = (elapsed: number, at: number, span: number): number =>
   quart(across(elapsed, at, at + span));
 
-type Mode = "wheel" | "list";
+type Mode = 'wheel' | 'list';
 
 /**
  * The chrome's cascade, as CSS custom properties.
@@ -268,18 +260,18 @@ type Mode = "wheel" | "list";
  */
 const chromePose = (step: number, viaRoute: boolean): React.CSSProperties =>
   ({
-    "--in-delay": `${(viaRoute ? 0 : ENTRY_LEAD_MS) + ENTRY_LINES_AT_MS + ENTRY_CHROME_AT_MS + step * ENTRY_CHROME_STAGGER_MS}ms`,
-    "--in-rise": `${ENTRY_CHROME_MS}ms`,
+    '--in-delay': `${(viaRoute ? 0 : ENTRY_LEAD_MS) + ENTRY_LINES_AT_MS + ENTRY_CHROME_AT_MS + step * ENTRY_CHROME_STAGGER_MS}ms`,
+    '--in-rise': `${ENTRY_CHROME_MS}ms`
   }) as React.CSSProperties;
 
 export default function Library({
   projects,
-  workRange,
+  workRange
 }: {
   projects: Project[];
   workRange: string;
 }): React.ReactElement {
-  const [mode, setMode] = useState<Mode>("wheel");
+  const [mode, setMode] = useState<Mode>('wheel');
 
   // The elements the engine drives, held as state rather than refs so that
   // an effect which has to re-attach listeners can depend on the arrival of
@@ -353,8 +345,7 @@ export default function Library({
    */
   const viaRoute = useViaRoute();
 
-  const chrome = (step: number): React.CSSProperties =>
-    chromePose(step, viaRoute);
+  const chrome = (step: number): React.CSSProperties => chromePose(step, viaRoute);
 
   /**
    * Step 4 lives inside `Readout`, so it has to be handed over rather than
@@ -384,18 +375,11 @@ export default function Library({
       // one after another, which is what the reference's five-line readout
       // does. Staggering by project would be eight lines racing inside one
       // mask where only one of them is ever on screen.
-      const elapsed = arrived.current
-        ? Number.POSITIVE_INFINITY
-        : entry.current;
+      const elapsed = arrived.current ? Number.POSITIVE_INFINITY : entry.current;
       for (let mask = 0; mask < rolls.current.length; mask += 1) {
         const roll = rolls.current[mask];
         const up =
-          (1 -
-            phase(
-              elapsed,
-              ENTRY_LINES_AT_MS + mask * ENTRY_LINE_STAGGER_MS,
-              ENTRY_LINE_MS,
-            )) *
+          (1 - phase(elapsed, ENTRY_LINES_AT_MS + mask * ENTRY_LINE_STAGGER_MS, ENTRY_LINE_MS)) *
           ENTRY_ROLL_PCT;
         for (let index = 0; index < roll.length; index += 1) {
           const away = shortest(index - position, roll.length);
@@ -407,8 +391,7 @@ export default function Library({
           // "08 Project Eight 2022" instead of the project the ring was on.
           // There is no uniform push that hides all of them at 110% spacing;
           // widening the gap as they go is what empties the window.
-          roll[index].style.transform =
-            `translateY(${(away * (110 + up) + up).toFixed(2)}%)`;
+          roll[index].style.transform = `translateY(${(away * (110 + up) + up).toFixed(2)}%)`;
         }
       }
 
@@ -423,8 +406,7 @@ export default function Library({
       // reference the wheel spins and the type rises separately; giving the
       // readout this offset would spin eight names behind a one-line mask
       // for no gain.
-      const spun =
-        position + (1 - phase(elapsed, 0, ENTRY_TURN_MS)) * projects.length;
+      const spun = position + (1 - phase(elapsed, 0, ENTRY_TURN_MS)) * projects.length;
 
       if (pitch.current === 0) {
         // Before `measure()` has run there is no pose to write, and the
@@ -433,8 +415,7 @@ export default function Library({
         // navigation raises neither and it is visible. `draw` stays the only
         // thing that touches them.
         for (const element of covers.current) {
-          if (element !== null && element !== undefined)
-            element.style.opacity = "0";
+          if (element !== null && element !== undefined) element.style.opacity = '0';
         }
         return;
       }
@@ -447,12 +428,7 @@ export default function Library({
       // cover, and only while there is a gather to draw.
       const gather = ease(blend.current);
       let stack = null as { x: number; y: number; scale: number } | null;
-      if (
-        gather > 0 &&
-        slot !== null &&
-        surface !== null &&
-        cover.current > 0
-      ) {
+      if (gather > 0 && slot !== null && surface !== null && cover.current > 0) {
         const box = slot.getBoundingClientRect();
         const frame = surface.getBoundingClientRect();
         const scale = box.width / cover.current;
@@ -466,7 +442,7 @@ export default function Library({
           // correction: it is centred, and the centre is the thing scaling
           // holds still.
           y: box.top - frame.top - (cover.current * TALL * (1 - scale)) / 2,
-          scale,
+          scale
         };
       }
       const centre = Math.round(position);
@@ -481,18 +457,14 @@ export default function Library({
         let y = ringTop.current + radius * (1 - Math.cos(angle * RAD));
         let turn = angle;
         let scale = Math.max(0.2, 1 - Math.abs(away) * SHRINK);
-        let shown = Math.min(
-          1,
-          Math.max(0, (fade - Math.abs(away)) / FADE_OVER),
-        );
+        let shown = Math.min(1, Math.max(0, (fade - Math.abs(away)) / FADE_OVER));
 
         if (stack !== null) {
           // Depth in the deck is taken from the settled project, not the
           // continuous position: a stack whose cards re-order mid-flight
           // shuffles instead of gathering.
           const depth = shortest(index - centre, projects.length);
-          const lean =
-            Math.max(-STACK_DEPTH, Math.min(STACK_DEPTH, depth)) * STACK_TILT;
+          const lean = Math.max(-STACK_DEPTH, Math.min(STACK_DEPTH, depth)) * STACK_TILT;
           x = mix(x, stack.x, gather);
           y = mix(y, stack.y, gather);
           turn = mix(turn, lean, gather);
@@ -511,7 +483,7 @@ export default function Library({
         // author on hit-testing beside the drag suppression in useCarousel,
         // whose "restored two frames after pointerup" reasoning assumes it
         // is the only one.
-        const solid = shown < 0.05 ? "none" : "";
+        const solid = shown < 0.05 ? 'none' : '';
 
         // A whole revolution is a no-op modulo the count: `shortest(i - 8, 8)`
         // and `shortest(i, 8)` are the same number, so the ring's first frame
@@ -526,14 +498,10 @@ export default function Library({
         // be absent until they are arriving. This fades them in across the
         // first part of the turn — multiplied by `(1 - gather)` so it cannot
         // touch a cover that is on its way to the slot.
-        const arriving = mix(
-          phase(elapsed, 0, ENTRY_TURN_MS * ENTRY_FADE_SHARE),
-          1,
-          gather,
-        );
+        const arriving = mix(phase(elapsed, 0, ENTRY_TURN_MS * ENTRY_FADE_SHARE), 1, gather);
 
         element.style.transform = `translate3d(calc(-50% + ${x.toFixed(2)}px), ${y.toFixed(
-          2,
+          2
         )}px, 0) rotate(${turn.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
         element.style.opacity = (shown * arriving).toFixed(3);
         // A cover nobody can see must not take a click either. It stays
@@ -542,19 +510,19 @@ export default function Library({
         element.style.zIndex = String(
           stack === null
             ? 50 - Math.round(Math.abs(away) * 10)
-            : 50 - Math.abs(shortest(index - centre, projects.length)),
+            : 50 - Math.abs(shortest(index - centre, projects.length))
         );
       }
     },
-    [projects, slot, surface],
+    [projects, slot, surface]
   );
 
   const carousel = useCarousel({
     count: projects.length,
     onFrame: draw,
-    enabled: mode === "wheel",
+    enabled: mode === 'wheel',
     surface,
-    links,
+    links
   });
 
   const { redraw } = carousel;
@@ -571,7 +539,7 @@ export default function Library({
       painted.current = now;
       redraw();
     },
-    [redraw],
+    [redraw]
   );
 
   /**
@@ -592,7 +560,7 @@ export default function Library({
     // from the top, or it sits high with a band of nothing under it.
     const slack = Math.max(0, box.height - width * verticalFor(fitted));
 
-    surface.style.setProperty("--cover", `${width}px`);
+    surface.style.setProperty('--cover', `${width}px`);
     pitch.current = width * PITCH_RATIO;
     cover.current = width;
     // The covers sit at the top of the surface and are moved entirely by
@@ -610,9 +578,9 @@ export default function Library({
       rolls.current = [];
       return;
     }
-    rolls.current = Array.from(
-      readout.querySelectorAll<HTMLElement>(".st-roll"),
-    ).map((roll) => Array.from(roll.children) as HTMLElement[]);
+    rolls.current = Array.from(readout.querySelectorAll<HTMLElement>('.st-roll')).map(
+      (roll) => Array.from(roll.children) as HTMLElement[]
+    );
     redraw();
   }, [readout, redraw]);
 
@@ -657,7 +625,7 @@ export default function Library({
 
     // One-shot, like the gather's. Only `useCarousel` keeps a live listener,
     // and it does so because it outlives every gesture.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       arrived.current = true;
       redraw();
       return;
@@ -688,7 +656,7 @@ export default function Library({
   }, [released, viaRoute, redraw, paintOnce]);
 
   useEffect(() => {
-    const target = mode === "list" ? 1 : 0;
+    const target = mode === 'list' ? 1 : 0;
     blendTo.current = target;
 
     // The reader has acted, so the arrival is superseded. Snapping it rather
@@ -697,7 +665,7 @@ export default function Library({
     // is not on the slot.
     if (target === 1) arrived.current = true;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       blend.current = target;
       redraw();
       return;
@@ -721,7 +689,7 @@ export default function Library({
     };
   }, [mode, redraw, paintOnce]);
 
-  const shown = mode === "list";
+  const shown = mode === 'list';
 
   return (
     <section
@@ -729,10 +697,7 @@ export default function Library({
       className="relative flex h-[100dvh] flex-col px-[var(--gut)] pt-[var(--chrome-top)] pb-[calc(var(--chrome-top)+0.5rem)]"
     >
       <header className="flex items-baseline justify-between gap-6">
-        <h1
-          id="library-heading"
-          className="st-meta m-0 font-[500] text-[var(--ink)]"
-        >
+        <h1 id="library-heading" className="st-meta m-0 font-[500] text-[var(--ink)]">
           <span className="st-line" data-in={released} style={chrome(0)}>
             <span className="st-line-body">work</span>
           </span>
@@ -759,11 +724,9 @@ export default function Library({
               aria-label="Show the work as a wheel"
               aria-pressed={!shown}
               onClick={() => {
-                setMode("wheel");
+                setMode('wheel');
               }}
-              className={
-                shown ? "text-[var(--ink-2)]" : "st-link text-[var(--ink)]"
-              }
+              className={shown ? 'text-[var(--ink-2)]' : 'st-link text-[var(--ink)]'}
             >
               wheel
             </button>
@@ -775,11 +738,9 @@ export default function Library({
               aria-label="Show the work as a list"
               aria-pressed={shown}
               onClick={() => {
-                setMode("list");
+                setMode('list');
               }}
-              className={
-                shown ? "st-link text-[var(--ink)]" : "text-[var(--ink-2)]"
-              }
+              className={shown ? 'st-link text-[var(--ink)]' : 'text-[var(--ink-2)]'}
             >
               list
             </button>
@@ -794,11 +755,7 @@ export default function Library({
       </div>
 
       <div ref={setReadout} className="mt-[clamp(1.2rem,4vh,2.8rem)]">
-        <Readout
-          projects={projects}
-          released={released}
-          counterPose={counterPose}
-        />
+        <Readout projects={projects} released={released} counterPose={counterPose} />
       </div>
 
       {/* One stage, both views. They are overlaid rather than laid out one
@@ -813,8 +770,8 @@ export default function Library({
           onScroll={redraw}
           className={
             shown
-              ? "st-quiet-scroll absolute inset-0 overflow-y-auto"
-              : "pointer-events-none absolute inset-0 overflow-clip"
+              ? 'st-quiet-scroll absolute inset-0 overflow-y-auto'
+              : 'pointer-events-none absolute inset-0 overflow-clip'
           }
         >
           <div className="flex flex-col gap-[clamp(0.6rem,2vh,2rem)] md:flex-row md:items-start md:gap-[clamp(1.5rem,4vw,3.5rem)]">
@@ -836,7 +793,7 @@ export default function Library({
             <div
               ref={setSlot}
               aria-hidden="true"
-              style={{ aspectRatio: "16 / 9" }}
+              style={{ aspectRatio: '16 / 9' }}
               className="order-1 w-[clamp(8rem,36vw,20rem)] shrink-0 self-center md:order-2 md:self-start"
             />
           </div>
@@ -852,8 +809,8 @@ export default function Library({
           inert={shown}
           className={
             shown
-              ? "pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] overflow-clip"
-              : "absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-grab touch-none overflow-clip"
+              ? 'pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] overflow-clip'
+              : 'absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-grab touch-none overflow-clip'
           }
         >
           <ol ref={setLinks} className="m-0 list-none p-0">
@@ -884,8 +841,7 @@ export default function Library({
                     sizes="(max-width: 48rem) 60vw, 28rem"
                   />
                   <span className="sr-only">
-                    {project.name}. {project.summary} {project.kind},{" "}
-                    {project.year}
+                    {project.name}. {project.summary} {project.kind}, {project.year}
                   </span>
                 </Link>
               </li>

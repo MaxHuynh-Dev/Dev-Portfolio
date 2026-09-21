@@ -1,6 +1,6 @@
-import configPromise from "@payload-config";
-import { getPayload } from "payload";
-import { cache } from "react";
+import configPromise from '@payload-config';
+import { getPayload } from 'payload';
+import { cache } from 'react';
 import type {
   About,
   LinkColumn,
@@ -9,9 +9,9 @@ import type {
   Profile,
   Project,
   Shot,
-  SiteSettings,
-} from "@/content/site";
-import type { Media, Project as ProjectDoc } from "@/payload/payload-types";
+  SiteSettings
+} from '@/content/site';
+import type { Media, Project as ProjectDoc } from '@/payload/payload-types';
 
 /**
  * ════════════════════════════════════════════════════════════════════
@@ -45,10 +45,8 @@ const client = async () => getPayload({ config: configPromise });
  * document that could not be resolved — a file deleted out from under a
  * reference — and the right answer is the same as no image at all.
  */
-const asMedia = (value: ProjectDoc["cover"]): Media | null =>
-  value !== null && value !== undefined && typeof value === "object"
-    ? value
-    : null;
+const asMedia = (value: ProjectDoc['cover']): Media | null =>
+  value !== null && value !== undefined && typeof value === 'object' ? value : null;
 
 /**
  * Where the file actually is.
@@ -65,25 +63,21 @@ const asMedia = (value: ProjectDoc["cover"]): Media | null =>
  * `a.jpg`. The adapter records the URL it was given; this reads it back.
  */
 const pathOf = (media: Media | null): string | null =>
-  media === null || typeof media.url !== "string" || media.url.length === 0
-    ? null
-    : media.url;
+  media === null || typeof media.url !== 'string' || media.url.length === 0 ? null : media.url;
 
-const shotOf = (row: NonNullable<ProjectDoc["shots"]>[number]): Shot => {
+const shotOf = (row: NonNullable<ProjectDoc['shots']>[number]): Shot => {
   const media = asMedia(row.image);
   return {
     src: pathOf(media),
-    alt: media?.alt ?? "",
+    alt: media?.alt ?? '',
     tall: row.tall === true,
     // Recorded by Payload on upload. A file whose dimensions did not
     // survive is treated as having none, which falls back to the declared
     // ratio — the same thing the empty field uses.
     size:
-      media !== null &&
-      typeof media.width === "number" &&
-      typeof media.height === "number"
+      media !== null && typeof media.width === 'number' && typeof media.height === 'number'
         ? { width: media.width, height: media.height }
-        : null,
+        : null
   };
 };
 
@@ -98,9 +92,9 @@ const projectOf = (doc: ProjectDoc): Project => ({
   stack: doc.stack,
   // Absent rather than dead: a link with nowhere to go is worse than no
   // link, and an empty string from a text field is nowhere to go.
-  url: typeof doc.url === "string" && doc.url.length > 0 ? doc.url : null,
+  url: typeof doc.url === 'string' && doc.url.length > 0 ? doc.url : null,
   cover: pathOf(asMedia(doc.cover)),
-  shots: (doc.shots ?? []).map(shotOf),
+  shots: (doc.shots ?? []).map(shotOf)
 });
 
 /**
@@ -118,29 +112,27 @@ const projectOf = (doc: ProjectDoc): Project => ({
 export const getProjects = cache(async (): Promise<Project[]> => {
   const payload = await client();
   const { docs } = await payload.find({
-    collection: "projects",
+    collection: 'projects',
     limit: 0,
     // Deep enough to resolve `cover` and each shot's `image`, and no
     // deeper — media has no relationships of its own to follow.
     depth: 1,
-    overrideAccess: true,
+    overrideAccess: true
   });
   return docs.map(projectOf);
 });
 
-export const getProject = cache(
-  async (slug: string): Promise<Project | null> => {
-    const projects = await getProjects();
-    return projects.find((project) => project.slug === slug) ?? null;
-  },
-);
+export const getProject = cache(async (slug: string): Promise<Project | null> => {
+  const projects = await getProjects();
+  return projects.find((project) => project.slug === slug) ?? null;
+});
 
 export const getProfile = cache(async (): Promise<Profile> => {
   const payload = await client();
   const doc = await payload.findGlobal({
-    slug: "profile",
+    slug: 'profile',
     depth: 0,
-    overrideAccess: true,
+    overrideAccess: true
   });
   return {
     firstName: doc.firstName,
@@ -151,7 +143,7 @@ export const getProfile = cache(async (): Promise<Profile> => {
     email: doc.email,
     availability: doc.availability,
     intro: doc.intro,
-    bio: doc.bio,
+    bio: doc.bio
   };
 });
 
@@ -164,22 +156,22 @@ export const getFullName = cache(async (): Promise<string> => {
 export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
   const payload = await client();
   const doc = await payload.findGlobal({
-    slug: "site-settings",
+    slug: 'site-settings',
     depth: 0,
-    overrideAccess: true,
+    overrideAccess: true
   });
 
   const contactLinks: LinkColumn[] = (doc.contactLinks ?? []).map((column) => ({
     label: column.label,
     links: (column.links ?? []).map((link) => ({
       label: link.label,
-      href: link.href,
-    })),
+      href: link.href
+    }))
   }));
 
   return {
     workRange: doc.workRange,
-    contactLinks,
+    contactLinks
   };
 });
 
@@ -194,9 +186,9 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
 export const getAbout = cache(async (): Promise<About> => {
   const payload = await client();
   const doc = await payload.findGlobal({
-    slug: "about",
+    slug: 'about',
     depth: 1,
-    overrideAccess: true,
+    overrideAccess: true
   });
 
   const media = asMedia(doc.portrait);
@@ -208,14 +200,14 @@ export const getAbout = cache(async (): Promise<About> => {
           src,
           alt: media.alt,
           size:
-            typeof media.width === "number" && typeof media.height === "number"
+            typeof media.width === 'number' && typeof media.height === 'number'
               ? { width: media.width, height: media.height }
-              : null,
+              : null
         };
 
   const columns: MetaColumn[] = (doc.columns ?? []).map((column) => ({
     label: column.label,
-    items: column.items,
+    items: column.items
   }));
 
   return {
@@ -225,6 +217,6 @@ export const getAbout = cache(async (): Promise<About> => {
       .map((paragraph) => paragraph.trim())
       .filter((paragraph) => paragraph.length > 0),
     portrait,
-    columns,
+    columns
   };
 });

@@ -1,4 +1,4 @@
-import { APP_ENV } from "@/constants/envs";
+import { APP_ENV } from '@/constants/envs';
 
 class UiHelper {
   shuffle(array: (string | number | HTMLElement)[]): void {
@@ -8,21 +8,18 @@ class UiHelper {
       const randomIndex = Math.floor(Math.random() * currentIndex);
       currentIndex--;
 
-      [array[currentIndex], array[randomIndex]] = [
-        array[randomIndex],
-        array[currentIndex],
-      ];
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
     }
   }
 
   pageScrollTop(): number {
-    if (typeof window === "undefined") return 0;
+    if (typeof window === 'undefined') return 0;
     return window.scrollY || document.documentElement.scrollTop || 0;
   }
 
   debounce<TArgs extends unknown[]>(
     func: (...args: TArgs) => unknown,
-    delay: number,
+    delay: number
   ): ((...args: TArgs) => void) & { cancel: () => void } {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -43,21 +40,21 @@ class UiHelper {
   }
 
   isProduction(): boolean {
-    return APP_ENV === "production";
+    return APP_ENV === 'production';
   }
 
   isDevelopment(): boolean {
-    return APP_ENV === "development";
+    return APP_ENV === 'development';
   }
 
   isClient(): boolean {
-    return typeof window !== "undefined";
+    return typeof window !== 'undefined';
   }
 
   isMobile(): boolean {
     if (!this.isClient()) return false;
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      window.navigator.userAgent,
+      window.navigator.userAgent
     );
   }
 }
