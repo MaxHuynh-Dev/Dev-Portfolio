@@ -40,6 +40,14 @@ export interface ShotProps {
    * a place.
    */
   stretch?: boolean;
+  /**
+   * Fetch now, wherever the image sits, instead of when it nears the
+   * viewport. For a picture the route curtain waits for that is not on
+   * screen at rest — the ring's covers, which all cross the screen as it
+   * arrives. A lazy image off to the side is one the browser may not have
+   * asked for yet, and a wait on it would simply run to the cap.
+   */
+  eager?: boolean;
 }
 
 /**
@@ -76,8 +84,11 @@ export default function Shot({
   sizes,
   priority = false,
   size = null,
-  stretch = false
+  stretch = false,
+  eager = false
 }: ShotProps): React.ReactElement {
+  const loading = eager ? 'eager' : undefined;
+
   if (src !== null && size !== null && !stretch) {
     return (
       <Image
@@ -87,6 +98,7 @@ export default function Shot({
         height={size.height}
         sizes={sizes}
         priority={priority}
+        loading={loading}
         className="block h-auto w-full"
       />
     );
@@ -110,6 +122,7 @@ export default function Shot({
           fill
           sizes={sizes}
           priority={priority}
+          loading={loading}
           className="object-cover"
         />
       )}

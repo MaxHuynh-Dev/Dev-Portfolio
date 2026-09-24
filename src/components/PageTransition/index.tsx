@@ -13,6 +13,9 @@ const FALLBACK = { cover: 500, reveal: 560 };
  * Nothing justifies holding a reader behind a panel longer than this. If
  * the route has not arrived by now it is not arriving, and a stuck curtain
  * is worse than a page that changed without ceremony.
+ *
+ * It is the ROUTE's cap. Once the route has arrived, the wait for its
+ * pictures has a ceiling of its own — see `IMAGES_CAP_MS`.
  */
 const HARD_CAP_MS = 3000;
 
@@ -64,6 +67,85 @@ const LETTER_EXIT_STEP_MS = 28;
  * the hold is over by the time the word is legible, not a beat later.
  */
 const NAME_HELD_MS = 120;
+
+/**
+ * How long the panel will wait for the destination's PICTURES, once the
+ * route itself has arrived.
+ *
+ * The panel used to open the instant the route committed, and the images
+ * on the page underneath were still on the network: measured on a
+ * production build with a cold image cache, going from /works to a project
+ * page, 6 of the 7 images on screen were not loaded when the uncover
+ * started and the last of them landed 1.5s after it — so the reader watched
+ * the panel sweep off a page and then watched its pictures pop in, one at a
+ * time. That pop is the flicker.
+ *
+ * So the panel only opens onto pictures that are there. This is the ceiling
+ * on that promise, not the expected wait: it is a separate budget from
+ * `HARD_CAP_MS` because that one is about the ROUTE not arriving, and a
+ * route that arrived at 2.9s would otherwise have left its images 100ms.
+ * Past it the panel opens anyway — a black screen on a slow connection is a
+ * worse failure than a picture arriving late.
+ */
+const IMAGES_CAP_MS = 4000;
+
+/**
+ * Every image the reader will see as the panel opens: whatever is on screen
+ * once the page has been put back at the top, plus anything inside a
+ * `[data-await-images]` region, wherever it is.
+ *
+ * The attribute is for pages whose arrival brings pictures ON to the screen
+ * that are not there at rest. The ring on /works turns through a whole
+ * revolution as it arrives (trap 35), so every cover crosses the screen in
+ * the first second, and waiting for only the three that happen to be in
+ * view would move the pop from the uncover to the spin.
+ *
+ * `#content` only: the corner chrome never re-renders across a navigation
+ * and has no images in it anyway.
+ */
+const awaitedImages = (): HTMLImageElement[] => {
+  const content = document.getElementById('content');
+  if (content === null) return [];
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  return [...content.querySelectorAll('img')].filter((img) => {
+    if (img.closest('[data-await-images]') !== null) return true;
+    const box = img.getBoundingClientRect();
+    return (
+      box.width > 0 &&
+      box.height > 0 &&
+      box.bottom > 0 &&
+      box.top < height &&
+      box.right > 0 &&
+      box.left < width
+    );
+  });
+};
+
+/**
+ * Loaded AND decoded. `complete` alone is not enough: a large image can have
+ * every byte and still be decoded on the frame it is first painted, which
+ * is a blank box for that frame on exactly the pictures this site is made
+ * of. `decode()` is what says it can be drawn.
+ *
+ * A broken image resolves rather than rejects. It is not going to get any
+ * more ready, and holding the panel for it would trade a missing picture
+ * for a stuck curtain.
+ */
+const pictureReady = (img: HTMLImageElement): Promise<void> => {
+  const decoded = (): Promise<void> =>
+    img.naturalWidth > 0 ? img.decode().catch(() => undefined) : Promise.resolve();
+  if (img.complete) return decoded();
+  return new Promise<void>((resolve) => {
+    const done = (): void => {
+      img.removeEventListener('load', done);
+      img.removeEventListener('error', done);
+      resolve();
+    };
+    img.addEventListener('load', done);
+    img.addEventListener('error', done);
+  }).then(decoded);
+};
 
 /**
  * One element per character, each in its own clip.
@@ -209,7 +291,7 @@ export default function PageTransition(): React.ReactElement {
   // `reveal` is called from a GSAP callback, from an effect, and from a
   // timeout. A ref keeps all three pointing at one live function without
   // making every caller depend on its identity.
-  const revealRef = useRef<() => void>(() => undefined);
+  const revealRef = useRef<(force?: boolean) => void>(() => undefined);
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -230,6 +312,10 @@ export default function PageTransition(): React.ReactElement {
     let letters: HTMLElement[] = [];
     /** When the last of them lands. `reveal` will not start before it. */
     let nameRestAt = 0;
+    /** Where this navigation's pictures are. `reveal` will not open on `waiting`. */
+    let pictures: 'none' | 'waiting' | 'ready' = 'none';
+    /** Bumped per navigation, so a late image cannot open a curtain it does not belong to. */
+    let navigation = 0;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const coverMs = readMs('--t-cover', FALLBACK.cover);
@@ -262,6 +348,7 @@ export default function PageTransition(): React.ReactElement {
       label.textContent = '';
       letters = [];
       nameRestAt = 0;
+      pictures = 'none';
       window.lenis?.start();
     };
 
@@ -288,25 +375,55 @@ export default function PageTransition(): React.ReactElement {
       window.lenis?.scrollTo(0, { immediate: true, force: true });
     };
 
-    const reveal = (): void => {
+    /**
+     * `force` is the caps: open NOW, whatever is still outstanding. Every
+     * other caller is the route having arrived, and gets the waits.
+     */
+    const reveal = (force = false): void => {
       if (phase.current !== 'holding') return;
 
-      // A prefetched route can arrive before the word has. Wait out the rest
-      // of the stagger plus a beat, or the first letters begin leaving
-      // before the last have landed — which does not read as a stagger, it
-      // reads as a glitch.
-      //
-      // It cannot become an open-ended wait: `nameRestAt` is computed at
-      // `go` from durations that are all constants, and the 3s cap is armed
-      // underneath this the whole time.
-      const wait = nameRestAt + NAME_HELD_MS - performance.now();
-      if (wait > 0) {
-        window.clearTimeout(nameTimer.current);
-        nameTimer.current = window.setTimeout(() => {
-          nameRestAt = 0;
-          reveal();
-        }, wait);
-        return;
+      if (!force) {
+        // The route is here; its pictures may not be. The first arrival
+        // starts the wait and everything after it — the name's timer, a
+        // second commit — finds it running and leaves it alone.
+        if (pictures === 'none') {
+          pictures = 'waiting';
+          // Back to the top FIRST, still under the closed panel, so "on
+          // screen" means on screen where the reader is about to be.
+          toTop();
+          // The route cap has done its job — the route arrived. From here
+          // the ceiling is the pictures' own.
+          window.clearTimeout(capTimer.current);
+          capTimer.current = window.setTimeout(() => reveal(true), IMAGES_CAP_MS);
+          // A navigation that has already been settled must not be opened
+          // by its own late images, and neither must the one after it.
+          const mine = navigation;
+          Promise.all(awaitedImages().map(pictureReady)).then(() => {
+            if (mine !== navigation || pictures !== 'waiting') return;
+            pictures = 'ready';
+            reveal();
+          });
+          return;
+        }
+        if (pictures === 'waiting') return;
+
+        // A prefetched route can arrive before the word has. Wait out the
+        // rest of the stagger plus a beat, or the first letters begin
+        // leaving before the last have landed — which does not read as a
+        // stagger, it reads as a glitch.
+        //
+        // It cannot become an open-ended wait: `nameRestAt` is computed at
+        // `go` from durations that are all constants, and a cap is armed
+        // underneath this the whole time.
+        const wait = nameRestAt + NAME_HELD_MS - performance.now();
+        if (wait > 0) {
+          window.clearTimeout(nameTimer.current);
+          nameTimer.current = window.setTimeout(() => {
+            nameRestAt = 0;
+            reveal();
+          }, wait);
+          return;
+        }
       }
 
       phase.current = 'revealing';
@@ -389,6 +506,8 @@ export default function PageTransition(): React.ReactElement {
       if (phase.current !== 'idle') return;
       phase.current = 'covering';
       target.current = url;
+      navigation += 1;
+      pictures = 'none';
 
       window.lenis?.stop();
       markRouted();
@@ -405,9 +524,13 @@ export default function PageTransition(): React.ReactElement {
       // at the end of the rise is as close to nothing as the network allows.
       router.prefetch(url.pathname);
 
+      // The ROUTE's cap. If it fires the route has not arrived, so there is
+      // nothing new to wait for pictures of — open onto whatever is there.
+      // Once the route does arrive, `reveal` swaps this for the pictures'
+      // own ceiling.
       capTimer.current = window.setTimeout(() => {
         phase.current = 'holding';
-        revealRef.current();
+        revealRef.current(true);
       }, HARD_CAP_MS);
 
       tl.current?.kill();
