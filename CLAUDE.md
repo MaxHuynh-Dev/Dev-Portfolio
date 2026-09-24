@@ -39,9 +39,10 @@ Four kinds of page:
 
 ## Motion
 
-Two of the three moments are a sheet of one colour moving in one direction
-while something asynchronous resolves behind it. The third is the ring on
-`/works`, and it is the only motion here that the reader steers directly.
+Two of the four moments are a sheet of one colour moving in one direction
+while something asynchronous resolves behind it. The other two are steered
+by the reader directly: the ring on `/works`, and the masthead's letters
+under the pointer.
 
 **Arriving** (`Preloader`). A sheet of paper, and the name assembling
 itself on it. Every letter waits just outside the line — odd ones above,
@@ -74,6 +75,19 @@ toward a target and settles on a whole project; it wraps, so the last leads
 back to the first. The curve is eight CSS transforms — a point on a circle
 and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
+
+**Leaning on the name** (`usePressure`, the index). The masthead's letters
+thin away from the pointer and stay heavy under it — reactbits'
+TextPressure, on the one axis Nippo has. The original moves weight, width
+and slant; Nippo is weight only, 200 to 700, and the masthead is already at
+700, so a letter can only get LIGHTER than it rests: the one nearest the
+pointer is exactly as designed and the rest thin with distance, linearly,
+reaching 200 at half the name's width. The pointer is chased at the
+original's 1/15 per frame, made per-millisecond. The line keeps both its
+ends — the first letter is pinned by its left edge and the last by its
+right, so the room a thinner letter gives up opens between the letters and
+the name still runs margin to margin. It lets go when the pointer leaves the
+window or a finger lifts, and never starts under `reduce`. See trap 48.
 
 **Switching views** is the same covers doing something else. They do not
 disappear and reappear: one number, `blend`, runs 0 to 1 and every cover is
@@ -329,8 +343,9 @@ src/components/PageTransition/  the route curtain, and the only place
                            internal navigation is handled
 src/hooks/useFittedText.ts the fitting engine
 src/hooks/useCarousel.ts   the ring's position engine
+src/hooks/usePressure.ts   the masthead's letters under the pointer — trap 48
 src/styles/global.css      design tokens + .st-* primitives
-public/fonts/              Nippo + Switzer, self-hosted
+public/fonts/              Nippo (ONE variable file) + Switzer, self-hosted
 public/images/work/        project imagery goes here
 ```
 
@@ -342,7 +357,10 @@ chrome at the four edges of the viewport.
 ## Type
 
 **Nippo** (display) and **Switzer** (text), both from Fontshare, both
-self-hosted via `next/font/local`. Nippo has only 400/500/700.
+self-hosted via `next/font/local`. Nippo is one variable file on a weight
+axis of 200 to 700 — the masthead moves along it (trap 48) — and its
+**Regular is at 378 on that axis, not 400**, which is why
+`.st-display-reg` asks for 378 by number.
 
 Nippo was chosen by rendering four candidates at the sizes this site
 actually uses. That step is not optional — **Array** was the first pick and
@@ -2296,6 +2314,77 @@ runs before that element exists and silently registers nothing — observe
 `document` with `subtree` — and Playwright's route handlers here have no
 `setTimeout`; use `page.waitForTimeout`.
 
+**48. A layer that stands in for text has to be proven identical before
+the text is hidden — and "nothing is animating" is not proof that nothing
+is moved.**
+The masthead's letters change weight under the pointer (`usePressure`, the
+Motion section). The heading's own text cannot do that — one text node has
+one weight — and splitting it into a span per letter loses the kerning
+(trap 10). So the text is left exactly as it is, and a layer of one element
+per letter is laid over it on the first pointer move, placed where a Range
+over each character of the real text says that character is. The real text
+goes transparent only after every letter has been CHECKED onto it.
+
+- **The font had to become a variable file, and its Regular is not at
+  400.** The three static cuts are gone; one 29KB file on a weight axis of
+  200 to 700 replaced 46KB of them. Checked glyph by glyph against the
+  statics before anything else moved: advances identical at 378, 500 and
+  700, outlines identical at 700 and within half a unit of a thousand at
+  the others. **But the variable font's Regular instance sits at 378**, so
+  `font-weight: 400` would have been a slightly heavier face than the one
+  the readout on `/works` was designed in. `.st-display-reg` asks for 378.
+- **The text is never touched, and that is three guarantees at once.** It
+  is the accessible name; it is what `useFittedText` sizes; and it is what
+  the preloader matches its own copy against by `textContent` (trap 10).
+  The layer is `aria-hidden` and draws its glyphs from `data-char` through
+  `::before`, so `textContent` never reads the name twice.
+- **Pinning is layout, not arithmetic.** A slot is the letter's width at
+  700 — the widest it can get, and the width it has at the one moment the
+  layer is built — and two empty flex items share whatever the letter gives
+  up in the ratio `--pin`: 0 for the first letter, 1 for the last. No width
+  is read back per frame, and nothing carries a transform, because a
+  transform puts glyphs on their own raster path and the swap would show
+  (trap 10).
+- **The readiness test took three conditions, and the third was found by
+  its control.** No curtain up; the preloader's element gone, not merely its
+  attribute, because the attribute comes off mid-dissolve; and nothing
+  between the text and the heading carrying a transform. "No animation
+  running" alone looks sufficient and is not: on the route path the name is
+  PARKED 145% below its mask for a frame after the curtain lets go and
+  before the rise starts, with nothing running at all. Measured by firing a
+  pointer move on every frame of the navigation: exactly **one** such frame
+  on each of three runs, and a layer built there would sit 145% low, outside
+  the mask that hides the text. With the transform test, **0** frames with
+  a layer over a moved text, and the layer arrives the frame the rise ends.
+- **A finished animation with a forwards fill is still in
+  `getAnimations()`.** The corner marks' `st-fade` stays there for good, so
+  a probe or a test that asks for the list to be empty waits forever. Ask
+  whether any is `pending` or `running`.
+- **The rAF loop stops when nothing moves**, and the count of that has a
+  control too: the callback is `usePressure.useEffect.step` in development,
+  not `step`, so a filter on the short name counted **0** while the pointer
+  moved, which reads exactly like a loop that has stopped. With the real
+  name: 53 scheduled across one gesture, **0** in 800ms of stillness.
+
+Verified at 1440x900, DPR 2, on the load path and the route path: letters
+on the text's own positions to **0px** in layout; photographed with every
+frame held so no weight had moved, **175 of 1.82M** device pixels differ,
+all on the diagonals of the `x` and one edge of the `y`, none on `M a H n
+h` — sub-1/64px glyph placement (a run positions glyphs in floats, an
+element starts on a layout unit), at a 494-device-px size where Skia draws
+glyphs as paths. The two photographs of the untouched page, taken back to
+back, differ by **0**; after the pointer leaves and the layer is removed,
+the page is **0** pixels from where it began. Across a sweep of 465 frames:
+first and last letter **0px** from their slots' outer edges, the first slot
+**0.005px** from the column's margin, weights 200 to 698, **420**
+distinct weight sets, median frame 13.3ms and **0** over 20ms. At 320 and
+768, driven by a finger through CDP: ends 0px, margin 0, no horizontal
+overflow, and the layer gone after the lift. Under `reduce`, no layer. A
+resize removes it at once. The preloader's letters still land on the
+masthead at **0px** on every frame of the dissolve, and the mask's headroom
+reads 13.0/4.0 at 320 — trap 29's numbers, unchanged, as identical outlines
+at 700 said they would be.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -2377,14 +2466,15 @@ Other invariants:
   and for the same reason: a rAF loop is somewhere the CSS block cannot
   reach. The reference suppresses its own arrival entirely rather than
   shortening it, which is what this does too.
-- Six things honour `prefers-reduced-motion` — the CSS block, Lenis
+- Seven things honour `prefers-reduced-motion` — the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which
-  drops the wipe for a fade) and `/works`, where both the ring and the
-  gather between views are assigned rather than walked. The last three read
-  the query in JavaScript, because the CSS block cannot reach a GSAP tween
-  or a rAF loop; add a sixth motion source and it will need its own check
-  too. The list's rows are the exception that proves it: their rise is a CSS
+  drops the wipe for a fade), `/works`, where both the ring and the
+  gather between views are assigned rather than walked, and the masthead's
+  pressure (`usePressure`), which never builds its layer at all. Everything
+  after Lenis reads the query in JavaScript, because the CSS block cannot
+  reach a GSAP tween or a rAF loop; add another motion source and it will
+  need its own check too. The list's rows are the exception that proves it: their rise is a CSS
   transition, so the block flattens it to 0.01ms without the component
   asking. Verified under `reduce`: the switch shows **two** distinct cover
   scales across 114 frames — the ring's and the deck's, and nothing
@@ -2404,8 +2494,10 @@ Other invariants:
   thrown out was ONE treatment applied to every block of a page; what is
   allowed is a composed arrival, on chosen type, seen once per page.
   Everything after the arrival still answers an action: the route curtain a
-  click, the ring a wheel, a drag or an arrow key, and a project page's
-  thumbnail marker the reader's own scroll position.
+  click, the ring a wheel, a drag or an arrow key, a project page's
+  thumbnail marker the reader's own scroll position, and the masthead's
+  letters the pointer — which is also why they do nothing until the pointer
+  first moves.
 - **A page that takes the wheel owes the reader a way out.** `/works` is
   exactly one screen tall in both views and the document never scrolls.
   That is defensible only because the `list` view is one click away, is

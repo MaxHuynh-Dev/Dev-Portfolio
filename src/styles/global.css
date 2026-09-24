@@ -218,8 +218,11 @@ body {
     min-width: 0;
   }
 
+  /* 378, not 400: Nippo is one variable file now, and on its axis the
+     Regular the site was designed in sits at 378 (see fonts.ts). 400 is a
+     real weight on that axis, just a slightly heavier one. */
   .st-display-reg {
-    font-weight: 400;
+    font-weight: 378;
     letter-spacing: -0.02em;
   }
 
@@ -516,6 +519,61 @@ body {
 
   [data-in="true"] .st-mast-line {
     transform: none;
+  }
+
+  /* The masthead under the pointer — see usePressure. A layer over the
+     heading's own text, which it hides only once every letter here has
+     been checked onto the text's own position. It inherits the heading's
+     face, size, tracking and 0.9 line, which is what puts each glyph's
+     baseline where the text's is without a number for it.
+
+     A slot is a letter's width at 700, the widest the letter can be, and
+     the letter inside it is PINNED by `--pin`: 0 holds its left edge, 1
+     its right, anything between splits the room it gives up in that
+     ratio. The first letter is pinned at 0 and the last at 1, so as the
+     letters thin, the gaps open and the line still runs margin to margin.
+     Two empty flex items with the room shared between them do the pinning,
+     so no letter's width is ever read back per frame, and nothing here
+     carries a transform — which would put the glyphs on their own raster
+     path and the swap would show (trap 10). */
+  .st-press {
+    position: absolute;
+    inset: 0;
+    color: var(--ink);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .st-press-slot {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+  }
+
+  .st-press-slot::before,
+  .st-press-slot::after {
+    content: "";
+    flex-shrink: 0;
+    flex-basis: 0;
+  }
+
+  .st-press-slot::before {
+    flex-grow: var(--pin);
+  }
+
+  .st-press-slot::after {
+    flex-grow: calc(1 - var(--pin));
+  }
+
+  .st-press-glyph {
+    flex: none;
+  }
+
+  /* Drawn, not written: `textContent` on the heading stays the name alone,
+     which is what the preloader matches its own copy against. */
+  .st-press-glyph::before {
+    content: attr(data-char);
   }
 
   /* Display type that BREAKS — the statement at the head of /about.

@@ -23,20 +23,22 @@ import localFont from 'next/font/local';
 export const nippo = localFont({
   variable: '--font-display',
   display: 'swap',
+  // ONE variable file on a weight axis of 200 to 700, in place of three
+  // static cuts. The masthead's letters move along that axis under the
+  // pointer (usePressure), which static files cannot do; and every other
+  // line still lands on exactly the weight it had, because the old cuts are
+  // points on the same axis — checked glyph by glyph, advances identical and
+  // outlines within half a unit of a thousand. 29KB against 46KB for the
+  // three it replaced, and one request.
+  //
+  // The one catch is that Regular is NOT at 400 on this axis. It is at 378,
+  // which is where the static Regular's outlines are; `.st-display-reg`
+  // asks for 378 by number for that reason. A `400` there would be a
+  // slightly heavier weight than the one this site was designed in.
   src: [
     {
-      path: '../../public/fonts/nippo-400.woff2',
-      weight: '400',
-      style: 'normal'
-    },
-    {
-      path: '../../public/fonts/nippo-500.woff2',
-      weight: '500',
-      style: 'normal'
-    },
-    {
-      path: '../../public/fonts/nippo-700.woff2',
-      weight: '700',
+      path: '../../public/fonts/nippo-variable.woff2',
+      weight: '200 700',
       style: 'normal'
     }
   ]
