@@ -5,6 +5,7 @@ import Lines from '@Components/Lines';
 import Reveal from '@Components/Reveal';
 import SocialIcon, { markFor } from '@Components/SocialIcon';
 import { useFittedText } from '@Hooks/useFittedText';
+import { usePressure } from '@Hooks/usePressure';
 import { useViaRoute } from '@Hooks/useReveal';
 import type React from 'react';
 import type { LinkColumn, Profile } from '@/content/site';
@@ -76,6 +77,11 @@ export default function Open({
     lineHeight: 0.9
   });
 
+  // Its letters thin away from the pointer once the page is the reader's.
+  // It never touches the text above — see usePressure for why the handover
+  // and the fit are both still exact.
+  usePressure(ref, FULL_NAME);
+
   // The name is the largest thing on the first screen, and on the load path
   // it is also the one thing that has already been introduced — the curtain
   // spells it out letter by letter and puts it here. On the route path
@@ -144,7 +150,7 @@ export default function Open({
       <h1
         ref={ref as React.RefObject<HTMLHeadingElement>}
         id="open-heading"
-        className="st-display st-fit mt-0 mr-0 mb-[0.185em] ml-0 whitespace-nowrap text-[var(--ink)]"
+        className="st-display st-fit relative mt-0 mr-0 mb-[0.185em] ml-0 whitespace-nowrap text-[var(--ink)]"
       >
         <Headline enabled={viaRoute} delay={40}>
           {FULL_NAME}
