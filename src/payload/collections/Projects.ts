@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload';
 
+import { revalidateAfterChange, revalidateAfterDelete } from '../hooks/revalidateSite';
+
 /**
  * The work.
  *
@@ -22,6 +24,10 @@ import type { CollectionConfig } from 'payload';
  */
 export const Projects: CollectionConfig = {
   slug: 'projects',
+  hooks: {
+    afterChange: [revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete]
+  },
   orderable: true,
   admin: {
     useAsTitle: 'name',

@@ -2,6 +2,7 @@ import type React from 'react';
 import type { Project } from '@/content/site';
 
 import NextProject from './NextProject';
+import PinnedColumn from './PinnedColumn';
 import ShotStack from './ShotStack';
 import SpecSheet from './SpecSheet';
 
@@ -36,9 +37,12 @@ export default function ProjectView({
     <>
       <article className="px-[var(--gut)] pt-[clamp(6.5rem,14vh,9rem)] pb-[clamp(3rem,8vh,5rem)]">
         <div className="flex flex-wrap items-start gap-x-[clamp(1.5rem,5vw,4.5rem)] gap-y-[clamp(2rem,5vh,3.5rem)]">
-          <div className="w-full shrink-0 md:sticky md:top-[calc(var(--chrome-top)+1rem)] md:w-[clamp(13rem,21vw,17rem)]">
+          {/* Sticks under the top chrome, or — when the sheet is taller than
+              the room — scrolls until its foot is clear of the bottom chrome
+              and sticks there. See PinnedColumn. */}
+          <PinnedColumn className="w-full shrink-0 md:sticky md:w-[clamp(13rem,21vw,17rem)]">
             <SpecSheet project={project} />
-          </div>
+          </PinnedColumn>
 
           <ShotStack project={project} shotSizes={shotSizes} />
         </div>

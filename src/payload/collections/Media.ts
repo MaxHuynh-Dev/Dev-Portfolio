@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload';
 
+import { revalidateAfterChange, revalidateAfterDelete } from '../hooks/revalidateSite';
+
 /**
  * Project imagery.
  *
@@ -22,6 +24,10 @@ import type { CollectionConfig } from 'payload';
  */
 export const Media: CollectionConfig = {
   slug: 'media',
+  hooks: {
+    afterChange: [revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete]
+  },
   admin: {
     useAsTitle: 'alt',
     defaultColumns: ['filename', 'alt', 'width', 'height']

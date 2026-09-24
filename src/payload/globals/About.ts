@@ -1,5 +1,7 @@
 import type { GlobalConfig } from 'payload';
 
+import { revalidateGlobalAfterChange } from '../hooks/revalidateSite';
+
 /**
  * The about page.
  *
@@ -17,6 +19,7 @@ import type { GlobalConfig } from 'payload';
  */
 export const About: GlobalConfig = {
   slug: 'about',
+  hooks: { afterChange: [revalidateGlobalAfterChange] },
   admin: {
     description: 'The /about page. Everything on it, in the order it is read.'
   },
