@@ -1,5 +1,7 @@
 import type { GlobalConfig } from 'payload';
 
+import { revalidateGlobalAfterChange } from '../hooks/revalidateSite';
+
 /**
  * Everything on the index that is not a project and not the person.
  *
@@ -12,6 +14,7 @@ import type { GlobalConfig } from 'payload';
  */
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
+  hooks: { afterChange: [revalidateGlobalAfterChange] },
   label: 'Site settings',
   admin: {
     description: 'The work range and the contact links.'

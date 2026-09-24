@@ -293,6 +293,7 @@ src/payload/collections/   Projects | Media | Users
 src/payload/globals/       Profile | About | SiteSettings
 src/payload/cloudinary.ts  the Cloudinary storage adapter. SERVER ONLY.
 src/payload/seed.ts        mock content for an empty database
+src/payload/hooks/revalidateSite.ts  a CMS save goes live — trap 45
 src/payload/payload-types.ts   GENERATED. Do not edit.
 src/content/site.ts        the SHAPES the site reads. Types only, no imports.
 src/content/source.ts      the only thing that talks to the CMS. SERVER ONLY.
@@ -309,6 +310,7 @@ src/modules/Library/
 src/modules/Project/
   index.tsx        the three-column project view
   SpecSheet.tsx | ShotStack.tsx | NextProject.tsx
+  PinnedColumn.tsx the spec sheet's sticky column — trap 46
 src/components/Shot.tsx    one image, or the field it will go in
 src/components/Lines.tsx   prose split into its own measured lines, masked
 src/components/Reveal.tsx  the same mask for what is already one line
@@ -374,12 +376,22 @@ screenshot exists — a shot row with no image attached is exactly that.
 description. The shape it replaced let the same image be given two
 different alts in two places, which is one more than can be true.
 
-**The site is statically generated from the database.** `next build` reads
-Mongo — `DATABASE_URI` has to be present in the build environment, not just
-at runtime — and a CMS edit appears on the next build. If edits should go
-live without one, that is `export const revalidate = <seconds>` on the
-pages; it is deliberately not set, rather than set to a number nobody
-chose.
+**The site is statically generated from the database, and a save in
+`/admin` puts it live without a build.** `next build` reads Mongo —
+`DATABASE_URI` has to be present in the build environment, not just at
+runtime — and prerenders every page. `src/payload/hooks/revalidateSite.ts`
+then runs after every change to a project, an image or any of the three
+globals and calls `revalidatePath('/', 'layout')`: every page, the sitemap
+included, is re-rendered from the database on its next visit. It is the
+WHOLE site on purpose — see the file for the dependency graph that answer
+avoids keeping. There is still no `export const revalidate = <seconds>`
+anywhere: nothing here goes stale on a clock, only on an edit. See trap 45
+before touching `dynamicParams`.
+
+Edits made OUTSIDE a Next request — `yarn seed`, a `payload run` script —
+write the database and revalidate nothing; the hook logs a warning per
+document and the live site keeps serving what it had until the next save
+in the admin or the next deploy.
 
 Three standing rules:
 
@@ -2060,6 +2072,14 @@ does not: **49px over at 375x667** and **230px over at 320x568**, down from
 753 and 810 before any of this. It fails the honest way — the page starts at
 the top and scrolls.
 
+**Re-measured with the real copy** that replaced the placeholders (a
+415-character body against 470, and four items per column against three):
+still **0** from 414 up, **38px over at 375** and **296 at 320**. 375 got
+shorter because the prose did; 320 got longer because on a phone the two
+lists stack beside the portrait, and the fourth item in each is two more
+lines there. No item wraps at any width — counted per text node with a
+Range, and the control (a string long enough to wrap) reported 2.
+
 That floor is the CONTENT's, not the layout's. At 375 the three seeded
 paragraphs alone are ~240px of a ~506px budget, and 49px is roughly two of
 their lines. **Do not chase it with type sizes.** Anything that closes the
@@ -2141,6 +2161,69 @@ coincident at **0.00** under `items-baseline` at 375, 768, 1024, 1440 and
 1920, and splits by **22–24.5px** under `items-start`. The alignment
 survived the mask by construction, and now there is a measurement that
 could have said otherwise.
+
+**45. `dynamicParams = false` plus on-demand revalidation is a 404 on
+every project page.**
+The project route used to export `dynamicParams = false`, on the contract
+that the set of projects is fixed at build. That was harmless while nothing
+ever invalidated a page. The first save in `/admin` after
+`revalidateSite` went in did: on `next start`, all five `/work/<slug>`
+pages answered **200 before the save and 404 on every visit after it**,
+with `Internal: NoFallbackError` in the server log. An invalidated
+prerender is treated as a param with no fallback, and `false` means there
+is none. `/`, `/works` and `/about` were unaffected, which is exactly why
+it would have shipped: they are the pages anyone checks.
+
+It is gone, and the page's own `notFound()` is what keeps an unknown slug a
+404 — verified, `/work/not-a-project` is 404 after the change. The same
+change is what lets a project added in the CMS have a page without a
+build.
+
+**Verify revalidation on `next start`, never on `next dev`.** The dev
+server renders every request from the database, so it shows a CMS edit
+immediately with or without the hook and proves nothing. The test that
+does: build, start, confirm `x-nextjs-cache: HIT`; change something from a
+`payload run` script (outside Next) and confirm the page is STILL the old
+one — that is the control, and it is what production did before the hook;
+then make a change from inside a Next request and confirm the next visit is
+a `MISS` carrying the new value. Measured that way: control stale on all
+five pages checked, then fresh on every one, all 200. Nothing in this repo
+logs in to the admin to do it, so the inside-Next write was a throwaway
+route handler that was deleted afterwards — if you do the same, check
+`git status` for it and re-run `tsc` after the next build, because
+`.next/types` keeps a reference to it until then.
+
+**46. A sticky column can be taller than the room it sticks in, and the
+CMS decides whether it is.**
+The project page's spec sheet stuck at a fixed offset under the top chrome.
+With placeholder copy that always fit. With the real copy — a six-line
+paragraph, three roles and up to five stack items — Defiant's sheet ran
+**23px** past the room at 1366x768 and **126px** at 1366x657, which is the
+viewport a 1366x768 screen actually leaves a browser. What sat in the
+overflow was the last row, `Visit the site`, parked under the bottom corner
+marks for the whole length of the shot stack.
+
+Trimming the copy would have fixed that one measurement and nothing else:
+the text is in the CMS, so the next edit spends the room again, without a
+build. So the column now sticks by whichever end it has to.
+`PinnedColumn` writes its own height into `--pinned-h` and nothing else;
+`.st-pinned` takes `min()` of the old top and the top that puts the foot
+1rem clear of `--chrome-bottom`. It cannot loop: the observer watches the
+box's height, and `top` moves the box without resizing it.
+
+`--chrome-bottom` is new and derived the way `--chrome-top` is — gutter,
+one line of `.st-meta`, the gradient — and resolves within **0.3px** of
+the measured bar at 768, 1024, 1366, 1440 and 1920, always on the long
+side (103.2 against 102.9 at 1440x900).
+
+Verified mid-scroll at 1366x657, 1280x720 and 1366x768 on the two tallest
+sheets: the link **15px** clear of the bottom chrome everywhere (1rem at
+that root size), against **-126px** with the old fixed top as the control.
+At 1440x900 and 1920x1080 the computed `top` is 136.62 and 157.74px — the
+old value exactly, so a sheet that fits behaves as it always did. The cost
+is the other end: when the sheet does not fit, its HEAD scrolls away under
+the top chrome instead. That is the right end to lose — the label `about`
+has already been read, and the link has not been reached.
 
 ## Accessibility invariants
 
