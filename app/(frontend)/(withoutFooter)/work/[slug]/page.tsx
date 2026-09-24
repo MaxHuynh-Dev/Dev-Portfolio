@@ -6,12 +6,21 @@ import { getProjects } from '@/content/source';
 
 type Params = { params: Promise<{ slug: string }> };
 
-/** The set of projects is fixed at build time, so an unknown slug is a 404
- *  rather than something to render on demand. A project added in the CMS
- *  appears on the next build — which is the same contract this page has
- *  always had, now with the list coming from the database. */
-export const dynamicParams = false;
-
+/**
+ * Every project is prerendered at build, and a slug the build did not know
+ * about is rendered on its first visit rather than refused — so a project
+ * added in the CMS has a page as soon as it is saved. An unknown slug is
+ * still a 404: the page itself calls `notFound()` when the database has no
+ * such project.
+ *
+ * **There is deliberately no `dynamicParams = false` here, and it is not a
+ * style choice.** With it, a prerendered page whose cache entry has been
+ * invalidated counts as a param with no fallback, and Next answers 404
+ * (`NoFallbackError` in the server log). A save in `/admin` invalidates
+ * every page (`src/payload/hooks/revalidateSite.ts`), so the first edit
+ * after a deploy turned all five project pages into 404s — measured on
+ * `next start`, 200 before the save and 404 on every visit after it.
+ */
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   const projects = await getProjects();
   return projects.map((project) => ({ slug: project.slug }));

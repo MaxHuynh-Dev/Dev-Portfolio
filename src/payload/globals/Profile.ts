@@ -1,5 +1,7 @@
 import type { GlobalConfig } from 'payload';
 
+import { revalidateGlobalAfterChange } from '../hooks/revalidateSite';
+
 /**
  * Who the site is about.
  *
@@ -20,6 +22,7 @@ import type { GlobalConfig } from 'payload';
  */
 export const Profile: GlobalConfig = {
   slug: 'profile',
+  hooks: { afterChange: [revalidateGlobalAfterChange] },
   admin: {
     description: 'The person. Read by the masthead, the corner marks and the page metadata.'
   },

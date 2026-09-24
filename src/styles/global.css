@@ -106,6 +106,10 @@
      hand-tuned number does. Anything that sticks or scrolls into view
      near the top offsets by this. */
   --chrome-top: calc(var(--gut) + 2.3rem + 2.5rem);
+  /* And the bottom, the same way: the gutter below the text, ONE line of
+     .st-meta, and the gradient above it. Within 0.3px of the measured bar
+     from 768 to 1920, always on the long side. */
+  --chrome-bottom: calc(var(--gut) + 1.15rem + 2.5rem);
 
   /* shadcn surface tokens remapped so components/ui/* stays coherent. */
   --radius: 0;
@@ -402,6 +406,26 @@ body {
   .st-quiet-scroll::-webkit-scrollbar {
     width: 0;
     height: 0;
+  }
+
+  /* A sticky column that may be taller than the room it sticks in.
+     The first term is where it has always stuck: just under the top
+     chrome. The second is the top that puts its LAST line 1rem clear of
+     the bottom chrome, and `min` takes whichever is higher up the screen.
+     A column that fits never reaches the second term, so nothing about it
+     changes; one that does not fit scrolls with the page until its foot is
+     in view, then holds there — instead of holding its head in view and
+     parking its foot under the bottom corner marks for the length of the
+     page. `--pinned-h` is the column's own height, written by
+     PinnedColumn; until it is, the fallback makes the second term huge
+     and the first one wins, which is the old behaviour exactly.
+     `top` only applies while the element is sticky, so this is inert
+     below `md`, where the column is in the flow. */
+  .st-pinned {
+    top: min(
+      calc(var(--chrome-top) + 1rem),
+      calc(100svh - var(--chrome-bottom) - 1rem - var(--pinned-h, 0px))
+    );
   }
 
   /* Text rising out of its own lines, on the index.
