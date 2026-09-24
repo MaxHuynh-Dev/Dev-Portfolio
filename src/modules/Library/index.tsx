@@ -813,7 +813,13 @@ export default function Library({
               : 'absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-grab touch-none overflow-clip'
           }
         >
-          <ol ref={setLinks} className="m-0 list-none p-0">
+          {/* `data-await-images`: the ring turns through a whole revolution
+              as it arrives (trap 35), so every cover crosses the screen in
+              the first second, not just the ones in view at rest. The route
+              curtain waits for everything in here to be loaded and decoded
+              before it opens — and `eager` is what makes sure the ones off
+              to the side have been asked for at all (trap 47). */}
+          <ol ref={setLinks} data-await-images="" className="m-0 list-none p-0">
             {projects.map((project, index) => (
               <li
                 key={project.slug}
@@ -839,6 +845,7 @@ export default function Library({
                     ratio="16 / 9"
                     label="cover, 16:9"
                     sizes="(max-width: 48rem) 60vw, 28rem"
+                    eager
                   />
                   <span className="sr-only">
                     {project.name}. {project.summary} {project.kind}, {project.year}

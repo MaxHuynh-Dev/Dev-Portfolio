@@ -190,6 +190,14 @@ and React commits the new page while the top of the screen still shows the
 old one — a visible jump, which is the whole thing this exists to remove.
 `router.prefetch` at click time is what keeps that ordering cheap.
 
+**And the panel only opens onto pictures that are there.** Once the route
+has committed, the page is put back at the top under the closed panel and
+every image the reader is about to see is waited for — loaded AND decoded —
+before the uncover starts: what is on screen, plus anything inside a
+`[data-await-images]` region. It is a wait the reader almost never sees:
+with the image cache warm the pictures are done during the name's own hold
+and the transition is exactly as long as it was. See trap 47.
+
 Durations live in `global.css` as `--t-quick`, `--t-cover`, `--t-reveal`
 and `--t-handoff`. Only the first is used by CSS; the other three are read
 off the computed style by the two components, because a CSS animation
@@ -2225,6 +2233,69 @@ is the other end: when the sheet does not fit, its HEAD scrolls away under
 the top chrome instead. That is the right end to lose — the label `about`
 has already been read, and the link has not been reached.
 
+**47. A curtain that opens when the route arrives opens onto pictures that
+have not.**
+The complaint was a flicker as the route curtain left, and it was the
+images. `reveal` used to start the uncover the moment the route committed,
+and on a production build with a cold image cache, at the instant the panel
+began to move: about to `/works`, **3 of 3** visible images not loaded; to
+`/work/soluis`, **6 of 7**; to `/work/mark-woodland`, **4 of 9**. The last
+of them landed up to **1566ms** after the uncover started, and the panel is
+gone in 640ms — so the reader watched the page arrive and then watched its
+pictures pop in, one at a time.
+
+The panel now waits for them. Three things decided how:
+
+- **"On screen" is measured after the scroll reset, not before.** `toTop`
+  used to run at the start of the uncover; it now runs when the wait begins,
+  still under the closed panel, so the set of images is the one at the top
+  of the page the reader is about to be on rather than wherever they left
+  the last one.
+- **Loaded is not ready; decoded is.** `complete` says the bytes are here.
+  A 3024px screenshot can still be decoded on the frame it is first painted,
+  which is a blank box for that frame. `pictureReady` waits for `load` and
+  then `img.decode()`. A broken image resolves instead of rejecting — it is
+  not going to get more ready, and a stuck curtain is the worse failure.
+- **The ring declares its covers, because position cannot.** `/works` turns
+  through a whole revolution on arrival (trap 35), so every cover crosses the
+  screen in the first second, and waiting only for the three in view would
+  have moved the pop from the uncover to the spin. The ring's `<ol>` carries
+  `data-await-images`, and its covers are `Shot eager` — a lazy image off to
+  the side is one the browser may not have requested yet, and a wait on it
+  runs straight to the cap. Any page whose arrival brings pictures ON to the
+  screen needs the same attribute.
+
+**Two caps, not one.** `HARD_CAP_MS` (3s) is about the ROUTE not arriving,
+and when it fires there is nothing new to wait for pictures of, so it opens
+with `reveal(true)`. Once the route has arrived that timer is swapped for
+`IMAGES_CAP_MS` (4s from arrival): a single 3s cap would have given a route
+that arrived at 2.9s's pictures 100ms. A navigation counter stops a late
+`Promise.all` from opening a curtain it does not belong to.
+
+Measured after, same four navigations, cold cache: **0** images not ready at
+the start of the uncover on every one, the ring's 5 covers included, and
+every image load BEFORE it — the last at −1ms and −2ms, which is the gate
+visibly doing the holding. The cost is real on a cold cache and only there:
+the uncover starts at 2179 / 2544 / 2301 / 1179ms against 1139 / 1219 / 1459
+/ 1181. With the cache warm the timings are **identical to before** —
+1139 / 1219 / 1458 / 1179ms — because the pictures finish 600–900ms before
+the name has finished standing.
+
+Both caps were forced: every `/_next/image` request held 8s opened the
+panel at **4524ms** (the route arrived at ~505ms), and the route itself held
+5s opened it at **3010ms** onto the old page. Both ended with the attribute
+gone, `#content` at opacity 1 and Lenis running. The destination still
+arrives: 19 distinct headline transforms after a normal navigation, 3 under
+`reduce`, **0** masked blocks left parked, scroll at 0, focus on `#content`.
+
+**Measure this on `next start` with `.next/cache/images` deleted.** The
+optimizer's cache is what makes the difference between the two sets of
+numbers above, and a warm one hides the bug completely. Two probe traps
+found on the way: an `addInitScript` that observes `document.documentElement`
+runs before that element exists and silently registers nothing — observe
+`document` with `subtree` — and Playwright's route handlers here have no
+`setTimeout`; use `page.waitForTimeout`.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -2367,7 +2438,8 @@ Other invariants:
   bar is 4.5:1 and `--ink-3` (3.88:1) fails it. Only the name dims; the
   number and the metadata beside it stay put.
 - **The route curtain must always let go.** `PageTransition` caps the hold
-  at 3s and reveals anyway; its cleanup calls `lenis.start()` even if the
+  at 3s for the ROUTE, and once the route has arrived gives its pictures at
+  most 4s more (trap 47), and reveals anyway; its cleanup calls `lenis.start()` even if the
   component unmounts mid-transition. A reader stuck behind a panel with
   scrolling switched off is the worst failure this file can produce. The
   `data-routing` flag comes down on every one of those paths too (trap 28),
