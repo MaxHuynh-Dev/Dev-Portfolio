@@ -344,6 +344,11 @@ export default function Library({
    * trap 28 fixed, pointing the other way.
    */
   const viaRoute = useViaRoute();
+  /** The same answer, for `draw`, which is a stable callback. */
+  const viaRouteRef = useRef(false);
+  useEffect(() => {
+    viaRouteRef.current = viaRoute;
+  }, [viaRoute]);
 
   const chrome = (step: number): React.CSSProperties => chromePose(step, viaRoute);
 
@@ -498,7 +503,15 @@ export default function Library({
         // be absent until they are arriving. This fades them in across the
         // first part of the turn — multiplied by `(1 - gather)` so it cannot
         // touch a cover that is on its way to the slot.
-        const arriving = mix(phase(elapsed, 0, ENTRY_TURN_MS * ENTRY_FADE_SHARE), 1, gather);
+        //
+        // NOT on the route path any more. The arrival starts as the panel
+        // starts to leave (see `useReleased`), so the covers are already
+        // turning when they are first uncovered — never sitting still in
+        // their finished pose — and fading pictures that are already
+        // decoded only made them look late.
+        const arriving = viaRouteRef.current
+          ? 1
+          : mix(phase(elapsed, 0, ENTRY_TURN_MS * ENTRY_FADE_SHARE), 1, gather);
 
         element.style.transform = `translate3d(calc(-50% + ${x.toFixed(2)}px), ${y.toFixed(
           2
