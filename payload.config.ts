@@ -6,6 +6,7 @@ import { buildConfig } from 'payload';
 import sharp from 'sharp';
 
 import { cloudinaryAdapter } from './src/payload/cloudinary';
+import { Experience } from './src/payload/collections/Experience';
 import { Media } from './src/payload/collections/Media';
 import { Projects } from './src/payload/collections/Projects';
 import { Users } from './src/payload/collections/Users';
@@ -42,7 +43,7 @@ export default buildConfig({
       titleSuffix: '— Portfolio CMS'
     }
   },
-  collections: [Projects, Media, Users],
+  collections: [Projects, Experience, Media, Users],
   globals: [Profile, About, SiteSettings],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

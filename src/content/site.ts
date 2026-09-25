@@ -139,3 +139,29 @@ export interface About {
   portrait: Portrait | null;
   columns: MetaColumn[];
 }
+
+/** A calendar month, as a CV states one. */
+export interface Month {
+  year: string;
+  /** 1–12. */
+  month: number;
+}
+
+/**
+ * One position, for /experience.
+ *
+ * `end` is null while it is still the job. `responsibilities` is an ARRAY
+ * for the same reason `About.body` is: each item is measured and masked
+ * line by line, and `Lines` takes exactly one string.
+ */
+export interface Position {
+  company: string;
+  role: string;
+  location: string | null;
+  start: Month;
+  end: Month | null;
+  responsibilities: string[];
+  stack: string[];
+  /** Projects built in this position, as links to their own pages. */
+  projects: { slug: string; name: string }[];
+}

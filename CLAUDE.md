@@ -7,7 +7,7 @@ ink type and **no accent colour at all**. Emphasis is carried by size,
 weight and position; hover and focus by an underline. The only colour the
 site will ever have is the project imagery.
 
-Four kinds of page:
+Five kinds of page:
 
 - **`/`** — the index, and it is **one screen that does not scroll**
   (trap 41). The masthead **and contact**, and nothing else at all.
@@ -36,6 +36,14 @@ Four kinds of page:
   in the middle, and a portrait where the project page puts its rail. On a
   phone the lists and the portrait share a row rather than stacking.
   Reached from the corner marks as `about`. See traps 39 and 43.
+- **`/experience`** — where he has worked, newest first, from the
+  `experience` collection. The project page's grammar on its side: the
+  year the job started in a narrow left column, counting itself in on an
+  odometer (`Odometer.tsx`), the company and the responsibilities in the
+  middle, `stack` / `projects` in a third column above `lg`. It is the one
+  page whose content is ALLOWED to run past the screen — a CV grows — so it
+  is the one page that reveals on `scroll`. Reached from the corner marks
+  as `experience`, between `work` and `about`.
 
 ## Motion
 
@@ -145,17 +153,31 @@ and clear. The spec sheet comes up a row at a time behind the name, and the
 first shot washes in. Before that, a project was the one place on this site
 where the curtain opened onto a still picture.
 
-**Nothing on this site reveals on `scroll` any more.** Every masked block on
-every page waits for `load` — 18 call sites, and all 18 pass `on="load"`,
+**Only `/experience` reveals on `scroll`.** Every masked block on every
+OTHER page waits for `load` — 18 call sites, and all 18 pass `on="load"`,
 checked rather than assumed. The index cannot scroll at all now (trap 41),
 the address arrives with the opening because that is where it lives (trap
 38), and `/about` is a page where everything arrives on `load` with the
 colophon alongside it (trap 39).
 
 `useReveal` still HAS a `scroll` trigger, and `Lines` and `Reveal` still
-default to it. That is left standing deliberately rather than pruned: it is
-the right default for a page that scrolls, the next one may, and trap 24 is
-the record of how to get it wrong.
+default to it. That was left standing deliberately rather than pruned, on
+the argument that the next page might scroll — and `/experience` is that
+page. Whatever is on screen when the curtain lets go comes up at once,
+because the trigger asks "is it at or above the line"; the rest comes up as
+it is reached. Verified: 0 of 28 masked lines left parked after scrolling
+to the foot at 1440, 0 of 35 at 375. Trap 24 is the record of how to get it
+wrong.
+
+**The odometer** is the one new gesture there. Each digit is a strip of
+0–9 three times over in a window one line tall, parked a cell below it, and
+rolls up to its digit — the further right, the more turns, all in the same
+1.4s, so the low digits spin and the high ones barely move. One CSS
+transition keyed off `data-in`, so under `reduce` it takes exactly two
+poses, parked and landed. The window is `line-height: normal` for trap 26's
+reason, and the company name beside it takes the same box at the same size,
+which is what puts the two on one baseline — measured equal tops at 768,
+1440 and 1920.
 
 All of this is a reversal of something recorded
 below as rejected, and the difference is the point: what was thrown out was
@@ -295,6 +317,7 @@ npx tsc --noEmit  # typecheck (strict)
 
 yarn seed                 # mock content into an EMPTY database
 yarn seed:reset           # ...or replace what is there (SEED_RESET=1, NOT a flag)
+yarn seed:experience      # the CV's positions, into an EMPTY experience collection
 yarn generate:types       # src/payload/payload-types.ts, after any field change
 yarn generate:importmap   # app/(payload)/admin/importMap.js, after a config change
 ```
@@ -311,7 +334,7 @@ app/(frontend)/(withoutFooter)/work/[slug]/      one page per project
 app/(payload)/             the admin, and Payload's REST + GraphQL routes.
                            A SECOND root layout — see trap 37.
 payload.config.ts          collections, globals, the Mongo adapter
-src/payload/collections/   Projects | Media | Users
+src/payload/collections/   Projects | Experience | Media | Users
 src/payload/globals/       Profile | About | SiteSettings
 src/payload/cloudinary.ts  the Cloudinary storage adapter. SERVER ONLY.
 src/payload/seed.ts        mock content for an empty database
@@ -325,6 +348,9 @@ src/modules/Studio/
   Corners.tsx      the fixed chrome at the four edges
 src/modules/About/
   index.tsx        /about — statement, prose, portrait. One screen.
+src/modules/Experience/
+  index.tsx        /experience — one entry per position, newest first
+src/components/Odometer.tsx  the year that counts itself in on /experience
 src/modules/Library/
   index.tsx        /works — the ring, its geometry, and the view switch
   Readout.tsx      the rolling number / name / year above it
@@ -370,8 +396,8 @@ close to a default geometric sans. Render before you commit.
 
 ## Content
 
-**All copy, projects and links live in Payload**, at `/admin`, in three
-collections and two globals. Nothing else hardcodes content. Current values
+**All copy, projects and links live in Payload**, at `/admin`, in four
+collections and three globals. Nothing else hardcodes content. Current values
 are the placeholders `yarn seed` writes.
 
 `src/content/site.ts` still exists and is still the thing every component
@@ -1554,7 +1580,8 @@ name and the intro stays under its END, where the eye already finishes.
   page they had just started on; then the address left the block for the
   corner above it, and what the mark reached was a row of social links
   named `social`. A mark that says one word and arrives somewhere named
-  another is worse than no mark. **Two marks now** — `work` and `about`,
+  another is worse than no mark. **Two marks now** (three since
+  `experience` joined them) — `work` and `about`,
   and both are real routes. The third went when the index's work list did
   (trap 41): it pointed at `/#work`, and what it named stopped existing.
   `all work` became simply `work` at the same time, for the same vocabulary
