@@ -216,10 +216,11 @@ a phase now — `covering`, `holding`, `leaving` — and `#content` is blanked
 for `holding` only. During `covering` the reader is still looking at the
 page they are leaving, and taking it away underneath them is the jump this
 whole thing exists to remove. The gate comes off the moment the uncover
-starts, so the strip the panel clears shows the destination in its PARKED
-state — masks empty, display type below its clip, the ring turned away —
-and the reveals still wait for the end of the uncover. Panel shut onto a
-blank page, panel sweeps off a parked one, type arrives. See trap 34.
+starts, and **so does the arrival** — `useReleased` treats `leaving` as
+released, so the type rises, the ring turns and the odometer counts WHILE
+the panel sweeps, and pictures are simply there. Panel shut onto a blank
+page, panel sweeps off a page already arriving. See trap 34, and trap 28
+for why this used to wait for the end of the sweep and no longer does.
 
 **The route is only pushed once the panel is closed.** Push during the rise
 and React commits the new page while the top of the screen still shows the
@@ -1023,14 +1024,33 @@ flag. Three things about that:
   on the page and switch on a second scroll lock beside the one this
   curtain already holds through Lenis. `data-routing` drives nothing but
   this question.
-- **The release is at the END of the uncover, not the start.** The panel
-  rises to uncover, so it lets go of the bottom of the screen first and the
-  top of it last — and the top is exactly where the block waiting on `load`
-  sits. Releasing when the tween starts would put the rise behind the part
-  of the panel that has not moved yet. Verified: 32 frames with the intro
-  mounted behind a visible panel, every one of them parked at the same
-  `y` of 31.9 with `data-in` false; the panel gone at 1219ms, `data-in`
-  true at 1260ms, the travel from 1401ms to 1762ms — all of it in view.
+- **The release is at the START of the uncover now — reversed at the
+  owner's request.** It was at the END, on the argument that the panel lets
+  go of the top of the screen last and a rise started earlier plays partly
+  behind it. That was measured and true (32 parked frames behind a visible
+  panel, the travel all in view after it), and it read as BROKEN: across
+  the whole 560ms sweep **0 of 38 frames** had anything moving, pictures on
+  `/about` and `/work/<slug>` sat at opacity 0 and the ring's covers at 0,
+  and the page then kept arriving for **1.1–1.6s** after the panel had gone
+  (2.7s on `/works`). The owner saw a page that had not finished rendering.
+  It had — the route commits and its pictures are decoded before `leaving`
+  is raised (trap 47); it was only still ARRIVING.
+
+  `useReleased` now counts `data-routing="leaving"` as released. Measured
+  after, 1440x900, production build: **26–38 of 38** uncover frames moving,
+  every picture at opacity 1 when the sweep starts, and the tail after the
+  panel is gone down to **0.4–0.9s** (2.05s on `/works`, whose readout
+  lines are timed from the turn itself). The rise of the top lines now
+  partly happens behind the last of the panel; that is the accepted cost.
+  `useViaRoute` still asks `hasAttribute`, so it is unaffected.
+
+  Two things went with it, both on the ROUTE path only — the cold load
+  keeps both, because the paper dissolves rather than uncovers:
+  `.st-wash` is forced on under `html[data-routing]` (a decoded picture
+  fading in reads as a late one), and the ring's covers no longer fade in
+  over the first 40% of the turn — they are already turning when first
+  uncovered, so trap 35's "sat in the finished pose, then jumped" cannot
+  happen. Under `reduce` nothing travels either way; pictures are on.
 - **It comes down everywhere the curtain does**, which is the same promise
   as "the route curtain must always let go": in `settle`, and in the
   effect's cleanup for an unmount mid-transition. A flag left up parks every
@@ -1356,7 +1376,8 @@ All three were found by tracing what is actually *on screen* during the
 uncover rather than by checking that the animations ran — they all ran
 perfectly.
 
-- **A whole revolution is a no-op modulo the count.** `shortest(i - 8, 8)`
+- *(The fade in this bullet is now for the cold load only — see trap 28.)*
+  **A whole revolution is a no-op modulo the count.** `shortest(i - 8, 8)`
   and `shortest(i, 8)` are the same number, so the ring's first frame and
   its last are the SAME pose. The covers sat at their finished position,
   pixel-for-pixel against the settled reference, for the entire 450ms

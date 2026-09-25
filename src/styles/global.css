@@ -718,6 +718,18 @@ body {
     opacity: 1;
   }
 
+  /* Except behind the route curtain. The panel only opens onto pictures
+     that are loaded AND decoded (trap 47), so fading one in afterwards only
+     makes a ready picture look late — the owner read it as the page not
+     having finished rendering. While `data-routing` is up the wash is
+     simply on, and once the arrival releases `data-in` holds it there, so
+     the attribute coming down changes nothing. The cold load keeps its
+     fade: nothing is uncovered there, the paper dissolves. */
+  html[data-routing] .st-wash {
+    opacity: 1;
+    transition: none;
+  }
+
   /* The destination is empty while the panel is SHUT.
 
      `holding` only, and that is the whole design. During `covering` the

@@ -48,10 +48,18 @@ const CURTAINS = ['data-preloading', 'data-routing'] as const;
  * screen until 1223ms, by which point the rise was three quarters over. The
  * animation ran perfectly, in a room with the lights off.
  *
- * And the panel uncovers UPWARD, so the top of the page is the last thing
- * it lets go of — which is exactly where the block waiting on `load` sits.
- * That is why the release comes at the end of the reveal rather than at the
- * start of it.
+ * **It lets go when the uncover STARTS — `data-routing="leaving"` — and
+ * that is a reversal, asked for by the owner.** It used to wait for the end
+ * of the sweep, on the argument that the panel uncovers upward and the top
+ * of the page is the last thing it lets go of. That was measured correct
+ * and read as broken: the reader watched the panel leave a parked page —
+ * masks empty, pictures at opacity 0, the ring turned away — and only THEN
+ * saw it arrive, which looks exactly like a page that had not finished
+ * rendering. Released at the start, the arrival plays WHILE the panel
+ * sweeps: the top lines are mid-rise as it clears them, and most of the
+ * page has landed by the time it is gone. The page itself is ready either
+ * way — the route has committed and its pictures are decoded before
+ * `leaving` is ever raised (trap 47).
  */
 export const useReleased = (): boolean => {
   const [released, setReleased] = useState(false);
@@ -61,7 +69,11 @@ export const useReleased = (): boolean => {
     let done = false;
 
     const settle = (): void => {
-      if (done || CURTAINS.some((name) => html.hasAttribute(name))) return;
+      // `leaving` is the route panel already on its way out — see above.
+      const covered = CURTAINS.some(
+        (name) => html.hasAttribute(name) && html.getAttribute(name) !== 'leaving'
+      );
+      if (done || covered) return;
       done = true;
       setReleased(true);
     };
