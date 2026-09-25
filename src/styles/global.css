@@ -430,7 +430,11 @@ body {
      it into view. What is removed is the painted bar, not the scrolling.
      Do not reach for this anywhere the content is not sized to fit — a
      hidden bar on a region that genuinely overflows is how a page ends up
-     silently cutting its own content off. */
+     silently cutting its own content off.
+
+     Below `md`, while the list is up, it is not a scroll container at all:
+     it runs on down the page and the document scrolls, so there is no bar
+     here for this to hide. */
   .st-quiet-scroll {
     scrollbar-width: none;
   }

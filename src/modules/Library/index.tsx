@@ -8,7 +8,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Project } from '@/content/site';
 import Readout from './Readout';
-import Roll from './Roll';
+import Roll, { COVER_SIZES } from './Roll';
 import {
   ENTRY_CHROME_AT_MS,
   ENTRY_CHROME_MS,
@@ -21,7 +21,12 @@ import {
   ENTRY_ROLL_PCT,
   ENTRY_TOTAL_MS,
   ENTRY_TURN_MS,
-  GATHER_MS
+  GATHER_MS,
+  HANDOFF_MS,
+  READOUT_IN_MS,
+  READOUT_OUT_MS,
+  readoutBackAt,
+  SCROLL_BACK_MS
 } from './timing';
 
 /**
@@ -216,6 +221,33 @@ const STACK_DEPTH = 4;
 /** Where in the gather the covers behind the top one start to go. */
 const STACK_FADE_FROM = 0.55;
 
+/** Where a cover has to be for its box to sit exactly on another box. */
+interface Landing {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+/**
+ * The pose that puts a cover `width` wide exactly on `box`, in the
+ * surface's own coordinates.
+ *
+ * `scale()` shrinks about the element's centre, so a cover translated to
+ * the box's top and then scaled down sits lower than the box by half of
+ * what it gave up: h(1 - scale) / 2. Measured at 34.6px with a 434px cover
+ * landing in a 311px slot, which is exactly how far the stack was off. The
+ * x needs no such correction: it is centred, and the centre is the thing
+ * scaling holds still.
+ */
+const landing = (box: DOMRect, frame: DOMRect, width: number): Landing => {
+  const scale = box.width / width;
+  return {
+    x: box.left + box.width / 2 - (frame.left + frame.width / 2),
+    y: box.top - frame.top - (width * TALL * (1 - scale)) / 2,
+    scale
+  };
+};
+
 /** Ease for the gather — out hard, so it reads as arriving, not drifting. */
 const ease = (t: number): number => 1 - (1 - t) ** 3;
 
@@ -281,6 +313,8 @@ export default function Library({
   const [readout, setReadout] = useState<HTMLDivElement | null>(null);
   /** The box in the list the covers gather into. Empty, and measured. */
   const [slot, setSlot] = useState<HTMLDivElement | null>(null);
+  /** Each row's own thumbnail below `md`, where there is no deck. */
+  const thumbs = useRef<(HTMLDivElement | null)[]>([]);
   const covers = useRef<(HTMLLIElement | null)[]>([]);
   /** Each mask in the readout, and its eight stacked lines in list order. */
   const rolls = useRef<HTMLElement[][]>([]);
@@ -301,6 +335,11 @@ export default function Library({
    */
   const blend = useRef(0);
   const blendTo = useRef(0);
+  /**
+   * Below `md`, 0 while the covers hold the pictures and 1 once the rows'
+   * own thumbnails do. Walked by the same loop as `blend`, after it lands.
+   */
+  const handoff = useRef(0);
 
   /**
    * 0 on arrival, 1 once the page has introduced itself.
@@ -427,28 +466,42 @@ export default function Library({
       const radius = pitch.current / Math.sin(STEP_DEG * RAD);
       const fade = fadeFor(projects.length);
 
-      // Where the stack is, measured off the empty slot in the list rather
-      // than positioned by a second set of numbers that would have to be kept
-      // in step with the list's own layout. Read once per frame, not once per
-      // cover, and only while there is a gather to draw.
+      // Where the covers land, measured off the list rather than positioned
+      // by a second set of numbers that would have to be kept in step with
+      // the list's own layout. Read once per frame, not once per cover, and
+      // only while there is a gather to draw.
+      //
+      // Two answers, and which one is live is read off the layout rather than
+      // restated as a breakpoint here: below `md` every row has a thumbnail
+      // with a box and there is no deck, above it the thumbnails have no box
+      // and the deck does. A second copy of `md` in this file would be a
+      // number kept in step by hand with a class in `Roll`.
       const gather = ease(blend.current);
-      let stack = null as { x: number; y: number; scale: number } | null;
-      if (gather > 0 && slot !== null && surface !== null && cover.current > 0) {
-        const box = slot.getBoundingClientRect();
+      let stack = null as Landing | null;
+      let rows = null as Landing[] | null;
+      if (gather > 0 && surface !== null && cover.current > 0) {
         const frame = surface.getBoundingClientRect();
-        const scale = box.width / cover.current;
-        stack = {
-          x: box.left + box.width / 2 - (frame.left + frame.width / 2),
-          // `scale()` shrinks about the element's centre, so a cover
-          // translated to the slot's top and then scaled down sits lower
-          // than the slot by half of what it gave up: h(1 - scale) / 2.
-          // Measured at 34.6px with a 434px cover landing in a 311px slot,
-          // which is exactly how far the stack was off. The x needs no such
-          // correction: it is centred, and the centre is the thing scaling
-          // holds still.
-          y: box.top - frame.top - (cover.current * TALL * (1 - scale)) / 2,
-          scale
-        };
+        const boxes = thumbs.current.map((thumb) => thumb?.getBoundingClientRect() ?? null);
+        if (
+          boxes.length === projects.length &&
+          boxes.every((box) => box !== null && box.width > 0)
+        ) {
+          rows = (boxes as DOMRect[]).map((box) => landing(box, frame, cover.current));
+        } else if (slot !== null) {
+          stack = landing(slot.getBoundingClientRect(), frame, cover.current);
+        }
+      }
+
+      // Every cover is on its own row's thumbnail, so the thumbnail takes
+      // over and the cover dissolves off the top of it (see `HANDOFF_MS`).
+      // The picture a finger scrolls has to be IN the scroll region — native
+      // scrolling runs off the main thread, and a cover moved to follow it
+      // from here is always a frame behind it. So the covers only exist for
+      // the flight, and the rows own the pictures either side of it (trap
+      // 49).
+      const landed = rows !== null && gather === 1;
+      for (const thumb of thumbs.current) {
+        if (thumb !== null && thumb !== undefined) thumb.style.opacity = landed ? '1' : '0';
       }
       const centre = Math.round(position);
 
@@ -464,7 +517,17 @@ export default function Library({
         let scale = Math.max(0.2, 1 - Math.abs(away) * SHRINK);
         let shown = Math.min(1, Math.max(0, (fade - Math.abs(away)) / FADE_OVER));
 
-        if (stack !== null) {
+        const row = rows?.[index];
+        if (row !== undefined) {
+          // Each cover to its own row, upright and whole. There is no deck to
+          // lean in and nothing to hide underneath, so every one of them is
+          // seen arriving, the ones that had faded round the back included.
+          x = mix(x, row.x, gather);
+          y = mix(y, row.y, gather);
+          turn = mix(turn, 0, gather);
+          scale = mix(scale, row.scale, gather);
+          shown = mix(shown, 1, gather);
+        } else if (stack !== null) {
           // Depth in the deck is taken from the settled project, not the
           // continuous position: a stack whose cards re-order mid-flight
           // shuffles instead of gathering.
@@ -516,12 +579,12 @@ export default function Library({
         element.style.transform = `translate3d(calc(-50% + ${x.toFixed(2)}px), ${y.toFixed(
           2
         )}px, 0) rotate(${turn.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-        element.style.opacity = (shown * arriving).toFixed(3);
+        element.style.opacity = (shown * arriving * (landed ? 1 - handoff.current : 1)).toFixed(3);
         // A cover nobody can see must not take a click either. It stays
         // focusable, though: tabbing onto it is what brings it round.
         element.style.pointerEvents = solid;
         element.style.zIndex = String(
-          stack === null
+          stack === null && rows === null
             ? 50 - Math.round(Math.abs(away) * 10)
             : 50 - Math.abs(shortest(index - centre, projects.length))
         );
@@ -678,23 +741,39 @@ export default function Library({
     // is not on the slot.
     if (target === 1) arrived.current = true;
 
+    // Leaving for the ring, the covers take the pictures back at once. They
+    // are about to move, and a picture in motion does not show its raster.
+    if (target === 0) handoff.current = 0;
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       blend.current = target;
+      handoff.current = target;
       redraw();
       return;
     }
 
     const from = blend.current;
     const distance = Math.abs(target - from);
-    if (distance < 0.001) return;
+    if (distance < 0.001) {
+      // Already there, so there is no flight to hand over at the end of.
+      // Finishing the handover outright is what keeps a re-run of this
+      // effect from leaving a cover half-dissolved over its row for good.
+      handoff.current = target;
+      redraw();
+      return;
+    }
 
     const ms = GATHER_MS * distance;
     const start = performance.now();
     let frame = requestAnimationFrame(function step(now: number): void {
       const t = Math.min(1, (now - start) / ms);
       blend.current = from + (target - from) * t;
+      // Only once the flight is over, so the dissolve happens with neither
+      // picture moving. Only `draw` decides whether there is anything to
+      // hand over to; above `md` there is not, and this walks for nothing.
+      if (target === 1) handoff.current = across(now - start - ms, 0, HANDOFF_MS);
       paintOnce(now);
-      if (t < 1) frame = requestAnimationFrame(step);
+      if (t < 1 || (target === 1 && handoff.current < 1)) frame = requestAnimationFrame(step);
     });
 
     return () => {
@@ -703,6 +782,50 @@ export default function Library({
   }, [mode, redraw, paintOnce]);
 
   const shown = mode === 'list';
+
+  /**
+   * True while the page may be longer than the screen: below `md` the list
+   * runs on down the page and the document scrolls, where above it the list
+   * is a region inside one screen. The owner asked for every project to be
+   * shown rather than held to the screen's height.
+   *
+   * It comes on with the list and goes a beat AFTER it. The ring is one
+   * screen tall, so going back to it takes the reader up to the top while
+   * the rows fall, and only then lets the page be one screen again —
+   * shortening it under a reader who is still scrolled down would clamp the
+   * scroll in one jump, which is the thing the route curtain exists to hide.
+   */
+  const [long, setLong] = useState(false);
+  useEffect(() => {
+    if (mode === 'list') {
+      setLong(true);
+      return;
+    }
+    if (window.scrollY > 0) {
+      if (window.lenis === undefined) window.scrollTo(0, 0);
+      else window.lenis.scrollTo(0, { duration: SCROLL_BACK_MS / 1000 });
+    }
+    const timer = window.setTimeout(
+      () => {
+        setLong(false);
+      },
+      Math.max(SCROLL_BACK_MS, readoutBackAt(projects.length))
+    );
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [mode, projects.length]);
+
+  /**
+   * Below `md`, the readout's way out and back. Out before the first row
+   * rises into its room, and back only once the last row has fallen out of
+   * it. Above `md` it never changes, so this never runs there.
+   */
+  const readoutFade: React.CSSProperties = {
+    transitionProperty: 'opacity',
+    transitionDuration: `${shown ? READOUT_OUT_MS : READOUT_IN_MS}ms`,
+    transitionDelay: `${shown ? 0 : readoutBackAt(projects.length)}ms`
+  };
 
   return (
     <section
@@ -767,33 +890,80 @@ export default function Library({
         )}
       </div>
 
-      <div ref={setReadout} className="mt-[clamp(1.2rem,4vh,2.8rem)]">
-        <Readout projects={projects} released={released} counterPose={counterPose} />
-      </div>
+      {/* The readout and one stage for both views, in one grid and behind one
+          clip. The views are overlaid rather than laid out one after the
+          other so that switching reflows nothing: the ring keeps the box it
+          solved against, and the covers can fly to a slot that has not moved
+          under them.
 
-      {/* One stage, both views. They are overlaid rather than laid out one
-          after the other so that switching reflows nothing: the ring keeps
-          the box it solved against, and the covers can fly to a slot that
-          has not moved under them. */}
-      <div className="relative mt-[clamp(0.8rem,3vh,2rem)] flex-1">
+          Below `md` the list also lies over the READOUT's row, and the
+          readout goes while the list is up — every row there carries its
+          own picture, name and year, so a readout of one of them only says it
+          again — and the list has the room. It is an overlay for the same
+          reason as the rest: collapsing the readout would grow the stage,
+          and the ring would re-solve and jump under covers that are leaving
+          it. That is also why the clip is HERE, full-bleed round both rows,
+          and not on the covers' own layer: a cover flying to the first row
+          has to be seen above the stage.
+
+          Gone means out of the hit test too, not only out of sight. The
+          readout's lines carry transforms, so they paint — and take hits —
+          above the list's rows, which are not positioned: at opacity 0 alone
+          it swallowed every tap on the first row.
+
+          And below `md` the list is not held to the screen at all: while it
+          is up the clip comes off here and on the list, the rows run on down
+          past the stage, and the DOCUMENT scrolls — see `long`. The stage
+          keeps its box, so the ring is never asked to re-solve. */}
+      <div
+        className={
+          long
+            ? 'mx-[calc(var(--gut)*-1)] mt-[clamp(1.2rem,4vh,2.8rem)] grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-clip px-[var(--gut)] max-md:overflow-visible'
+            : 'mx-[calc(var(--gut)*-1)] mt-[clamp(1.2rem,4vh,2.8rem)] grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-clip px-[var(--gut)]'
+        }
+      >
+        <div
+          ref={setReadout}
+          style={readoutFade}
+          className={
+            shown
+              ? 'col-[1] row-[1] max-md:pointer-events-none max-md:opacity-0'
+              : 'col-[1] row-[1]'
+          }
+        >
+          <Readout projects={projects} released={released} counterPose={counterPose} />
+        </div>
+
         <div
           aria-hidden={!shown}
           inert={!shown}
           data-lenis-prevent=""
           onScroll={redraw}
-          className={
-            shown
-              ? 'st-quiet-scroll absolute inset-0 overflow-y-auto'
-              : 'pointer-events-none absolute inset-0 overflow-clip'
-          }
+          className={[
+            'relative col-[1] row-[1/3] min-h-0 md:row-[2/3] md:mt-[clamp(0.8rem,3vh,2rem)]',
+            shown ? 'st-quiet-scroll overflow-y-auto' : 'pointer-events-none overflow-clip',
+            long ? 'max-md:overflow-visible' : ''
+          ].join(' ')}
         >
-          <div className="flex flex-col gap-[clamp(0.6rem,2vh,2rem)] md:flex-row md:items-start md:gap-[clamp(1.5rem,4vw,3.5rem)]">
+          {/* `relative` is not decoration. Each row's `sr-only` line is
+              absolutely positioned, and an absolute box escapes every clip
+              between it and its containing block — without this the section
+              was that block, and the parked rows' lines lengthened a
+              one-screen page by 140px on a phone held sideways.
+
+              The foot padding is the section's own, because overflowing
+              content does not get the section's: it lets the last row come
+              to rest exactly where the list's box ends — clear of the bottom
+              corner marks — and only makes the page scroll when a row
+              actually runs past that line. */}
+          <div className="flex flex-col gap-[clamp(0.6rem,2vh,2rem)] max-md:pb-[calc(var(--chrome-top)+0.5rem)] md:flex-row md:items-start md:gap-[clamp(1.5rem,4vw,3.5rem)]">
             <div className="order-2 min-w-0 flex-1 md:order-1">
               <Roll
                 projects={projects}
                 active={carousel.active}
                 shown={shown}
                 onActive={carousel.goTo}
+                thumbs={thumbs}
               />
             </div>
 
@@ -802,71 +972,84 @@ export default function Library({
                 hidden, because it is a picture of the row the list has
                 already named. Its box is measured every frame of the
                 gather, so the list owns where the stack ends up and this
-                file never has a second opinion about it. */}
+                file never has a second opinion about it.
+
+                Not below `md`, where every row carries its own picture and
+                a preview of one of them would only repeat it (see Roll). */}
             <div
               ref={setSlot}
               aria-hidden="true"
               style={{ aspectRatio: '16 / 9' }}
-              className="order-1 w-[clamp(8rem,36vw,20rem)] shrink-0 self-center md:order-2 md:self-start"
+              className="order-1 w-[clamp(8rem,36vw,20rem)] shrink-0 self-center max-md:hidden md:order-2 md:self-start"
             />
           </div>
         </div>
 
-        {/* The covers, last so they paint over the slot, full-bleed so the
-            ring can run off the sides of the screen, and clipped so the
-            ones that have dropped below the ring cannot lengthen the page.
-            `clip`, never `hidden` — see the note in global.css. */}
-        <div
-          ref={setSurface}
-          aria-hidden={shown}
-          inert={shown}
-          className={
-            shown
-              ? 'pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] overflow-clip'
-              : 'absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-[var(--cursor-grab)] touch-none overflow-clip'
-          }
-        >
-          {/* `data-await-images`: the ring turns through a whole revolution
+        {/* The stage the ring is solved against — the row under the readout,
+            at every width, whatever the list is doing.
+
+            It lies over the list's rows and comes after them, so it must
+            take no hits of its own: without `pointer-events-none` every row
+            under it was unclickable. Only the covers' layer takes them back,
+            and only while the ring is the view. */}
+        <div className="pointer-events-none relative col-[1] row-[2/3] mt-[clamp(0.8rem,3vh,2rem)]">
+          {/* The covers, last so they paint over the slot, and full-bleed so
+            the ring can run off the sides of the screen. The grid round
+            both rows is what clips them, so the ones that have dropped below
+            the ring cannot lengthen the page — `clip`, never `hidden`, see
+            the note in global.css. */}
+          <div
+            ref={setSurface}
+            aria-hidden={shown}
+            inert={shown}
+            className={
+              shown
+                ? 'pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)]'
+                : 'pointer-events-auto absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-[var(--cursor-grab)] touch-none'
+            }
+          >
+            {/* `data-await-images`: the ring turns through a whole revolution
               as it arrives (trap 35), so every cover crosses the screen in
               the first second, not just the ones in view at rest. The route
               curtain waits for everything in here to be loaded and decoded
               before it opens — and `eager` is what makes sure the ones off
               to the side have been asked for at all (trap 47). */}
-          <ol ref={setLinks} data-await-images="" className="m-0 list-none p-0">
-            {projects.map((project, index) => (
-              <li
-                key={project.slug}
-                ref={(node) => {
-                  covers.current[index] = node;
-                }}
-                className="absolute top-0 left-1/2 w-[var(--cover,8rem)]"
-              >
-                <Link
-                  href={`/work/${project.slug}`}
-                  data-transition-label={project.name}
-                  onFocus={() => {
-                    carousel.goTo(index);
+            <ol ref={setLinks} data-await-images="" className="m-0 list-none p-0">
+              {projects.map((project, index) => (
+                <li
+                  key={project.slug}
+                  ref={(node) => {
+                    covers.current[index] = node;
                   }}
-                  className="block"
+                  className="absolute top-0 left-1/2 w-[var(--cover,8rem)]"
                 >
-                  {/* Decorative: the link's name is spelled out below, and
+                  <Link
+                    href={`/work/${project.slug}`}
+                    data-transition-label={project.name}
+                    onFocus={() => {
+                      carousel.goTo(index);
+                    }}
+                    className="block"
+                  >
+                    {/* Decorative: the link's name is spelled out below, and
                       an empty field has nothing to describe in the first
                       place. */}
-                  <Shot
-                    src={project.cover}
-                    alt=""
-                    ratio="16 / 9"
-                    label="cover, 16:9"
-                    sizes="(max-width: 48rem) 60vw, 28rem"
-                    eager
-                  />
-                  <span className="sr-only">
-                    {project.name}. {project.summary} {project.kind}, {project.year}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ol>
+                    <Shot
+                      src={project.cover}
+                      alt=""
+                      ratio="16 / 9"
+                      label="cover, 16:9"
+                      sizes={COVER_SIZES}
+                      eager
+                    />
+                    <span className="sr-only">
+                      {project.name}. {project.summary} {project.kind}, {project.year}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </div>
     </section>

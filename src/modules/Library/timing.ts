@@ -18,6 +18,20 @@
 export const GATHER_MS = 520;
 
 /**
+ * Below `md`, how long a landed cover takes to dissolve into the row's own
+ * thumbnail underneath it.
+ *
+ * Not a flourish: the two are the same file in the same box, measured to
+ * 0.01px, and still not the same picture. The cover is drawn at its ring
+ * size on its own layer and scaled down by the compositor; the thumbnail is
+ * drawn at its size. Photographed, the cover is ~6% softer and its edges sit
+ * on a fractional pixel, so a hard swap shows as the picture sharpening and
+ * a faint outline blinking. Dissolving one into the other, with neither
+ * moving, turns that into nothing anyone sees.
+ */
+export const HANDOFF_MS = 160;
+
+/**
  * How long after the click the first row starts to rise.
  *
  * Deliberately inside `GATHER_MS`. Waiting for the covers to land first
@@ -38,6 +52,29 @@ export const ROW_RISE_MS = 560;
  */
 export const ROW_FALL_MS = 280;
 export const ROW_FALL_STAGGER_MS = 18;
+
+/**
+ * Below `md`, the readout above the list leaves while the list is up, and
+ * the list is drawn in the room it leaves (see `Library`).
+ *
+ * Out inside `ROW_LEAD_MS`, so it has gone before the first row rises
+ * where it was. It is a fade and not a roll: the `/ 08` beside it is on the
+ * chrome's cascade, whose delay is counted from the curtain, so it cannot
+ * be sent back into its mask on a click's clock.
+ */
+export const READOUT_OUT_MS = 200;
+export const READOUT_IN_MS = 300;
+
+/** And back only once the last row has fallen out of that room. */
+export const readoutBackAt = (rows: number): number =>
+  ROW_FALL_MS + Math.max(0, rows - 1) * ROW_FALL_STAGGER_MS;
+
+/**
+ * Below `md`, where the list runs on down the page, how long going back to
+ * the ring takes to bring a scrolled reader up to the top. Inside the rows'
+ * fall, so the page is at the top before it is made one screen again.
+ */
+export const SCROLL_BACK_MS = 300;
 
 /** Everything, end to end, for the longest of the two directions. */
 export const switchMs = (rows: number): number =>
