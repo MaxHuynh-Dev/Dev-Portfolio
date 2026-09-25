@@ -17,7 +17,8 @@ Five kinds of page:
   (trap 38), and the work list went to `/works`, which was already showing
   the same eight projects. The corner mark that used to scroll the reader
   down this page is the one that goes there now. The block sits on the
-  FOOT of the screen, not its middle (trap 41).
+  FOOT of the screen, not its middle (trap 41), and the paper above it
+  holds the owner at a laptop, typing — a Lottie drawn in ink (trap 50).
 - **`/works`** — all of it, on a ring. The covers hang on the rim of a
   circle whose centre is far below the page; the wheel, a drag or the
   arrow keys turn it, and a readout above rolls with it — number, name,
@@ -84,6 +85,14 @@ toward a target and settles on a whole project; it wraps, so the last leads
 back to the first. The curve is eight CSS transforms — a point on a circle
 and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
+
+**Typing** (`Typist`, the index). The owner, drawn in the site's two inks
+from his own line portrait, at a laptop: the arms tap in short alternating
+beats, rest for a moment once a loop, the head nods, the eyes blink, and
+small marks — `{ }`, `</>`, `>_` — rise off the lid and fade. A 4s loop,
+the one motion on the site that is not an answer to anything; it is
+furniture that breathes, which is why it is small, slow and ink-only. See
+trap 50.
 
 **Leaning on the name** (`usePressure`, the index). The masthead's letters
 thin away from the pointer and stay heavy under it — reactbits'
@@ -445,6 +454,8 @@ src/components/PageTransition/  the route curtain, and the only place
 src/hooks/useFittedText.ts the fitting engine
 src/hooks/useCarousel.ts   the ring's position engine
 src/hooks/usePressure.ts   the masthead's letters under the pointer — trap 48
+src/components/Typist.tsx  the typing figure over the masthead — trap 50
+scripts/typing-lottie.mjs  draws public/lottie/typing.json — re-run it after an edit
 src/styles/global.css      design tokens + .st-* primitives
 public/cursors/            the five cartoon cursors (see Cursors)
 public/fonts/              Nippo (ONE variable file) + Switzer, self-hosted
@@ -2794,6 +2805,44 @@ switch there and back. At 768 and 1440 nothing changed: thumbnails
 follow the pointer (hovering row three puts cover three on top), and the
 bar is still hidden with nothing to scroll.
 
+**50. A picture over the masthead has to take the room, not make it.**
+The index's block rests on the foot (trap 41), which left a field of paper
+above the name, and the owner asked for himself in it: the line portrait
+he supplied, at a MacBook, typing, as a Lottie.
+
+It is not the `DeskScene.tsx` this file lists as rejected, and the
+difference is the reason that one went: that was a WebGL scene, a canvas
+and a dependency on three.js for a figure in the hero. This is a flat ink
+drawing on the paper, in the same hand as the cursors, and it is a
+picture of the person rather than a demo of a renderer.
+
+- **Drawn by a script, not exported.** `scripts/typing-lottie.mjs` writes
+  every shape as an SVG path in a 400x360 box, converts it to Lottie's
+  bezier form, and keys the motion by hand. The two inks are
+  `--ink` / `--paper` copied in, so a palette change is a re-run (trap 7
+  applies: they are copies). `Typist` plays whatever Lottie is at
+  `/lottie/typing.json`, so a designer's file can replace this one with no
+  code change. No Apple mark on the lid — a `</>` sticker instead.
+- **`flex-[1_1_0] min-h-0` is the whole layout.** A zero basis grows into
+  what the section has spare and shrinks to nothing when there is none, so
+  the `<h1>` sits exactly where it did — measured identical tops at nine
+  sizes from 320x568 to 1920x1080 (278 / 366 / 554 / 543 / 290 / 419 / 348
+  / 454 / 507), the preloader still landing at **0.00px**, and the page
+  still one screen (`over` 0 at all nine). The drawing then fits that box
+  by `xMidYMax meet`, standing on its foot 0.75–1.5rem above the name; it
+  is 132px tall at 320x568 and ~300px at 1440x900. `max-h-[28rem]` stops
+  it becoming a poster on a tall screen.
+- **Loaded after the curtain lets go.** The light player (SVG only, no
+  expressions) is ~150KB, so it is a dynamic import fetched with the JSON
+  once `useReleased` is true — never on the preloader's path — and the box
+  washes in with `.st-wash` like the portrait on `/about`. On a route away
+  the effect's cleanup destroys the animation: 0 SVGs left behind.
+- **Under `reduce` it is one still frame** (`STILL_FRAME`), loaded with
+  `autoplay` and `loop` off — verified, no change across 400ms. That makes
+  EIGHT things that honour the query.
+- **`role="img"` with the name in its label**, so the drawing is one
+  described image and the SVG Lottie writes is presentational beneath it.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -2919,7 +2968,8 @@ Other invariants:
   and for the same reason: a rAF loop is somewhere the CSS block cannot
   reach. The reference suppresses its own arrival entirely rather than
   shortening it, which is what this does too.
-- Seven things honour `prefers-reduced-motion` — the CSS block, Lenis
+- Eight things honour `prefers-reduced-motion` — the typing figure on the
+  index (a still frame, trap 50), and the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which
   drops the wipe for a fade), `/works`, where both the ring and the
