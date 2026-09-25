@@ -61,21 +61,51 @@ const CURTAINS = ['data-preloading', 'data-routing'] as const;
  * way — the route has committed and its pictures are decoded before
  * `leaving` is ever raised (trap 47).
  */
+/**
+ * How long after the route panel STARTS to leave the arrival is let go.
+ *
+ * The knob for "how soon does the new page start moving". 0 is the start of
+ * the uncover, which the owner found a little early — the first lines were
+ * already on their way before much of the page was showing. The panel is
+ * gone ~650ms after `leaving` is raised (an 80ms beat for the name, then
+ * `--t-reveal` on `power3.inOut`), and that ease is slow to start: measured,
+ * at 300ms it is only ~19% up, and it covers the rest in the next ~350ms.
+ * So at 300ms the arrival starts as the sweep is about to accelerate, and
+ * is mid-flight while most of the page is uncovered. Pictures do not wait
+ * for this — they are on for the whole curtain. Anything past ~650ms is
+ * simply the end of the sweep, where it used to be: `settle` removes the
+ * attribute, and that releases at once whatever this says.
+ */
+export const LEAVING_LEAD_MS = 300;
+
 export const useReleased = (): boolean => {
   const [released, setReleased] = useState(false);
 
   useEffect(() => {
     const html = document.documentElement;
     let done = false;
+    let lead = 0;
+
+    const release = (): void => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(lead);
+      setReleased(true);
+    };
 
     const settle = (): void => {
-      // `leaving` is the route panel already on its way out — see above.
-      const covered = CURTAINS.some(
-        (name) => html.hasAttribute(name) && html.getAttribute(name) !== 'leaving'
-      );
-      if (done || covered) return;
-      done = true;
-      setReleased(true);
+      if (done) return;
+      // `leaving` is the route panel already on its way out — see above —
+      // and the arrival goes `LEAVING_LEAD_MS` into that. The timer is
+      // started once; the attribute coming down releases at once.
+      const leaving = html.getAttribute('data-routing') === 'leaving';
+      const covered = CURTAINS.some((name) => html.hasAttribute(name) && !leaving);
+      if (covered) return;
+      if (leaving) {
+        if (lead === 0) lead = window.setTimeout(release, LEAVING_LEAD_MS);
+        return;
+      }
+      release();
     };
 
     const observer = new MutationObserver(settle);
@@ -98,6 +128,7 @@ export const useReleased = (): boolean => {
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
+      window.clearTimeout(lead);
     };
   }, []);
 
