@@ -152,9 +152,11 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
           that line has no room, measured overlapping the nav by 46px at 320
           and 19px at 375 — just ABOVE them instead, one line of .st-meta
           plus a gap. Only the dog takes pointer events, not the strip. */}
+          {/*
       <div className="st-fade pointer-events-none fixed inset-x-0 bottom-[calc(var(--gut)+1.55rem)] z-50 flex justify-center leading-none min-[480px]:bottom-[var(--gut)]">
         <Corgi />
       </div>
+      */}
     </>
   );
 }
