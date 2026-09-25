@@ -1,7 +1,7 @@
 import ExperienceView from '@Modules/Experience';
 import type { Metadata } from 'next';
 import type React from 'react';
-import { getExperience } from '@/content/source';
+import { getExperience, getProfile } from '@/content/source';
 
 export async function generateMetadata(): Promise<Metadata> {
   const positions = await getExperience();
@@ -15,6 +15,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ExperiencePage(): Promise<React.ReactElement> {
-  const positions = await getExperience();
-  return <ExperienceView positions={positions} />;
+  const [positions, profile] = await Promise.all([getExperience(), getProfile()]);
+  return <ExperienceView positions={positions} profile={profile} />;
 }

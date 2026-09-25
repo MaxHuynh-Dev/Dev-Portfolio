@@ -97,6 +97,23 @@ export const Profile: GlobalConfig = {
       ]
     },
     {
+      name: 'cv',
+      type: 'text',
+      admin: {
+        description:
+          'A public link to your CV — a PDF on Google Drive, Dropbox, or under /public. Leave empty and every cv link on the site disappears.'
+      },
+      // A link rather than an upload, and that is the Cloudinary account
+      // talking: a free account refuses to DELIVER PDFs until support turns
+      // it on, so an uploaded CV would be a link that 401s. `Media` is also
+      // images only, with a required `alt` that means nothing for a PDF.
+      validate: (value: string | null | undefined) => {
+        if (value === null || value === undefined || value === '') return true;
+        if (value.startsWith('/') || /^https?:\/\//.test(value)) return true;
+        return 'A full https:// address, or a path under /public starting with /.';
+      }
+    },
+    {
       name: 'intro',
       type: 'textarea',
       required: true,

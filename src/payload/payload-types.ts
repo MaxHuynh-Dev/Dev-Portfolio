@@ -512,6 +512,10 @@ export interface Profile {
    */
   availability: string;
   /**
+   * A public link to your CV — a PDF on Google Drive, Dropbox, or under /public. Leave empty and every cv link on the site disappears.
+   */
+  cv?: string | null;
+  /**
    * The line under the masthead, and the site description. Split into measured lines, so plain text only.
    */
   intro: string;
@@ -596,6 +600,7 @@ export interface ProfileSelect<T extends boolean = true> {
   timeZone?: T;
   email?: T;
   availability?: T;
+  cv?: T;
   intro?: T;
   bio?: T;
   updatedAt?: T;

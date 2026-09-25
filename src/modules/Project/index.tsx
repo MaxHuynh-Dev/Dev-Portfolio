@@ -1,5 +1,6 @@
+import Invite from '@Components/Invite';
 import type React from 'react';
-import type { Project } from '@/content/site';
+import type { Profile, Project } from '@/content/site';
 
 import NextProject from './NextProject';
 import PinnedColumn from './PinnedColumn';
@@ -26,10 +27,12 @@ import SpecSheet from './SpecSheet';
  */
 export default function ProjectView({
   project,
-  next
+  next,
+  profile
 }: {
   project: Project;
   next: Project;
+  profile: Profile;
 }): React.ReactElement {
   const shotSizes = project.shots.map((shot) => shot.size);
 
@@ -48,7 +51,16 @@ export default function ProjectView({
         </div>
       </article>
 
-      <NextProject project={next} />
+      {/* The foot is a left/right pair, the grammar the corner marks and
+          the opening already speak: the way on through the work on the
+          left, and the way to the person who made it on the right —
+          bottom-aligned, so the invitation's link sits on the line the
+          next project's name ends on. Stacked on a phone, next first,
+          because reading on is the commoner want. */}
+      <div className="flex flex-col gap-y-[clamp(3rem,8vh,5rem)] px-[var(--gut)] pt-[clamp(3.5rem,10vh,7rem)] pb-[clamp(8rem,17vh,11rem)] lg:flex-row lg:items-end lg:justify-between lg:gap-x-[clamp(2rem,6vw,5rem)]">
+        <NextProject project={next} />
+        <Invite profile={profile} className="lg:shrink-0" />
+      </div>
     </>
   );
 }

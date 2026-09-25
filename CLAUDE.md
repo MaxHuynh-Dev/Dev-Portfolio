@@ -16,7 +16,8 @@ Five kinds of page:
   contact came UP out of the foot to sit under the start of the masthead
   (trap 38), and the work list went to `/works`, which was already showing
   the same eight projects. The corner mark that used to scroll the reader
-  down this page is the one that goes there now.
+  down this page is the one that goes there now. The block sits on the
+  FOOT of the screen, not its middle (trap 41).
 - **`/works`** — all of it, on a ring. The covers hang on the rim of a
   circle whose centre is far below the page; the wheel, a drag or the
   arrow keys turn it, and a readout above rolls with it — number, name,
@@ -607,6 +608,25 @@ Three standing rules:
   `projects` collection, which is exactly where the reference design puts
   its award list, and `aboutMeta` is a free list of columns rather than a
   fixed `awards` field sitting empty asking to be filled.
+- **The CV is a link, not an upload.** `profile.cv` is an optional URL —
+  Google Drive, Dropbox, or a path under `/public`. A free Cloudinary
+  account refuses to DELIVER PDFs until support switches it on, so an
+  uploaded CV would have been a link that answers 401, and `Media` is
+  images-only with an `alt` that means nothing for a document. Empty, and
+  every cv link on the site disappears rather than going dead: the word
+  `cv` at the end of the index's contact row, `read the cv` beside the
+  availability line on `/about`, and under the invitation (below).
+- **The invitation, `Invite.tsx`, is at the foot of every page that runs
+  long** — each project, beside `next project`, and `/experience`, in the
+  company column. A reader who has scrolled to the end has just done the
+  thing a portfolio is for, and nothing there asked them to act on it.
+  It repeats neither the address (the top-right mark carries it — trap 38)
+  nor the availability line (the bottom-left mark does, and the first
+  build of this said `open to work` twice, 200px apart). So it is a
+  question, `have a project in mind?`, over WORDS — `get in touch` — that
+  open a mail to the address the corner shows. Verified at 1440 and 375:
+  no link on two line boxes, 0 masked rows parked after scrolling to it,
+  no horizontal overflow.
 - **Every image needs a real `alt`** describing what it shows, not
   "screenshot of the homepage". It is the only description a screen reader
   gets, and it is `required` on the Media collection rather than left to
@@ -2073,11 +2093,11 @@ guess.
 - **The padding is not slack, and tightening it is invisible until it
   breaks.** `clamp(7rem, 13vh, 9.5rem)` top and bottom is sized by the
   fixed corner marks: at 320x568 the floor resolves to 105px against a top
-  chrome of 89.25px, which is **15.75px** of margin. And because it is
-  SYMMETRIC under `justify-center`, it has no effect at all on where
-  anything sits — the content is centred on the viewport either way. All it
-  decides is the width at which the page starts to scroll, so a change here
-  looks like nothing until it puts the masthead under the corner marks.
+  chrome of 89.25px, which is **15.75px** of margin. Since the block moved
+  to the foot, the BOTTOM padding is also where it rests: it is the gap
+  between the last row and the bottom marks, **44–99px** measured from
+  1366x768 to 768x1024. The top padding only matters once the content
+  outgrows the box.
 - **The headroom is the number to watch, and it is the CMS that spends
   it.** Content occupies 185px of a 358px box at 320x568 and 431px of 776px
   at 1920x1080 — 173 to 345px in hand. `profile.intro` is a textarea in
@@ -2098,13 +2118,33 @@ leaves `scrollY` at **0**. No horizontal scroll (−15 everywhere, which is
 clickable on two line boxes counted with a Range, and the `work` mark still
 lands on `/works`.
 
-**What this leaves is a sparse page, and that is a real thing to look at
-rather than a defect to hunt.** Photographed at a fixed viewport: 140–354px
-of empty paper above the content and 157–371px below it, worst on tall
-phones where the masthead is width-bound. The three answers are centre it
-(what it does now), anchor the register to the foot of the screen so the
-two objects span it the way the corner marks do, or let the type grow. It
-is a composition decision and it has not been taken.
+**What this leaves is a sparse page, and the composition decision has now
+been taken: the block sits on the foot.** Centred, it left 140–354px of
+empty paper above the content and 157–371px below it — two equal voids,
+which reads as a page with something missing. The three answers were
+centre it, anchor it to the foot, or let the type grow; the owner asked
+for the decision to be made, and the second is the one that needs no new
+content and no change to the fit. One field of paper above a block that is standing on
+something reads as a decision. The name, the intro and contact still
+travel together — anchoring only the register would have put the whole
+empty field BETWEEN the name and its own sentence on a phone.
+
+- **`mt-auto` on the `<h1>`, never `justify-end` on the section.** The
+  reason is `/about`'s (trap 43): `justify-end` overflows UPWARD, under the
+  top chrome, where no scroll can reach, while an auto margin collapses to
+  zero once the content outgrows the box and the page then starts at the
+  top and scrolls like any other. The `<h1>` is still a direct child of the
+  section (trap 38); only its margin changed.
+- **The handover is untouched.** The preloader re-reads the heading every
+  frame (trap 10), so the name moving down 169px at 1440 cost nothing: its
+  first letter lands at **0.00px** top and left, and the last at 0.02 on the
+  right, over the last 20 frames of the dissolve at 375, 1440 and 1920.
+  `h1.innerHTML` is still exactly `Max Huynh` on the load path.
+
+Verified at 320x568 / 375x667 / 414x896 / 768x1024 / 900x700 / 1024x768 /
+1366x768 / 1440x900 / 1920x1080: `scrollHeight - innerHeight` is **0** at
+every one, and the content ends 44–99px above the bottom marks' text. On
+the route path all 9 masked rows arrive, 0 parked.
 
 **42. A transform on an inline element does nothing, and every measurement
 of it will still look right.**
@@ -2311,8 +2351,9 @@ Three things it turned on:
   where it cannot be reached — there is no scrolling above zero. Auto
   margins collapse to nothing the moment free space runs out, so a page that
   outgrows its screen simply starts at the top and scrolls like any other.
-  The index can use `justify-center` because its content always fits (trap
-  41); this page's does not, at two widths.
+  The index used `justify-center` because its content always fits (trap
+  41); it uses `mt-auto` now, which is this bullet's answer turned to the
+  foot.
 - **`md:contents` is what lets one markup serve two shapes.** On a phone the
   metadata and the portrait are a ROW inside a wrapper; above `md` the
   wrapper stops generating a box and its two children become items of the

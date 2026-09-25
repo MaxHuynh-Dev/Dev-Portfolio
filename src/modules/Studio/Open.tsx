@@ -106,7 +106,7 @@ export default function Open({
     <section
       id="open"
       aria-labelledby="open-heading"
-      className="flex min-h-[100svh] flex-col justify-center px-[var(--gut)] pt-[clamp(7rem,13vh,9.5rem)] pb-[clamp(7rem,13vh,9.5rem)]"
+      className="flex min-h-[100svh] flex-col px-[var(--gut)] pt-[clamp(7rem,13vh,9.5rem)] pb-[clamp(7rem,13vh,9.5rem)]"
     >
       {/* On the LOAD path this is bare, and that is not an oversight. The
           preloader assembles its own copy of this line at this line's own
@@ -150,7 +150,7 @@ export default function Open({
       <h1
         ref={ref as React.RefObject<HTMLHeadingElement>}
         id="open-heading"
-        className="st-display st-fit relative mt-0 mr-0 mb-[0.185em] ml-0 whitespace-nowrap text-[var(--ink)]"
+        className="st-display st-fit relative mt-auto mr-0 mb-[0.185em] ml-0 whitespace-nowrap text-[var(--ink)]"
       >
         <Headline enabled={viaRoute} delay={40}>
           {FULL_NAME}
@@ -258,6 +258,31 @@ export default function Open({
                         </li>
                       );
                     })}
+                    {/* The CV rides at the end of the FIRST group only, as
+                        a word — it has no brand mark, and it is set exactly
+                        the way an unknown label falls back above, so the
+                        row reads as one row. Absent when the Profile has
+                        no link. Opens in a new tab, which is also what
+                        keeps the route curtain off it (it only intercepts
+                        same-tab links). */}
+                    {index === 0 && profile.cv !== null ? (
+                      <li className="text-[0.95rem] leading-[1.6]">
+                        <Reveal
+                          on="load"
+                          className="st-line block"
+                          delay={at(start + 1 + column.links.length)}
+                        >
+                          <a
+                            className="st-link st-line-body mx-[0.5rem]"
+                            href={profile.cv}
+                            rel="noreferrer noopener"
+                            target="_blank"
+                          >
+                            cv
+                          </a>
+                        </Reveal>
+                      </li>
+                    ) : null}
                   </ul>
                 </div>
               );
