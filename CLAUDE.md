@@ -282,8 +282,8 @@ for `holding` only. During `covering` the reader is still looking at the
 page they are leaving, and taking it away underneath them is the jump this
 whole thing exists to remove. The gate comes off the moment the uncover
 starts, and **so does the arrival** — `useReleased` treats `leaving` as
-released, so the type rises, the ring turns and the odometer counts WHILE
-the panel sweeps, and pictures are simply there. Panel shut onto a blank
+released, so the type rises, the ring turns, the odometer counts and the
+first picture washes in WHILE the panel sweeps. Panel shut onto a blank
 page, panel sweeps off a page already arriving. See trap 34, and trap 28
 for why this used to wait for the end of the sweep and no longer does.
 
@@ -1209,13 +1209,22 @@ flag. Three things about that:
   partly happens behind the last of the panel; that is the accepted cost.
   `useViaRoute` still asks `hasAttribute`, so it is unaffected.
 
-  Two things went with it, both on the ROUTE path only — the cold load
-  keeps both, because the paper dissolves rather than uncovers:
-  `.st-wash` is forced on under `html[data-routing]` (a decoded picture
-  fading in reads as a late one), and the ring's covers no longer fade in
-  over the first 40% of the turn — they are already turning when first
-  uncovered, so trap 35's "sat in the finished pose, then jumped" cannot
-  happen. Under `reduce` nothing travels either way; pictures are on.
+  One thing went with it, on the ROUTE path only — the cold load keeps
+  it, because the paper dissolves rather than uncovers: the ring's covers
+  no longer fade in over the first 40% of the turn — they are already
+  turning when first uncovered, so trap 35's "sat in the finished pose,
+  then jumped" cannot happen. Under `reduce` nothing travels either way.
+
+  **`.st-wash` was forced on under `html[data-routing]` too, and that was
+  reversed at the owner's request.** It went in while the arrival still
+  waited for the END of the sweep, when a picture fading in after the
+  panel had gone read as a late one. With the arrival released inside the
+  sweep, the owner asked for the fade back on the route path: the first
+  shot on `/work/<slug>` and the portrait on `/about` now wash in on the
+  same release as the type. Measured at 1440x900 on `next start`, three
+  navigations: opacity **0** through `holding`, first above 0 at
+  ~570ms into `leaving` (the 300ms lead plus the element's own delay),
+  1 about 600ms later, **44** distinct opacities on the way.
 - **It comes down everywhere the curtain does**, which is the same promise
   as "the route curtain must always let go": in `settle`, and in the
   effect's cleanup for an unmount mid-transition. A flag left up parks every
