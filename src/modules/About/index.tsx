@@ -140,6 +140,22 @@ export default function About({
               >
                 <span className="st-line-body">
                   {profile.availability.toLowerCase()}, {profile.location.toLowerCase()}
+                  {/* On the same line rather than a row of its own: this
+                      page is held to one screen (trap 43), and a word
+                      after the line costs no height where a row would. */}
+                  {profile.cv !== null ? (
+                    <>
+                      {' '}
+                      <a
+                        className="st-link ml-[0.6rem] text-[var(--ink)]"
+                        href={profile.cv}
+                        rel="noreferrer noopener"
+                        target="_blank"
+                      >
+                        read the cv
+                      </a>
+                    </>
+                  ) : null}
                 </span>
               </Reveal>
             </p>

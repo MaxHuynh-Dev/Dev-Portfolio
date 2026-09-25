@@ -144,6 +144,7 @@ export const getProfile = cache(async (): Promise<Profile> => {
     timeZone: doc.timeZone,
     email: doc.email,
     availability: doc.availability,
+    cv: typeof doc.cv === 'string' && doc.cv.trim() !== '' ? doc.cv.trim() : null,
     intro: doc.intro,
     bio: doc.bio
   };

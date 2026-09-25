@@ -12,10 +12,7 @@ import type { Project } from '@/content/site';
  */
 export default function NextProject({ project }: { project: Project }): React.ReactElement {
   return (
-    <section
-      aria-labelledby="next-heading"
-      className="px-[var(--gut)] pt-[clamp(3.5rem,10vh,7rem)] pb-[clamp(8rem,17vh,11rem)]"
-    >
+    <section aria-labelledby="next-heading" className="min-w-0 lg:flex-1">
       <h2 id="next-heading" className="st-meta m-0 font-[500] text-[var(--ink)]">
         next project
       </h2>

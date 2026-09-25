@@ -1,9 +1,10 @@
+import Invite from '@Components/Invite';
 import Lines from '@Components/Lines';
 import Odometer from '@Components/Odometer';
 import Reveal from '@Components/Reveal';
 import Link from 'next/link';
 import type React from 'react';
-import type { Month, Position } from '@/content/site';
+import type { Month, Position, Profile } from '@/content/site';
 
 /**
  * How one position arrives, in one place.
@@ -233,7 +234,13 @@ function Entry({ position, index }: { position: Position; index: number }): Reac
  * it a third time above the first entry is the eyebrow trap 43 took off
  * `/about`. The heading is still in the document for a screen reader.
  */
-export default function Experience({ positions }: { positions: Position[] }): React.ReactElement {
+export default function Experience({
+  positions,
+  profile
+}: {
+  positions: Position[];
+  profile: Profile;
+}): React.ReactElement {
   return (
     <article className="px-[var(--gut)] pt-[clamp(6.5rem,14vh,9rem)] pb-[clamp(6rem,14vh,9rem)]">
       <h1 className="sr-only">Experience</h1>
@@ -251,6 +258,13 @@ export default function Experience({ positions }: { positions: Position[] }): Re
           ))}
         </ol>
       )}
+
+      {/* The end of the CV, which is exactly where a reader decides. In the
+          company column rather than on the gutter, so it reads as the last
+          entry's continuation and not as a footer band. */}
+      <div className="mt-[clamp(5rem,14vh,9rem)] lg:grid lg:grid-cols-[clamp(13rem,21vw,17rem)_minmax(0,1fr)] lg:gap-x-[clamp(1.5rem,5vw,4.5rem)]">
+        <Invite profile={profile} className="lg:col-start-2" />
+      </div>
     </article>
   );
 }

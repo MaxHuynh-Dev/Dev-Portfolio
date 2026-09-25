@@ -2,7 +2,7 @@ import ProjectView from '@Modules/Project';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type React from 'react';
-import { getProjects } from '@/content/source';
+import { getProfile, getProjects } from '@/content/source';
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function ProjectPage({ params }: Params): Promise<React.ReactElement> {
   const { slug } = await params;
-  const projects = await getProjects();
+  const [projects, profile] = await Promise.all([getProjects(), getProfile()]);
   const index = projects.findIndex((item) => item.slug === slug);
   if (index === -1) notFound();
 
@@ -56,5 +56,5 @@ export default async function ProjectPage({ params }: Params): Promise<React.Rea
   // dead-ending the only way forward on the page.
   const next = projects[(index + 1) % projects.length];
 
-  return <ProjectView project={projects[index]} next={next} />;
+  return <ProjectView project={projects[index]} next={next} profile={profile} />;
 }
