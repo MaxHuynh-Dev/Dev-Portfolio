@@ -13,6 +13,7 @@ export const EXPERIENCE = [
   {
     company: 'Autonomous Inc',
     role: 'Front End Developer',
+    url: 'https://www.autonomous.ai/',
     start: '2023-05',
     end: null,
     location: 'Ho Chi Minh City',
@@ -27,6 +28,7 @@ export const EXPERIENCE = [
   {
     company: 'HiCAS Ltd',
     role: 'Front End Developer - Intern',
+    url: 'https://hicas.vn/',
     start: '2022-06',
     end: '2022-07',
     location: 'Ho Chi Minh City',
@@ -50,8 +52,23 @@ export const EXPERIENCE = [
 export async function seedExperience(payload: Payload, reset: boolean): Promise<void> {
   const existing = await payload.count({ collection: 'experience' });
   if (existing.totalDocs > 0 && !reset) {
+    // The one thing it does to a collection that already has content:
+    // fill a company's `url` where it is EMPTY, matched by name. The field
+    // arrived after the positions were seeded, and an empty field is not
+    // an edit anyone made — a url already set in the admin is never touched.
+    for (const position of EXPERIENCE) {
+      const { docs } = await payload.find({
+        collection: 'experience',
+        where: { company: { equals: position.company } },
+        limit: 1
+      });
+      const doc = docs[0];
+      if (doc === undefined || (typeof doc.url === 'string' && doc.url.length > 0)) continue;
+      await payload.update({ collection: 'experience', id: doc.id, data: { url: position.url } });
+      payload.logger.info(`experience: ${position.company} url → ${position.url}`);
+    }
     payload.logger.warn(
-      `experience: left alone — it already holds ${existing.totalDocs} position(s). SEED_RESET=1 replaces them.`
+      `experience: otherwise left alone — it already holds ${existing.totalDocs} position(s). SEED_RESET=1 replaces them.`
     );
     return;
   }

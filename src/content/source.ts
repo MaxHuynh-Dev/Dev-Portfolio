@@ -251,6 +251,7 @@ export const getExperience = cache(async (): Promise<Position[]> => {
     company: doc.company,
     role: doc.role,
     location: typeof doc.location === 'string' && doc.location.length > 0 ? doc.location : null,
+    url: typeof doc.url === 'string' && doc.url.length > 0 ? doc.url : null,
     start: monthOf(doc.start),
     end: typeof doc.end === 'string' && doc.end.length > 0 ? monthOf(doc.end) : null,
     // One item per line; blank lines and stray whitespace are not items.

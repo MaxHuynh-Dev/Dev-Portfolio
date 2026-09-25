@@ -234,6 +234,10 @@ export interface Experience {
   end?: string | null;
   location?: string | null;
   /**
+   * The company's site. Left empty the link is absent rather than dead — a link with nowhere to go is worse than no link.
+   */
+  url?: string | null;
+  /**
    * ONE ITEM PER LINE. Each is split into its own measured lines on the page, so plain text only.
    */
   responsibilities: string;
@@ -393,6 +397,7 @@ export interface ExperienceSelect<T extends boolean = true> {
   start?: T;
   end?: T;
   location?: T;
+  url?: T;
   responsibilities?: T;
   stack?: T;
   projects?: T;

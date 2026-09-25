@@ -23,6 +23,15 @@ const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', '
 const monthLabel = (value: Month): string => `${MONTHS[value.month - 1]} ${value.year}`;
 
 /** `may 2023 – now`. An en dash, because it is a range. */
+/** `autonomous.ai` from `https://www.autonomous.ai/` — the link says where it goes. */
+const hostOf = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+
 const periodOf = (position: Position): string =>
   `${monthLabel(position.start)} – ${position.end === null ? 'now' : monthLabel(position.end)}`;
 
@@ -181,6 +190,22 @@ function Entry({ position, index }: { position: Position; index: number }): Reac
           <Row delay={ROLE_MS}>{periodOf(position)}</Row>
           {position.location !== null ? (
             <Row delay={ROLE_MS + 40}>{position.location.toLowerCase()}</Row>
+          ) : null}
+          {/* The company's own site, named by its address rather than a
+              repeated "Visit the site" — two links with one name on one
+              page is two links a screen reader cannot tell apart. Absent
+              rather than dead when the CMS has none. */}
+          {position.url !== null ? (
+            <Row delay={ROLE_MS + 80}>
+              <a
+                className="st-link text-[var(--ink)]"
+                href={position.url}
+                rel="noreferrer noopener"
+                target="_blank"
+              >
+                {hostOf(position.url)}
+              </a>
+            </Row>
           ) : null}
         </p>
       </div>
