@@ -103,6 +103,12 @@ export default function Open({
     LINKS_STEP +
     links.slice(0, index).reduce((total, column) => total + 1 + column.links.length, 0);
 
+  const cvs = [
+    { href: profile.cv, label: 'english', lang: 'en' },
+    { href: profile.cvVi, label: 'tiếng việt', lang: 'vi' }
+  ].filter((cv): cv is { href: string; label: string; lang: string } => cv.href !== null);
+  const cvStart = columnStep(links.length);
+
   return (
     <section
       id="open"
@@ -265,35 +271,45 @@ export default function Open({
                         </li>
                       );
                     })}
-                    {/* The CV rides at the end of the FIRST group only, as
-                        a word — it has no brand mark, and it is set exactly
-                        the way an unknown label falls back above, so the
-                        row reads as one row. Absent when the Profile has
-                        no link. Opens in a new tab, which is also what
-                        keeps the route curtain off it (it only intercepts
-                        same-tab links). */}
-                    {index === 0 && profile.cv !== null ? (
-                      <li className="text-[0.95rem] leading-[1.6]">
-                        <Reveal
-                          on="load"
-                          className="st-line block"
-                          delay={at(start + 1 + column.links.length)}
-                        >
-                          <a
-                            className="st-link st-line-body mx-[0.5rem]"
-                            href={profile.cv}
-                            rel="noreferrer noopener"
-                            target="_blank"
-                          >
-                            cv
-                          </a>
-                        </Reveal>
-                      </li>
-                    ) : null}
                   </ul>
                 </div>
               );
             })}
+            {/* The CV is its own group, after the social marks rather than
+                at the end of them: it is a document, not a place the work
+                lives, and it comes in two languages. Set as words, the way
+                an unknown label falls back above, under a label of its own.
+                Each language is absent when its Profile field is empty, and
+                the group with it when both are. New tab, which is also what
+                keeps the route curtain off them (it only intercepts
+                same-tab links). */}
+            {cvs.length > 0 ? (
+              <div>
+                <p className="st-meta m-0">
+                  <Reveal on="load" className="st-line block" delay={at(cvStart)}>
+                    <span className="st-line-body">cv</span>
+                  </Reveal>
+                </p>
+                <ul className="st-icon-row mt-[0.3rem] list-none p-0">
+                  {cvs.map((cv, item) => (
+                    <li key={cv.href} className="text-[0.95rem] leading-[1.6]">
+                      <Reveal on="load" className="st-line block" delay={at(cvStart + 1 + item)}>
+                        <a
+                          className="st-link st-line-body mx-[0.5rem]"
+                          href={cv.href}
+                          hrefLang={cv.lang}
+                          lang={cv.lang}
+                          rel="noreferrer noopener"
+                          target="_blank"
+                        >
+                          {cv.label}
+                        </a>
+                      </Reveal>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </section>
       </div>
