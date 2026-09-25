@@ -61,7 +61,10 @@ const SECTIONS: { label: string; route: string }[] = [
  * clearance: `--chrome-top` and `--chrome-bottom` are measured off exactly
  * these boxes, and every sticky offset and `scroll-padding-top` is
  * expressed against them, so where content comes to REST is unchanged —
- * a sticky column still parks clear of the marks. `pointer-events` is off
+ * a sticky column still parks clear of the marks. That is also why their
+ * type is `--corner-size` and not a class here: it grows from `lg` up, and
+ * the two heights are declared beside it in global.css so all three move
+ * together. `pointer-events` is off
  * on each full-width row and back on for the text, or the rows would
  * swallow clicks across the full width of the page.
  */
@@ -75,7 +78,7 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
     <>
       <div className="st-fade st-blend pointer-events-none fixed inset-x-0 top-0 z-50 pb-[2.5rem]">
         <div className="pointer-events-auto flex items-start justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pt-[var(--gut)]">
-          <p className="st-meta">
+          <p className="st-meta text-[length:var(--corner-size)]">
             {/* EVERY internal Link on this site needs `data-transition-label`.
                 The route curtain reads it off the dataset and spells it out
                 in the middle of the panel; a Link without one raises a
@@ -103,7 +106,7 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
             {profile.role.toLowerCase()}
           </p>
 
-          <p className="st-meta text-right">
+          <p className="st-meta text-right text-[length:var(--corner-size)]">
             <span suppressHydrationWarning>
               {profile.location.toLowerCase()}, {time}
             </span>
@@ -117,10 +120,12 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
 
       <div className="st-fade st-blend pointer-events-none fixed inset-x-0 bottom-0 z-50 pt-[2.5rem]">
         <div className="pointer-events-auto flex items-end justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pb-[var(--gut)]">
-          <p className="st-meta">{profile.availability.toLowerCase()}</p>
+          <p className="st-meta text-[length:var(--corner-size)]">
+            {profile.availability.toLowerCase()}
+          </p>
 
           <nav aria-label="Sections">
-            <ul className="st-meta flex flex-wrap justify-end gap-x-[1.1rem] gap-y-[0.2rem]">
+            <ul className="st-meta flex flex-wrap justify-end gap-x-[1.1rem] gap-y-[0.2rem] text-[length:var(--corner-size)]">
               {SECTIONS.map((item) => (
                 // PageTransition reads the label off the dataset and writes
                 // it on the curtain, so the covered moment says where you

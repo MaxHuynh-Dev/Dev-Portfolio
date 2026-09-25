@@ -99,16 +99,24 @@
   --t-reveal: 560ms; /* and carrying on up to uncover the next one */
   --t-handoff: 620ms; /* the entry curtain dissolving off the masthead */
 
+  /* The corner marks' type. .st-meta's own 0.78rem below `lg`, where the
+     whole layout is the phone's scaled up and that already comes out at
+     16.6px on a tablet; larger from `lg` up (below), where the root stops
+     scaling with the screen and 0.78rem was 11.7–14px — the owner found it
+     too small. The two chrome heights under it are written against the
+     same size, and the three change together. */
+  --corner-size: 0.78rem;
+
   /* How much of the top of the viewport the fixed corner marks own.
      Derived from the three things that actually size them — the gutter
-     above the text, two lines of .st-meta (0.78rem at 1.45), and 2.5rem
-     of clearance below it (a paper gradient once, empty now — see
-     Corners) — so it cannot drift out of step the way a
+     above the text, two lines of the marks' type (--corner-size at 1.45),
+     and 2.5rem of clearance below it (a paper gradient once, empty now —
+     see Corners) — so it cannot drift out of step the way a
      hand-tuned number does. Anything that sticks or scrolls into view
      near the top offsets by this. */
   --chrome-top: calc(var(--gut) + 2.3rem + 2.5rem);
   /* And the bottom, the same way: the gutter below the text, ONE line of
-     .st-meta, and the same 2.5rem of clearance above it. Within 0.3px of the measured bar
+     the marks' type, and the same 2.5rem of clearance above it. Within 0.3px of the measured bar
      from 768 to 1920, always on the long side. */
   --chrome-bottom: calc(var(--gut) + 1.15rem + 2.5rem);
 
@@ -132,6 +140,18 @@
   --border: var(--edge);
   --input: var(--edge);
   --ring: var(--ink);
+}
+
+/* Desktop corner marks. Two lines of 0.9rem at 1.45 are 2.61rem and one is
+   1.305rem; each is rounded up a hair so the height stays on the long side
+   of the measured bar — 0.15–0.18px over at the top and 0.22–0.26px at the
+   bottom, from 1024 to 1920. */
+@media (width >= 64rem) {
+  :root {
+    --corner-size: 0.9rem;
+    --chrome-top: calc(var(--gut) + 2.62rem + 2.5rem);
+    --chrome-bottom: calc(var(--gut) + 1.32rem + 2.5rem);
+  }
 }
 
 /* ── Fluid root ──
