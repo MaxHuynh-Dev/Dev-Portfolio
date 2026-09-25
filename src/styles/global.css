@@ -875,10 +875,70 @@ body {
   }
 }
 
+/* ── Cursors ──
+   Cartoon, and still only ink and paper: a white-gloved hand in the manner
+   of the old animated shorts, drawn in `public/cursors/` with the ink as
+   its outline and paper-white as its fill, so it reads on this ground and
+   on a dark screenshot alike. Five of them, one per job — the arrow, the
+   pointing hand for anything clickable, the I-beam for fields, and an open
+   and a closed hand for the ring on /works.
+
+   Native cursors, not a drawn element chasing the pointer: nothing lags a
+   frame behind the real hotspot, nothing is added to hit-testing, and text
+   selection, drags and clicks behave exactly as they did. A cursor file
+   cannot animate, so "cartoon" is carried by the drawing alone.
+
+   Only where there IS a pointer to draw: a finger has no cursor, and the
+   keywords stay as the fallback everywhere a file cannot be used. Every
+   call site asks for the variable, never the keyword — a bare `cursor-grab`
+   would quietly put the system's hand back on the ring. */
+:root {
+  --cursor-default: default;
+  --cursor-pointer: pointer;
+  --cursor-text: text;
+  --cursor-grab: grab;
+  --cursor-grabbing: grabbing;
+}
+
+@media (pointer: fine) {
+  :root {
+    --cursor-default: url("/cursors/arrow.svg") 5 3, default;
+    --cursor-pointer: url("/cursors/pointer.svg") 15 2, pointer;
+    --cursor-text: url("/cursors/text.svg") 16 16, text;
+    --cursor-grab: url("/cursors/grab.svg") 17 16, grab;
+    --cursor-grabbing: url("/cursors/grabbing.svg") 17 18, grabbing;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
     box-sizing: border-box;
+  }
+
+  /* In `base`, so a utility at a call site still wins — which is how the
+     ring on /works gets its open hand. */
+  html {
+    cursor: var(--cursor-default);
+  }
+
+  a[href],
+  button:not(:disabled),
+  [role="button"],
+  label[for],
+  summary,
+  select,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  input[type="button"] {
+    cursor: var(--cursor-pointer);
+  }
+
+  textarea,
+  [contenteditable="true"],
+  input:not([type="checkbox"], [type="radio"], [type="submit"], [type="button"], [type="range"]) {
+    cursor: var(--cursor-text);
   }
   body {
     @apply bg-background text-foreground;

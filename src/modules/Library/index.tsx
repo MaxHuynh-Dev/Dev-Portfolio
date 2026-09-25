@@ -823,7 +823,7 @@ export default function Library({
           className={
             shown
               ? 'pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] overflow-clip'
-              : 'absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-grab touch-none overflow-clip'
+              : 'absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-[var(--cursor-grab)] touch-none overflow-clip'
           }
         >
           {/* `data-await-images`: the ring turns through a whole revolution

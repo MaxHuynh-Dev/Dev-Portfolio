@@ -22,14 +22,14 @@ export default function PrimaryButton({ ...props }: TPrimaryButton): React.JSX.E
     <button
       type="button"
       className={cn(
-        'flex cursor-pointer items-center gap-2.5 bg-transparent',
+        'flex cursor-[var(--cursor-pointer)] items-center gap-2.5 bg-transparent',
         buttonColorClass,
         className
       )}
       onClick={onClick}
     >
       <div className="border-current border-b-2 pb-[7px]">
-        <Text Comp={'label'} size={20} color="black" className="cursor-pointer">
+        <Text Comp={'label'} size={20} color="black" className="cursor-[var(--cursor-pointer)]">
           {text}
         </Text>
       </div>

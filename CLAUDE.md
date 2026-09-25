@@ -372,6 +372,7 @@ src/hooks/useFittedText.ts the fitting engine
 src/hooks/useCarousel.ts   the ring's position engine
 src/hooks/usePressure.ts   the masthead's letters under the pointer — trap 48
 src/styles/global.css      design tokens + .st-* primitives
+public/cursors/            the five cartoon cursors (see Cursors)
 public/fonts/              Nippo (ONE variable file) + Switzer, self-hosted
 public/images/work/        project imagery goes here
 ```
@@ -394,6 +395,45 @@ actually uses. That step is not optional — **Array** was the first pick and
 had to be thrown out on sight: it is a halftone-dot face that turns to
 unreadable noise below about 40px. Cabinet Grotesk and Excon were both too
 close to a default geometric sans. Render before you commit.
+
+## Cursors
+
+Cartoon, and still only ink and paper: a white-gloved hand in the manner of
+the old animated shorts, with the ink as its outline and paper-white as its
+fill, so it reads on this ground and over a dark screenshot alike. Five SVGs
+in `public/cursors/` — `arrow`, `pointer` (the gloved hand pointing, for
+anything clickable), `text` (a chunky I-beam, for fields), and `grab` /
+`grabbing` for the ring on `/works`. Each is drawn twice over: every shape
+in ink at a heavy stroke, then the same shapes in paper on top, so the parts
+merge into one silhouette; the stitching goes last.
+
+They are NATIVE cursors, `cursor: url(...)`, not an element chasing the
+pointer — nothing lags a frame behind the hotspot, nothing joins the hit
+test, and selection, drags and clicks are untouched. A cursor file cannot
+animate, so "cartoon" is carried by the drawing alone.
+
+- **Every call site asks for the variable, never the keyword.** They are
+  `--cursor-default`, `--cursor-pointer`, `--cursor-text`, `--cursor-grab`
+  and `--cursor-grabbing`, and a bare `cursor-grab` utility would quietly
+  put the system's hand back on the ring. The ring's surface uses
+  `cursor-[var(--cursor-grab)]`, and `useCarousel` writes
+  `var(--cursor-grabbing)` inline while a drag is live.
+- **Only under `(pointer: fine)`.** Everywhere else the variables are the
+  plain keywords, so a touch screen gets exactly what it had.
+- **The rules sit in `@layer base`**, so a utility at a call site still
+  wins over them — trap 1's ordering, used on purpose.
+- **Text keeps the arrow.** `cursor` inherits, so paragraphs show the arrow
+  rather than an I-beam; the I-beam is for fields. Selection works as it
+  always did.
+- **The cost:** a custom cursor ignores the reader's own system cursor size.
+  32px is roughly the system default; someone who has enlarged theirs gets
+  ours at 32 instead.
+
+Verified on `next start`: the computed cursor is the SVG on the page, on a
+link, on a cover, and on the ring at rest (`grab`), during a drag
+(`grabbing`) and after it (`grab` again); all five files serve as
+`image/svg+xml` and decode at 32x32; under touch emulation every one of
+them falls back to its keyword.
 
 ## Content
 
