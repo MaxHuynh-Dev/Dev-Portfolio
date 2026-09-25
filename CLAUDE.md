@@ -345,8 +345,9 @@ yarn generate:importmap   # app/(payload)/admin/importMap.js, after a config cha
 ```
 
 Biome, not ESLint/Prettier. 2-space, single quotes, semicolons, width 100.
-The two generated files are excluded from it in `biome.json`, because both are
-rewritten by their generator and formatting them lasts until the next run.
+The three generated files — `payload-types.ts`, `importMap.js` and the
+corgi's `corgi.json` — are excluded from it in `biome.json`, because each is
+rewritten by its generator and formatting it lasts until the next run.
 
 ## Where things live
 
