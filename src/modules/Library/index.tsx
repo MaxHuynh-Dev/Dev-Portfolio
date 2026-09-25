@@ -192,12 +192,24 @@ const reaches = (width: number, steps: number, screen: number): boolean =>
  * depends on the width being solved for: start one step deep and go deeper
  * only while the next cover out would still be on screen at the answer
  * that produced.
+ *
+ * **Below `md`, `fill` replaces the neighbour rules.** The owner asked for
+ * the cover in the middle to be as wide as the column on a phone, so there
+ * the width is the column's, taken down only by the stage height — and that
+ * floored by `COVER_READABLE` exactly as before. Without the floor, a phone
+ * held sideways has a ~48px stage, the climb below goes three steps deep,
+ * and the cover comes out a 38px stamp; with it that screen gets the same
+ * 200px cover it always had. Filling overrules `PEEK` on purpose: at the
+ * ring's own pitch the neighbours sit just off both edges at rest and come
+ * in as it turns.
  */
-const solveCover = (box: DOMRect): { width: number; fitted: number } => {
+const solveCover = (box: DOMRect, fill: number | null): { width: number; fitted: number } => {
   const peek = capFor(box.width, PEEK);
   const whole = capFor(box.width, WHOLE);
   const solve = (steps: number): number =>
-    Math.min(peek, Math.max(COVER_READABLE, Math.min(whole, box.height / verticalFor(steps))));
+    fill === null
+      ? Math.min(peek, Math.max(COVER_READABLE, Math.min(whole, box.height / verticalFor(steps))))
+      : Math.min(fill, Math.max(COVER_READABLE, box.height / verticalFor(steps)));
 
   let fitted = 1;
   let width = solve(fitted);
@@ -630,7 +642,13 @@ export default function Library({
     const box = surface.getBoundingClientRect();
     if (box.width === 0 || box.height === 0) return;
 
-    const { width, fitted } = solveCover(box);
+    // Whether the cover fills the column is the stylesheet's call, made at
+    // the same breakpoint as everything else below `md` and read off the
+    // surface — not a second copy of that breakpoint in this file. The
+    // column is the stage the surface bleeds out of.
+    const fills = getComputedStyle(surface).getPropertyValue('--cover-fill').trim() === '1';
+    const column = surface.parentElement?.getBoundingClientRect().width ?? 0;
+    const { width, fitted } = solveCover(box, fills && column > 0 ? column : null);
     // On a tall narrow screen the width cap wins and the ring does not need
     // the whole stage. Hang it in the middle of what is left rather than
     // from the top, or it sits high with a band of nothing under it.
@@ -1004,8 +1022,8 @@ export default function Library({
             inert={shown}
             className={
               shown
-                ? 'pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)]'
-                : 'pointer-events-auto absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-[var(--cursor-grab)] touch-none'
+                ? 'pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] max-md:[--cover-fill:1]'
+                : 'pointer-events-auto absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-[var(--cursor-grab)] touch-none max-md:[--cover-fill:1]'
             }
           >
             {/* `data-await-images`: the ring turns through a whole revolution

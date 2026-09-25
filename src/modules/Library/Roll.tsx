@@ -60,8 +60,11 @@ import {
  * The ring's covers ask for this and so do the thumbnails, so both pick the
  * same candidate out of the same srcset: one file, one request, one decode,
  * and a handover between two identical pictures.
+ *
+ * `100vw` below `md` because the middle cover is the column's width there;
+ * at `60vw` it was being drawn from a file two thirds of the size it shows.
  */
-export const COVER_SIZES = '(max-width: 48rem) 60vw, 28rem';
+export const COVER_SIZES = '(max-width: 48rem) 100vw, 28rem';
 
 /** The cells of one row all move together; the rows are what stagger. */
 const timing = (index: number, shown: boolean): React.CSSProperties => ({

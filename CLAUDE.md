@@ -1013,6 +1013,23 @@ positions across the scroll, where ordinary motion gives 21.
   width being solved for, so the solver starts one step deep and goes
   deeper only while the next cover out would still be on screen at the
   answer that produced.
+
+  **Below `md` the middle cover is the column's width**, at the owner's
+  request, and that overrules `PEEK` and the whole-neighbour rule: at the
+  ring's own pitch the neighbours sit just off both edges at rest and come
+  in as it turns (half a step dragged at 375: 101px of one, 214 of the
+  next). The height still binds and `COVER_READABLE` still floors it — take
+  the floor away and a phone held sideways, with a ~48px stage, climbs
+  three steps deep and gets a **38px** cover; with it, 667x375 gets the
+  same 200px it always had. Which regime applies is the stylesheet's call:
+  `max-md:[--cover-fill:1]` on the covers' layer, which `measure()` reads,
+  so the breakpoint is not restated in JS. Verified at 320, 375, 390, 414,
+  564 and 700: the cover's edges on the column's to **0.00px** both sides,
+  the whole cover inside the stage, no neighbour on screen at rest; at 768
+  and 1440 the ring's digest is identical to before. `COVER_SIZES` went to
+  `100vw` below `md` with it, or the column-wide cover was drawn from a file
+  60% of the width — now the candidate is always at least the shown width
+  in device pixels (640 for 571 at 320, 1200 for 1051 at 564).
 - **A cover is 16:9, and the shape is one number.** `TALL` is a cover's
   height per unit width, and everything above resolves through it, so
   changing the shape is changing `TALL` and the `ratio` on the `Shot` —
