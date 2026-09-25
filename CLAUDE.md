@@ -2876,6 +2876,13 @@ picture of the person rather than a demo of a renderer.
   hands that could not be on the keys), and this. The lesson is the first
   line of this bullet — draw what the viewpoint shows, and let the lid do
   its job.
+- **The mug is a mug, at a mug's size.** The first was a 36-unit box with
+  a C for a handle, and the owner found it unconvincing and small. It is
+  now seen a little from above — an elliptical rim with the coffee in it,
+  a body tapering to a rounded foot, a handle with an outer and an inner
+  loop, one glaze stroke — and 70 units tall, about four tenths of his
+  head, which is a real mug beside him. Its handle is drawn for a 60-unit
+  mug and scaled by the height (`K`), so resizing the mug is one number.
 - **The eyes are redrawn, not traced.** The traced pupils sit under paper
   for good and new ones are drawn over them, so they can move: down and
   in, at the screen, while he types; straight out while he looks up. The

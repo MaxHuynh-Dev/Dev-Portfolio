@@ -486,39 +486,53 @@ const laptop = layer('laptop', [
   group(base, { fill: PAPER, width: 2.4 })
 ]);
 
-/** A mug on the desk, and steam that drifts up off it. */
-const MUG = 474;
+/**
+ * A coffee mug on the desk, and steam that drifts up off it. Drawn as a
+ * mug and not a box: seen a little from above, so the rim is an ellipse
+ * with the coffee showing in it; the body tapers slightly to a rounded
+ * foot; the handle has a thickness, an outer and an inner loop; and one
+ * light stroke down the body says it is glazed. It stands on the desk
+ * line, about four tenths the height of his head, which is a real mug's
+ * size beside him — the first one was a thimble.
+ */
+const MUG = { left: 468, right: 526, rim: DESK - 70 };
+const MUG_RX = (MUG.right - MUG.left) / 2;
+const MUG_MID = (MUG.left + MUG.right) / 2;
+const MUG_BODY = `M${MUG.left} ${MUG.rim} C${MUG.left} ${MUG.rim + 26} ${MUG.left + 1} ${MUG.rim + 44} ${MUG.left + 4} ${DESK - 6} C${MUG.left + 6} ${DESK - 1} ${MUG.left + 10} ${DESK + 1} ${MUG.left + 16} ${DESK + 1} L${MUG.right - 16} ${DESK + 1} C${MUG.right - 10} ${DESK + 1} ${MUG.right - 6} ${DESK - 1} ${MUG.right - 4} ${DESK - 6} C${MUG.right - 1} ${MUG.rim + 44} ${MUG.right} ${MUG.rim + 26} ${MUG.right} ${MUG.rim} Z`;
+/** The handle, drawn for a 60-unit mug and scaled to this one. */
+const K = (DESK - MUG.rim) / 60;
+const MUG_HANDLE = `M${MUG.right - 1 * K} ${MUG.rim + 10 * K} C${MUG.right + 18 * K} ${MUG.rim + 6 * K} ${MUG.right + 25 * K} ${MUG.rim + 30 * K} ${MUG.right + 14 * K} ${MUG.rim + 42 * K} C${MUG.right + 9 * K} ${MUG.rim + 47 * K} ${MUG.right + 3 * K} ${MUG.rim + 48 * K} ${MUG.right - 2 * K} ${MUG.rim + 47 * K} L${MUG.right - 2 * K} ${MUG.rim + 38 * K} C${MUG.right + 2 * K} ${MUG.rim + 38 * K} ${MUG.right + 6 * K} ${MUG.rim + 36 * K} ${MUG.right + 8 * K} ${MUG.rim + 33 * K} C${MUG.right + 12 * K} ${MUG.rim + 26 * K} ${MUG.right + 10 * K} ${MUG.rim + 16 * K} ${MUG.right - 1 * K} ${MUG.rim + 18 * K} Z`;
+const MUG_GLAZE = `M${MUG.left + 7} ${MUG.rim + 11} C${MUG.left + 6} ${MUG.rim + 24} ${MUG.left + 6} ${MUG.rim + 36} ${MUG.left + 8} ${MUG.rim + 46}`;
 const mug = layer('mug', [
-  group(
-    `M${MUG + 36} ${DESK - 36} C${MUG + 50} ${DESK - 36} ${MUG + 50} ${DESK - 12} ${MUG + 36} ${DESK - 12}`
-  ),
-  group(
-    `M${MUG} ${DESK - 45} L${MUG} ${DESK - 3} C${MUG} ${DESK - 1} ${MUG + 2} ${DESK + 1} ${MUG + 5} ${DESK + 1} L${MUG + 31} ${DESK + 1} C${MUG + 34} ${DESK + 1} ${MUG + 36} ${DESK - 1} ${MUG + 36} ${DESK - 3} L${MUG + 36} ${DESK - 45} Z`,
-    { fill: PAPER }
-  )
+  group(ellipse(MUG_MID, MUG.rim + 1, MUG_RX - 4.5, 4.6), { fill: INK, stroke: null }),
+  group(ellipse(MUG_MID, MUG.rim, MUG_RX, 7), { fill: PAPER }),
+  group(MUG_GLAZE, { width: 1.8 }),
+  group(MUG_BODY, { fill: PAPER }),
+  group(MUG_HANDLE, { fill: PAPER, width: 2.6 })
 ]);
-const steam = layer(
-  'steam',
-  [
-    group(
-      `M${MUG + 11} ${DESK - 56} C${MUG + 5} ${DESK - 66} ${MUG + 17} ${DESK - 73} ${MUG + 11} ${DESK - 83} M${MUG + 24} ${DESK - 56} C${MUG + 18} ${DESK - 66} ${MUG + 30} ${DESK - 73} ${MUG + 24} ${DESK - 83}`,
-      { width: 2.4 }
-    )
-  ],
-  {
-    pivot: [MUG + 18, DESK - 56],
-    p: moving([
-      [0, [MUG + 18, DESK - 50, 0]],
-      [FRAMES, [MUG + 18, DESK - 68, 0]]
-    ]),
-    o: moving([
-      [0, [0]],
-      [36, [100]],
-      [114, [100]],
-      [FRAMES, [0]]
-    ])
-  }
-);
+
+/** Three wisps, rising off the rim and thinning out as they go. */
+const STEAM = [-11, 0, 11]
+  .map((dx, i) => {
+    const x = MUG_MID + dx;
+    const y = MUG.rim - 10 + (i === 1 ? 2 : 0);
+    const top = y - (i === 1 ? 34 : 28);
+    return `M${x} ${y} C${x - 6} ${y - 10} ${x + 6} ${y - 18} ${x} ${top}`;
+  })
+  .join(' ');
+const steam = layer('steam', [group(STEAM, { width: 2.2 })], {
+  pivot: [MUG_MID, MUG.rim - 10],
+  p: moving([
+    [0, [MUG_MID, MUG.rim - 4, 0]],
+    [FRAMES, [MUG_MID, MUG.rim - 20, 0]]
+  ]),
+  o: moving([
+    [0, [0]],
+    [36, [100]],
+    [114, [100]],
+    [FRAMES, [0]]
+  ])
+});
 
 /**
  * What he is typing, as it leaves the screen: small marks that rise off
