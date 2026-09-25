@@ -421,20 +421,6 @@ const blink = layer(
 /** True while he is typing rather than looking up. */
 const typing = (t) => t < TYPE_END || t >= BACK_DOWN + 4;
 
-/**
- * One finger's taps: down a couple of units on its own beats, back up.
- * Staggered by finger and by hand so no two land together.
- */
-const fingerTaps = (seed) => {
-  const keys = [[0, [0, 0]]];
-  for (let t = 3 + ((seed * 7) % 11); t < FRAMES - 4; t += 9 + ((seed * 5) % 7)) {
-    if (!typing(t) || !typing(t + 3)) continue;
-    keys.push([t, [0, 0]], [t + 2, [0.4, 2.6]], [t + 4, [0, 0]]);
-  }
-  keys.push([FRAMES, [0, 0]]);
-  return moving(keys);
-};
-
 /** A group whose whole drawing moves by `p`. */
 function moved(d, p, options) {
   const g = group(d, options);
@@ -443,12 +429,18 @@ function moved(d, p, options) {
 }
 
 /**
- * Forearms along the desk, and hands on the keys at the lid's two front
- * corners. Physically the keyboard is behind the lid; this is the drawing
- * convention every illustration of someone at a laptop uses, because a
- * typist with no hands does not read as typing. Drawn in the traced
- * lines' weight, ink over paper. The watch is on his left wrist, as in
- * the portrait.
+ * The hands, BEHIND the lid — which is where they are. He faces us across
+ * the laptop, so his hands are on the keys on the far side of the screen,
+ * fingertips toward us, and the lid hides all but their outer edges: the
+ * wrist, the back of the hand, the little and ring fingers, standing out
+ * past each side of the lid. An earlier build put whole hands in front of
+ * the lid for visibility and the owner read it, rightly, as wrong; the
+ * one before that drew fingers as capsules and it read as a robot. These
+ * are drawn in the traced portrait's own manner — one silhouette in paper
+ * to hide what is behind it, and loose ink strokes for knuckles, the gaps
+ * between fingers and the nails — and each hand bobs on its own beat as
+ * the keys go down. The sleeves are rolled, as in the portrait, and the
+ * watch is on his left wrist.
  *
  * The left hand is drawn; the right is the same shapes mirrored about the
  * lid's centre.
@@ -465,65 +457,49 @@ const across = (d) =>
   });
 
 /**
- * Lying along the desk from the traced elbow, the wrist lifted onto the
- * laptop. NOT grown with the hand (below): its elbow end has to stay under
- * the traced upper arm, and only its wrist end meets the larger hand.
+ * From the traced elbow toward the keys — foreshortened, since it points
+ * at us — with the shirt sleeve rolled back off it in a band.
  */
 const FOREARM =
-  'M82 398 C104 386 126 378 149 375 L151 398 C128 405 104 415 80 426 C78 416 78 406 82 398 Z';
-/** The back of the hand, wrist to knuckles; the fingers come out from under its edge. */
-const PALM =
-  'M147 386 C160 379 183 377 199 381 C207 383 212 389 210 396 C195 395 172 397 152 405 Z';
-const THUMB =
-  'M150 398 C157 396 167 402 172 409 C175 414 171 418 166 416 C159 412 153 406 150 398 Z';
-const FINGER = (x, length) =>
-  `M${x} 392 L${x} ${412 + length} C${x} ${417 + length} ${x + 8.5} ${417 + length} ${x + 8.5} ${412 + length} L${x + 8.5} 392 Z`;
-const FINGERS = [
-  [172, 2],
-  [181, 5],
-  [190, 4.5],
-  [199, 1]
-];
-/** On the wrist the forearm meets the hand: a strap round it, the face on top. */
-const WATCH =
-  'M136 386 L136 407 M147 386 L147 405 M133 391 C133 389 134 388 136 388 L146 388 C148 388 149 389 149 391 L149 402 C149 404 148 405 146 405 L136 405 C134 405 133 404 133 402 Z';
-
+  'M58 386 C64 378 72 372 82 369 L80 400 C72 405 64 412 58 420 C55 408 55 396 58 386 Z';
+const SLEEVE = 'M62 382 C66 392 67 404 64 416 M68 377 C72 388 73 399 71 410';
 /**
- * The hands are drawn at life size against the traced head and then grown
- * by a third about the desk under the wrist: at the size the figure is
- * shown on the index (~300px wide at 1440) life-size hands were a smudge
- * at the lid's corners. Cartoon hands run large; the line weight does not
- * grow with them, because it is the geometry that is scaled, not the layer.
+ * The hand's silhouette, in paper, so the lines behind it go: the back of
+ * the hand from the wrist, the fingers curling down onto the keys, the
+ * index and thumb out of sight behind the lid.
  */
-const HAND_SCALE = 1.35;
-const HAND_PIVOT = [158, DESK];
-const grow = (d) =>
-  d.replace(/([MLQC])([^MLQCZ]*)/g, (_, command, args) => {
-    const values = args
-      .trim()
-      .split(/[\s,]+/)
-      .filter(Boolean)
-      .map(Number);
-    const scaled = values.map((v, i) => {
-      const c = HAND_PIVOT[i % 2];
-      return +(c + (v - c) * HAND_SCALE).toFixed(2);
-    });
-    return `${command}${scaled.join(' ')} `;
-  });
+const HAND =
+  'M78 372 C96 364 124 362 152 366 L156 414 C140 418 118 419 98 417 C86 415 77 409 74 400 C71 390 72 379 78 372 Z';
+/** Knuckles, the gaps between fingers, the nails, two tendons. */
+const HAND_LINES =
+  'M79 388 C83 384 88 384 92 388 M93 387 C97 383 103 383 107 387 M108 387 C112 383 118 383 122 387 M92 391 C94 399 95 407 94 416 M107 391 C109 399 110 408 109 417 M122 391 C124 399 125 408 124 417 M79 408 C81 412 86 413 89 411 M96 412 C98 415 103 416 106 414 M111 413 C113 416 118 417 121 415 M86 375 C92 379 98 381 104 381 M102 371 C108 375 114 377 120 377';
+/** Strap across the wrist and the face on top of it. */
+const WATCH =
+  'M76 373 C78 384 78 394 76 404 M87 369 C89 380 89 390 87 400 M74 380 C74 378 75 377 77 377 L86 377 C88 377 89 378 89 380 L89 392 C89 394 88 395 86 395 L77 395 C75 395 74 394 74 392 Z';
+
+/** A hand bobbing a unit or two as a key goes down under it. */
+const bob = (seed) => {
+  const keys = [[0, [0, 0]]];
+  for (let t = 2 + seed; t < FRAMES - 4; t += 6 + ((seed * 3) % 3)) {
+    if (!typing(t) || !typing(t + 3)) continue;
+    keys.push([t, [0, 0]], [t + 2, [0.3, 1.8]], [t + 4, [0, 0]]);
+  }
+  keys.push([FRAMES, [0, 0]]);
+  return moving(keys);
+};
 
 const hand = (name, side, seed) => {
-  const draw = side === 'left' ? grow : (d) => across(grow(d));
+  const draw = side === 'left' ? (d) => d : across;
+  const beat = bob(seed);
   return layer(name, [
-    ...(side === 'right' ? [group(draw(WATCH), { fill: PAPER, width: 2.4 })] : []),
-    group(draw(THUMB), { fill: PAPER, width: 2.4 }),
-    group(draw(PALM), { fill: PAPER, width: 2.6 }),
-    ...FINGERS.map(([x, length], i) =>
-      moved(draw(FINGER(x, length)), fingerTaps(seed + i), { fill: PAPER, width: 2.4 })
-    ),
-    group(side === 'left' ? FOREARM : across(FOREARM), { fill: PAPER, width: 2.6 })
+    ...(side === 'right' ? [moved(draw(WATCH), beat, { fill: PAPER, width: 2.2 })] : []),
+    moved(draw(HAND_LINES), beat, { width: 2.2 }),
+    moved(draw(HAND), beat, { fill: PAPER, width: 2.6 }),
+    group(draw(SLEEVE), { width: 2.2 }),
+    group(draw(FOREARM), { fill: PAPER, width: 2.6 })
   ]);
 };
-const hands = [hand('hand-left', 'left', 1), hand('hand-right', 'right', 6)];
+const hands = [hand('hand-left', 'left', 0), hand('hand-right', 'right', 3)];
 
 // ─── what is drawn here ─────────────────────────────────────────────────
 
@@ -638,8 +614,8 @@ const animation = {
     ...marks,
     steam,
     mug,
-    ...hands,
     laptop,
+    ...hands,
     blink,
     pupils,
     whites,

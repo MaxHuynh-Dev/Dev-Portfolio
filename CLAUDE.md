@@ -88,8 +88,9 @@ at all under `reduce` (see the a11y invariants).
 
 **Typing** (`Typist`, the index). The owner's own line portrait, traced,
 behind a MacBook: a 5s loop in which he types with his eyes on the screen
-— his hands on the keys at the lid's front corners, each finger tapping
-on its own beat, the arms rocking slightly about the shoulders, marks
+— his hands on the keys behind the lid, their outer edges showing past
+it and bobbing on their own beats, the arms rocking slightly about the
+shoulders, marks
 (`{ }`, `</>`, `>_`) rising off either side of the lid — then blinks,
 glances up at the reader for most of a second, and looks back down. A 4s loop,
 the one motion on the site that is not an answer to anything; it is
@@ -2861,18 +2862,20 @@ picture of the person rather than a demo of a renderer.
   pivot, where a degree of turn moves nothing. The folded hands that
   peeked out either side of the lid are masked away, and everything is
   masked above the desk line.
-- **The hands are drawn, and they break the physics on purpose.** From
-  behind a laptop the keyboard is hidden, and the owner could not see the
-  hands at all — a typist with no hands does not read as typing. So
-  forearms lie along the desk from the traced elbows and the hands sit on
-  the lid's two front corners, which is the convention every illustration
-  of someone at a laptop uses. Each of the eight fingers is its own group
-  tapping ~2.6 units down on a staggered beat, only while he types. The
-  hands are drawn and then GROWN by 1.35 about the desk under the wrist —
-  geometry, not layer scale, so the line weight stays the traced one —
-  because at ~300px wide on the index life-size hands were a smudge. The
-  forearms are NOT grown: their elbow end has to stay under the traced
-  upper arm. The watch is on his left wrist, as in the portrait.
+- **The hands are drawn, BEHIND the lid, in the portrait's own line.**
+  He faces us across the laptop, so his hands are on the keys on the far
+  side of the screen, fingertips toward us, and the lid hides their inner
+  halves. What shows past each side of the lid is the wrist, the back of
+  the hand with three knuckles, the gaps between little, ring and middle
+  fingers, and their nails — a paper silhouette to hide what is behind
+  it, loose ink strokes for the rest — each hand bobbing ~1.8 units on its
+  own beat while he types. The sleeves are rolled and the watch is on his
+  left wrist, as in the portrait. Two builds were thrown out on the way,
+  both at the owner's word: whole hands drawn IN FRONT of the lid for
+  visibility (physically wrong — "the hands should be behind the screen"),
+  and before that fingers drawn as capsules on a dome of a palm, which
+  read as a robot's. The hands sit a little out from the lid's edges, as
+  hands on the outer keys do, which is what makes enough of them show.
 - **The eyes are redrawn, not traced.** The traced pupils sit under paper
   for good and new ones are drawn over them, so they can move: down and
   in, at the screen, while he types; straight out while he looks up. The
