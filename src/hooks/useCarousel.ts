@@ -251,7 +251,7 @@ export function useCarousel({
 
       if (!dragged) {
         dragged = true;
-        surface.style.cursor = 'grabbing';
+        surface.style.cursor = 'var(--cursor-grabbing)';
         // From here the click that ends this gesture must not navigate.
         // PageTransition listens on `document` in the CAPTURE phase, so it
         // sees the click before any listener this hook could add — there is
