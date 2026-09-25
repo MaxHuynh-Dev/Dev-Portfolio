@@ -19,6 +19,15 @@
  * inverts with the ground and the value does not survive being carried
  * over. See CLAUDE.md.
  * ─────────────────────────────────────────────────────────────────── */
+/* lottie-react injects its defaults (`width: 100%; height: 100%` on the
+   display) inside `@layer lottie-react`, at RUN time — after this file.
+   A layer ranks by where it is first declared, so that one landed above
+   `components` and beat `.st-corgi`'s own width: measured at 120px, the
+   file's intrinsic size, against a declared 4.2rem. Naming it here, first,
+   ranks it below everything the site writes. Trap 1's cascade, arriving
+   from a dependency. */
+@layer lottie-react;
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -347,6 +356,26 @@ body {
     --ink: #dbdcdb;
     --ink-2: #848a8f;
     --ink-3: #72787d;
+  }
+
+  /* The corgi in the middle of the bottom chrome — see Corgi/index.tsx.
+     The Lottie file is drawn in two tones and both are replaced here: CSS
+     beats the `fill` presentation attribute lottie-web writes, so the dog is
+     painted from the same tokens as the words beside it and, inside
+     `.st-blend`, lands as ink on paper exactly as they do. It is the
+     reader's to hover, so it takes pointer events back from the row. */
+  .st-corgi {
+    width: 4.2rem;
+    aspect-ratio: 3 / 2;
+    pointer-events: auto;
+  }
+
+  .st-corgi .corgi-ink path {
+    fill: var(--ink);
+  }
+
+  .st-corgi .corgi-paper path {
+    fill: var(--paper);
   }
 
   /* The rolling readout on /works.
