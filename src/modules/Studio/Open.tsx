@@ -289,7 +289,9 @@ export default function Open({
                 same-tab links). */}
             {cvs.length > 0 ? (
               <div>
-                <p className="st-meta m-0">
+                {/* Set as the `social` heading is, so the two groups read
+                    as a pair of equals rather than a heading and a note. */}
+                <p className="st-meta m-0 font-[500] text-[var(--ink)]">
                   <Reveal on="load" className="st-line block" delay={at(cvStart)}>
                     <span className="st-line-body">cv</span>
                   </Reveal>
