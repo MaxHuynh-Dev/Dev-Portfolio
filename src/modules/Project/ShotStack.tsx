@@ -236,7 +236,7 @@ export default function ShotStack({
                 size={shotSizes[index] ?? null}
                 ratio={shot.tall === true ? RATIO.tall : RATIO.wide}
                 label={`shot ${String(index + 1).padStart(2, '0')}, ${shot.tall === true ? '4:5' : '16:10'}`}
-                sizes="(max-width: 60rem) 100vw, 46rem"
+                sizes="(max-width: 63.99rem) 100vw, 46rem"
                 priority={index === 0}
               />
             );
@@ -271,7 +271,7 @@ export default function ShotStack({
 
       {/* Below md the rail would be smaller than a touch target and would
           steal width the shots need. */}
-      <nav aria-label="Shots" className="hidden shrink-0 md:block">
+      <nav aria-label="Shots" className="hidden shrink-0 lg:block">
         {/* `sticky` is a positioned box, so the marker resolves against this
             and rides with it — and each thumbnail's offsetTop is measured
             against it too, which is what the marker is placed from. */}

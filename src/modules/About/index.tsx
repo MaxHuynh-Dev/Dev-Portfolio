@@ -110,12 +110,12 @@ export default function About({
             disagree about anything a keyboard does; what the DOM order buys
             is the reading sequence — the statement, then the prose that
             answers it, then the lists, then the picture. */}
-        <div className="mt-[clamp(1.6rem,4vh,2.6rem)] flex flex-col gap-y-[clamp(1.4rem,3.5vh,2.2rem)] md:flex-row md:items-stretch md:justify-between md:gap-x-[clamp(1.5rem,4vw,3.5rem)]">
+        <div className="mt-[clamp(1.6rem,4vh,2.6rem)] flex flex-col gap-y-[clamp(1.4rem,3.5vh,2.2rem)] lg:flex-row lg:items-stretch lg:justify-between lg:gap-x-[clamp(1.5rem,4vw,3.5rem)]">
           {/* The prose. One `Lines` per paragraph, because each one is
               measured and masked line by line and `Lines` takes exactly one
               — which is also why the CMS splits the textarea on blank lines
               rather than handing this a single string with breaks in it. */}
-          <div className="flex min-w-0 flex-1 flex-col gap-[clamp(0.8rem,1.8vh,1.3rem)] md:order-2 md:max-w-[58ch]">
+          <div className="flex min-w-0 flex-1 flex-col gap-[clamp(0.8rem,1.8vh,1.3rem)] lg:order-2 lg:max-w-[58ch]">
             {about.body.map((paragraph, index) => (
               <Lines
                 key={paragraph.slice(0, 40)}
@@ -145,20 +145,20 @@ export default function About({
             </p>
           </div>
 
-          {/* **`md:contents` is what lets one markup serve both shapes.**
+          {/* **`lg:contents` is what lets one markup serve both shapes.**
               On a phone these two are a ROW — the lists taking what width
               they need and the portrait a small fixed column beside them —
-              because stacked they cost 556px of a 395px budget. Above `md`
+              because stacked they cost 556px of a 395px budget. Above `lg`
               this wrapper stops generating a box at all, so its two
               children become items of the row above and take their places
               as the outer and inner columns of the project page's grammar.
 
               A plain div with no semantics, so `display: contents` has
               nothing to drop out of the accessibility tree. */}
-          <div className="flex items-start gap-x-[clamp(1.25rem,5vw,2.5rem)] md:contents">
+          <div className="flex items-start gap-x-[clamp(1.25rem,5vw,2.5rem)] lg:contents">
             {/* What he does and what he works with — the spec sheet's
                 position on a project page, and its width. */}
-            <div className="min-w-0 flex-1 md:order-1 md:w-[clamp(9rem,14vw,12rem)] md:flex-none">
+            <div className="min-w-0 flex-1 lg:order-1 lg:w-[clamp(9rem,14vw,12rem)] lg:flex-none">
               <div className="flex flex-wrap gap-x-[clamp(1.25rem,3vw,2.5rem)] gap-y-[clamp(0.9rem,2.2vh,1.4rem)]">
                 {about.columns.map((column, index) => {
                   const start = columnStep(index);
@@ -207,7 +207,7 @@ export default function About({
                 here. An image has no lines to mask, so opacity is the whole
                 gesture. */}
             {/* **The height is the prose column's, not a ratio.** The row
-                is `items-stretch` above `md`, so this box is exactly as
+                is `items-stretch` above `lg`, so this box is exactly as
                 tall as the tallest thing in the row — which is the prose,
                 and the last line of the prose is `open to work`. The two
                 bottom edges are one line by construction rather than by a
@@ -216,7 +216,7 @@ export default function About({
 
                 On a phone the row is the metadata's, roughly 100px, and
                 stretching to THAT would shrink the picture rather than grow
-                it. So the mobile box keeps a declared 4:5 and `md:aspect-auto`
+                it. So the mobile box keeps a declared 4:5 and `lg:aspect-auto`
                 hands the height over at the breakpoint.
 
                 **No `h-full` on this wrapper, and that is the whole bug
@@ -225,13 +225,13 @@ export default function About({
                 resolving a percentage child that is itself asking for a
                 percentage is circular — it collapses to 0. Measured exactly
                 that way: a 228px-wide frame **0px tall** at every width
-                above `md`, while every other number on the page stayed
+                above `lg`, while every other number on the page stayed
                 correct. `align-items: stretch` has ALREADY given this item
                 a definite cross size; asking for it a second time is what
                 took it away. Below it, `h-full` on the Reveal and on
                 `Shot`'s box is fine, because by then the parent is
                 definite. */}
-            <div className="aspect-[4/5] w-[clamp(5.5rem,26vw,8rem)] shrink-0 md:order-3 md:aspect-auto md:w-[clamp(9rem,16vw,15rem)]">
+            <div className="aspect-[4/5] w-[clamp(5.5rem,26vw,8rem)] shrink-0 lg:order-3 lg:aspect-auto lg:w-[clamp(9rem,16vw,15rem)]">
               <Reveal on="load" className="st-wash block h-full" delay={LEAD_MS + STATEMENT_MS}>
                 <Shot
                   stretch
@@ -239,7 +239,7 @@ export default function About({
                   alt={about.portrait === null ? '' : about.portrait.alt}
                   ratio="4 / 5"
                   label="portrait"
-                  sizes="(max-width: 48rem) 26vw, 15rem"
+                  sizes="(max-width: 63.99rem) 26vw, 15rem"
                   size={about.portrait === null ? null : about.portrait.size}
                 />
               </Reveal>

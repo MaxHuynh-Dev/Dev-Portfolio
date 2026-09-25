@@ -193,7 +193,7 @@ const reaches = (width: number, steps: number, screen: number): boolean =>
  * only while the next cover out would still be on screen at the answer
  * that produced.
  *
- * **Below `md`, `fill` replaces the neighbour rules.** The owner asked for
+ * **Below `lg`, `fill` replaces the neighbour rules.** The owner asked for
  * the cover in the middle to be as wide as the column on a phone, so there
  * the width is the column's, taken down only by the stage height — and that
  * floored by `COVER_READABLE` exactly as before. Without the floor, a phone
@@ -325,7 +325,7 @@ export default function Library({
   const [readout, setReadout] = useState<HTMLDivElement | null>(null);
   /** The box in the list the covers gather into. Empty, and measured. */
   const [slot, setSlot] = useState<HTMLDivElement | null>(null);
-  /** Each row's own thumbnail below `md`, where there is no deck. */
+  /** Each row's own thumbnail below `lg`, where there is no deck. */
   const thumbs = useRef<(HTMLDivElement | null)[]>([]);
   const covers = useRef<(HTMLLIElement | null)[]>([]);
   /** Each mask in the readout, and its eight stacked lines in list order. */
@@ -348,7 +348,7 @@ export default function Library({
   const blend = useRef(0);
   const blendTo = useRef(0);
   /**
-   * Below `md`, 0 while the covers hold the pictures and 1 once the rows'
+   * Below `lg`, 0 while the covers hold the pictures and 1 once the rows'
    * own thumbnails do. Walked by the same loop as `blend`, after it lands.
    */
   const handoff = useRef(0);
@@ -484,9 +484,9 @@ export default function Library({
       // only while there is a gather to draw.
       //
       // Two answers, and which one is live is read off the layout rather than
-      // restated as a breakpoint here: below `md` every row has a thumbnail
+      // restated as a breakpoint here: below `lg` every row has a thumbnail
       // with a box and there is no deck, above it the thumbnails have no box
-      // and the deck does. A second copy of `md` in this file would be a
+      // and the deck does. A second copy of `lg` in this file would be a
       // number kept in step by hand with a class in `Roll`.
       const gather = ease(blend.current);
       let stack = null as Landing | null;
@@ -643,7 +643,7 @@ export default function Library({
     if (box.width === 0 || box.height === 0) return;
 
     // Whether the cover fills the column is the stylesheet's call, made at
-    // the same breakpoint as everything else below `md` and read off the
+    // the same breakpoint as everything else below `lg` and read off the
     // surface — not a second copy of that breakpoint in this file. The
     // column is the stage the surface bleeds out of.
     const fills = getComputedStyle(surface).getPropertyValue('--cover-fill').trim() === '1';
@@ -788,7 +788,7 @@ export default function Library({
       blend.current = from + (target - from) * t;
       // Only once the flight is over, so the dissolve happens with neither
       // picture moving. Only `draw` decides whether there is anything to
-      // hand over to; above `md` there is not, and this walks for nothing.
+      // hand over to; above `lg` there is not, and this walks for nothing.
       if (target === 1) handoff.current = across(now - start - ms, 0, HANDOFF_MS);
       paintOnce(now);
       if (t < 1 || (target === 1 && handoff.current < 1)) frame = requestAnimationFrame(step);
@@ -802,7 +802,7 @@ export default function Library({
   const shown = mode === 'list';
 
   /**
-   * True while the page may be longer than the screen: below `md` the list
+   * True while the page may be longer than the screen: below `lg` the list
    * runs on down the page and the document scrolls, where above it the list
    * is a region inside one screen. The owner asked for every project to be
    * shown rather than held to the screen's height.
@@ -835,9 +835,9 @@ export default function Library({
   }, [mode, projects.length]);
 
   /**
-   * Below `md`, the readout's way out and back. Out before the first row
+   * Below `lg`, the readout's way out and back. Out before the first row
    * rises into its room, and back only once the last row has fallen out of
-   * it. Above `md` it never changes, so this never runs there.
+   * it. Above `lg` it never changes, so this never runs there.
    */
   const readoutFade: React.CSSProperties = {
     transitionProperty: 'opacity',
@@ -914,7 +914,7 @@ export default function Library({
           solved against, and the covers can fly to a slot that has not moved
           under them.
 
-          Below `md` the list also lies over the READOUT's row, and the
+          Below `lg` the list also lies over the READOUT's row, and the
           readout goes while the list is up — every row there carries its
           own picture, name and year, so a readout of one of them only says it
           again — and the list has the room. It is an overlay for the same
@@ -929,14 +929,14 @@ export default function Library({
           above the list's rows, which are not positioned: at opacity 0 alone
           it swallowed every tap on the first row.
 
-          And below `md` the list is not held to the screen at all: while it
+          And below `lg` the list is not held to the screen at all: while it
           is up the clip comes off here and on the list, the rows run on down
           past the stage, and the DOCUMENT scrolls — see `long`. The stage
           keeps its box, so the ring is never asked to re-solve. */}
       <div
         className={
           long
-            ? 'mx-[calc(var(--gut)*-1)] mt-[clamp(1.2rem,4vh,2.8rem)] grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-clip px-[var(--gut)] max-md:overflow-visible'
+            ? 'mx-[calc(var(--gut)*-1)] mt-[clamp(1.2rem,4vh,2.8rem)] grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-clip px-[var(--gut)] max-lg:overflow-visible'
             : 'mx-[calc(var(--gut)*-1)] mt-[clamp(1.2rem,4vh,2.8rem)] grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-clip px-[var(--gut)]'
         }
       >
@@ -945,7 +945,7 @@ export default function Library({
           style={readoutFade}
           className={
             shown
-              ? 'col-[1] row-[1] max-md:pointer-events-none max-md:opacity-0'
+              ? 'col-[1] row-[1] max-lg:pointer-events-none max-lg:opacity-0'
               : 'col-[1] row-[1]'
           }
         >
@@ -958,9 +958,9 @@ export default function Library({
           data-lenis-prevent=""
           onScroll={redraw}
           className={[
-            'relative col-[1] row-[1/3] min-h-0 md:row-[2/3] md:mt-[clamp(0.8rem,3vh,2rem)]',
+            'relative col-[1] row-[1/3] min-h-0 lg:row-[2/3] lg:mt-[clamp(0.8rem,3vh,2rem)]',
             shown ? 'st-quiet-scroll overflow-y-auto' : 'pointer-events-none overflow-clip',
-            long ? 'max-md:overflow-visible' : ''
+            long ? 'max-lg:overflow-visible' : ''
           ].join(' ')}
         >
           {/* `relative` is not decoration. Each row's `sr-only` line is
@@ -974,8 +974,8 @@ export default function Library({
               to rest exactly where the list's box ends — clear of the bottom
               corner marks — and only makes the page scroll when a row
               actually runs past that line. */}
-          <div className="flex flex-col gap-[clamp(0.6rem,2vh,2rem)] max-md:pb-[calc(var(--chrome-top)+0.5rem)] md:flex-row md:items-start md:gap-[clamp(1.5rem,4vw,3.5rem)]">
-            <div className="order-2 min-w-0 flex-1 md:order-1">
+          <div className="flex flex-col gap-[clamp(0.6rem,2vh,2rem)] max-lg:pb-[calc(var(--chrome-top)+0.5rem)] lg:flex-row lg:items-start lg:gap-[clamp(1.5rem,4vw,3.5rem)]">
+            <div className="order-2 min-w-0 flex-1 lg:order-1">
               <Roll
                 projects={projects}
                 active={carousel.active}
@@ -992,13 +992,13 @@ export default function Library({
                 gather, so the list owns where the stack ends up and this
                 file never has a second opinion about it.
 
-                Not below `md`, where every row carries its own picture and
+                Not below `lg`, where every row carries its own picture and
                 a preview of one of them would only repeat it (see Roll). */}
             <div
               ref={setSlot}
               aria-hidden="true"
               style={{ aspectRatio: '16 / 9' }}
-              className="order-1 w-[clamp(8rem,36vw,20rem)] shrink-0 self-center max-md:hidden md:order-2 md:self-start"
+              className="order-1 w-[clamp(8rem,36vw,20rem)] shrink-0 self-center max-lg:hidden lg:order-2 lg:self-start"
             />
           </div>
         </div>
@@ -1022,8 +1022,8 @@ export default function Library({
             inert={shown}
             className={
               shown
-                ? 'pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] max-md:[--cover-fill:1]'
-                : 'pointer-events-auto absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-[var(--cursor-grab)] touch-none max-md:[--cover-fill:1]'
+                ? 'pointer-events-none absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] max-lg:[--cover-fill:1]'
+                : 'pointer-events-auto absolute inset-y-0 right-[calc(var(--gut)*-1)] left-[calc(var(--gut)*-1)] cursor-[var(--cursor-grab)] touch-none max-lg:[--cover-fill:1]'
             }
           >
             {/* `data-await-images`: the ring turns through a whole revolution

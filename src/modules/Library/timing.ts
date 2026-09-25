@@ -18,7 +18,7 @@
 export const GATHER_MS = 520;
 
 /**
- * Below `md`, how long a landed cover takes to dissolve into the row's own
+ * Below `lg`, how long a landed cover takes to dissolve into the row's own
  * thumbnail underneath it.
  *
  * Not a flourish: the two are the same file in the same box, measured to
@@ -54,7 +54,7 @@ export const ROW_FALL_MS = 280;
 export const ROW_FALL_STAGGER_MS = 18;
 
 /**
- * Below `md`, the readout above the list leaves while the list is up, and
+ * Below `lg`, the readout above the list leaves while the list is up, and
  * the list is drawn in the room it leaves (see `Library`).
  *
  * Out inside `ROW_LEAD_MS`, so it has gone before the first row rises
@@ -70,7 +70,7 @@ export const readoutBackAt = (rows: number): number =>
   ROW_FALL_MS + Math.max(0, rows - 1) * ROW_FALL_STAGGER_MS;
 
 /**
- * Below `md`, where the list runs on down the page, how long going back to
+ * Below `lg`, where the list runs on down the page, how long going back to
  * the ring takes to bring a scrolled reader up to the top. Inside the rows'
  * fall, so the page is at the top before it is made one screen again.
  */

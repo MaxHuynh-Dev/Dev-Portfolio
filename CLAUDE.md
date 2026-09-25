@@ -461,6 +461,45 @@ had to be thrown out on sight: it is a halftone-dot face that turns to
 unreadable noise below about 40px. Cabinet Grotesk and Excon were both too
 close to a default geometric sans. Render before you commit.
 
+## Mobile and tablet
+
+**Below `lg` (1024px) there is ONE layout, the phone's, and a tablet is that
+layout scaled up.** Nothing on the site switches arrangement at `md` any
+more: every former `md:` / `max-md:` in the page modules is `lg:` /
+`max-lg:`, so the three-column project page, `/about`'s side-by-side
+columns, `/experience`'s year column and the `/works` deck all begin at
+1024 exactly where they began before, and everything under it stacks the
+way a phone does.
+
+The scale is the root font-size, and only below `lg`:
+`max(0.9375rem, min(100vw * 15 / 375, 100svh * 15 / 720))`. Every rem —
+type, spacing, the pictures' boxes — and every vw then grows by one factor,
+so a `clamp(rem, vw, rem)` keeps landing in the same branch it did on the
+phone and the page is the phone's page, bigger.
+
+- **`min()` of width and height is "contain".** A tablet in portrait is
+  relatively shorter than a phone; scaling by width alone put `/about` 15px
+  past the screen at 768x1024. 720 rather than 667 is the height that makes
+  the one-screen pages fit on every tablet measured — 600x960, 768x1024,
+  820x1180 and 1023x768 all at 0 overflow on `/`, `/about` and `/works`.
+  Measured, not chosen; re-measure if the CMS copy grows.
+- **The floor is the old value**, so nothing at or under 375x667 changed
+  (root 15px there before and after), and it is the floor that keeps the
+  reader's own font-size preference in play (trap 2).
+- **`sizes` moved with the layout**: `(max-width: 63.99rem)` on the three
+  that had a breakpoint, so a tablet asks for a full-width picture and 1024
+  and up asks for exactly what it did.
+- **Desktop is untouched, and that was measured against `main`**: every
+  element under `#content` on `/`, `/about`, `/works`, `/work/<slug>` and
+  `/experience` at 1024x768, 1280x800, 1440x900 and 1920x1080 has the same
+  rect and font-size to 0.1px on both builds. (Measure `/works` after ~8s:
+  its chrome cascade is still landing at 4.2s — trap 44 — and a 4s read
+  shows 1–5px of mask travel that is timing, not layout.)
+- **The cost:** inside the scaled band the root is derived from the
+  viewport, so browser page zoom on a tablet-sized window is partly absorbed
+  — zooming narrows the CSS viewport and the root shrinks with it until the
+  floor. Pinch zoom and the reader's font-size setting still work.
+
 ## Cursors
 
 Cartoon, and still only ink and paper: a white-gloved hand in the manner of

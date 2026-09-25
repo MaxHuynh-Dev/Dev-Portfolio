@@ -88,12 +88,12 @@ function Entry({ position, index }: { position: Position; index: number }): Reac
   const afterItems = LABEL_MS + (position.responsibilities.length + 1) * ITEM_MS;
 
   return (
-    <li className="flex flex-col gap-y-[clamp(0.9rem,2.4vh,1.6rem)] md:grid md:grid-cols-[clamp(13rem,21vw,17rem)_minmax(0,1fr)] md:gap-x-[clamp(1.5rem,5vw,4.5rem)]">
+    <li className="flex flex-col gap-y-[clamp(0.9rem,2.4vh,1.6rem)] lg:grid lg:grid-cols-[clamp(13rem,21vw,17rem)_minmax(0,1fr)] lg:gap-x-[clamp(1.5rem,5vw,4.5rem)]">
       {/* The company, and everything about the job. FIRST in the DOM and
           second on screen, so a screen reader meets the heading before the
           year that sits to its left — nothing in the year column can take
           focus, so the two orders cannot disagree about a keyboard. */}
-      <div className="min-w-0 md:order-2">
+      <div className="min-w-0 lg:order-2">
         {/* `leading-[normal]` is the face's own box, so the mask cannot
             shave a cap or a descender — and it is the SAME box the year's
             odometer beside it uses, which is what puts the two on one
@@ -182,11 +182,11 @@ function Entry({ position, index }: { position: Position; index: number }): Reac
           On a phone the months sit BESIDE the year rather than under it:
           stacked, they would come between the year and the company's name
           and split the one pair that has to read together. */}
-      <div className="order-first flex items-end justify-between gap-x-4 md:order-1 md:block">
+      <div className="order-first flex items-end justify-between gap-x-4 lg:order-1 lg:block">
         <p className="st-display st-display-reg m-0 text-[clamp(2.2rem,5.4vw,4.6rem)] text-[var(--ink)]">
           <Odometer value={position.start.year} />
         </p>
-        <p className="st-meta m-0 pb-[0.35em] text-right md:mt-[0.2rem] md:pb-0 md:text-left">
+        <p className="st-meta m-0 pb-[0.35em] text-right lg:mt-[0.2rem] lg:pb-0 lg:text-left">
           <Row delay={ROLE_MS}>{periodOf(position)}</Row>
           {position.location !== null ? (
             <Row delay={ROLE_MS + 40}>{position.location.toLowerCase()}</Row>

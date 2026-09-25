@@ -40,7 +40,7 @@ export default function ProjectView({
           {/* Sticks under the top chrome, or — when the sheet is taller than
               the room — scrolls until its foot is clear of the bottom chrome
               and sticks there. See PinnedColumn. */}
-          <PinnedColumn className="w-full shrink-0 md:sticky md:w-[clamp(13rem,21vw,17rem)]">
+          <PinnedColumn className="w-full shrink-0 lg:sticky lg:w-[clamp(13rem,21vw,17rem)]">
             <SpecSheet project={project} />
           </PinnedColumn>
 

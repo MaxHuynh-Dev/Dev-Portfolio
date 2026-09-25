@@ -157,7 +157,7 @@ export default function Open({
         </Headline>
       </h1>
 
-      <div className="flex flex-col gap-[clamp(2.2rem,5vh,3.4rem)] md:flex-row md:items-start md:justify-between md:gap-[clamp(2rem,6vw,5rem)]">
+      <div className="flex flex-col gap-[clamp(2.2rem,5vh,3.4rem)] lg:flex-row lg:items-start lg:justify-between lg:gap-[clamp(2rem,6vw,5rem)]">
         {/* The line under the name is what arrives on load — not the name.
             The curtain assembles its own copy of the masthead and hands it
             over already in place, so there is nothing left there to reveal,
@@ -166,7 +166,7 @@ export default function Open({
         <Lines
           on="load"
           delay={at(0)}
-          className="m-0 max-w-[42ch] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.35] md:order-2"
+          className="m-0 max-w-[42ch] text-[clamp(1.05rem,2vw,1.45rem)] leading-[1.35] lg:order-2"
         >
           {profile.intro}
         </Lines>
@@ -186,7 +186,7 @@ export default function Open({
             also the only place that knows how many groups there are: the
             first is the heading, and a second would sit under it with a
             label of its own. */}
-        <section id="contact" aria-labelledby="contact-heading" className="md:order-1 md:shrink-0">
+        <section id="contact" aria-labelledby="contact-heading" className="lg:order-1 lg:shrink-0">
           {/* The address is NOT repeated here. It sits in the top-right
               corner mark, which is on every page of the site and never
               re-renders across a navigation, and one screen carrying it
