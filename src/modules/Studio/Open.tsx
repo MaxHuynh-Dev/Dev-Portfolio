@@ -104,9 +104,11 @@ export default function Open({
     links.slice(0, index).reduce((total, column) => total + 1 + column.links.length, 0);
 
   const cvs = [
-    { href: profile.cv, label: 'english', lang: 'en' },
-    { href: profile.cvVi, label: 'tiếng việt', lang: 'vi' }
-  ].filter((cv): cv is { href: string; label: string; lang: string } => cv.href !== null);
+    { href: profile.cv, label: 'EN', name: 'English', lang: 'en' },
+    { href: profile.cvVi, label: 'VN', name: 'Tiếng Việt', lang: 'vi' }
+  ].filter(
+    (cv): cv is { href: string; label: string; name: string; lang: string } => cv.href !== null
+  );
   const cvStart = columnStep(links.length);
 
   return (
@@ -278,7 +280,9 @@ export default function Open({
             {/* The CV is its own group, after the social marks rather than
                 at the end of them: it is a document, not a place the work
                 lives, and it comes in two languages. Set as words, the way
-                an unknown label falls back above, under a label of its own.
+                an unknown label falls back above, under a label of its own —
+                EN and VN, in caps at the owner's request: they are language
+                codes, not a tracked-out label.
                 Each language is absent when its Profile field is empty, and
                 the group with it when both are. New tab, which is also what
                 keeps the route curtain off them (it only intercepts
@@ -302,7 +306,11 @@ export default function Open({
                           rel="noreferrer noopener"
                           target="_blank"
                         >
+                          {/* The code is what shows; the language's own name
+                              is read out after it, so a screen reader does
+                              not spell out two letters on their own. */}
                           {cv.label}
+                          <span className="sr-only"> {cv.name}</span>
                         </a>
                       </Reveal>
                     </li>
