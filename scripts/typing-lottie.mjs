@@ -325,10 +325,10 @@ const SHOULDER_RIGHT = [404, 246];
 const taps = (sign, offset) => {
   const keys = [[0, [0]]];
   for (let t = offset; t < TYPE_END; t += 5)
-    keys.push([t, [(Math.floor(t / 5) % 2 ? 1 : -0.4) * sign * 1.3]]);
+    keys.push([t, [(Math.floor(t / 5) % 2 ? 1 : -0.4) * sign * 0.5]]);
   keys.push([TYPE_END + 2, [0]], [BACK_DOWN + 2, [0]]);
   for (let t = BACK_DOWN + 4 + offset; t < FRAMES - 2; t += 5) {
-    keys.push([t, [(Math.floor(t / 5) % 2 ? 1 : -0.4) * sign * 1.3]]);
+    keys.push([t, [(Math.floor(t / 5) % 2 ? 1 : -0.4) * sign * 0.5]]);
   }
   keys.push([FRAMES, [0]]);
   return moving(keys);
@@ -416,6 +416,115 @@ const blink = layer(
   }
 );
 
+// ─── the hands ──────────────────────────────────────────────────────────
+
+/** True while he is typing rather than looking up. */
+const typing = (t) => t < TYPE_END || t >= BACK_DOWN + 4;
+
+/**
+ * One finger's taps: down a couple of units on its own beats, back up.
+ * Staggered by finger and by hand so no two land together.
+ */
+const fingerTaps = (seed) => {
+  const keys = [[0, [0, 0]]];
+  for (let t = 3 + ((seed * 7) % 11); t < FRAMES - 4; t += 9 + ((seed * 5) % 7)) {
+    if (!typing(t) || !typing(t + 3)) continue;
+    keys.push([t, [0, 0]], [t + 2, [0.4, 2.6]], [t + 4, [0, 0]]);
+  }
+  keys.push([FRAMES, [0, 0]]);
+  return moving(keys);
+};
+
+/** A group whose whole drawing moves by `p`. */
+function moved(d, p, options) {
+  const g = group(d, options);
+  g.it[g.it.length - 1] = { ...transform(), p };
+  return g;
+}
+
+/**
+ * Forearms along the desk, and hands on the keys at the lid's two front
+ * corners. Physically the keyboard is behind the lid; this is the drawing
+ * convention every illustration of someone at a laptop uses, because a
+ * typist with no hands does not read as typing. Drawn in the traced
+ * lines' weight, ink over paper. The watch is on his left wrist, as in
+ * the portrait.
+ *
+ * The left hand is drawn; the right is the same shapes mirrored about the
+ * lid's centre.
+ */
+const AXIS = LID.left + LID.right;
+const across = (d) =>
+  d.replace(/([MLQC])([^MLQCZ]*)/g, (_, command, args) => {
+    const values = args
+      .trim()
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .map(Number);
+    return `${command}${values.map((v, i) => (i % 2 === 0 ? AXIS - v : v)).join(' ')} `;
+  });
+
+/**
+ * Lying along the desk from the traced elbow, the wrist lifted onto the
+ * laptop. NOT grown with the hand (below): its elbow end has to stay under
+ * the traced upper arm, and only its wrist end meets the larger hand.
+ */
+const FOREARM =
+  'M82 398 C104 386 126 378 149 375 L151 398 C128 405 104 415 80 426 C78 416 78 406 82 398 Z';
+/** The back of the hand, wrist to knuckles; the fingers come out from under its edge. */
+const PALM =
+  'M147 386 C160 379 183 377 199 381 C207 383 212 389 210 396 C195 395 172 397 152 405 Z';
+const THUMB =
+  'M150 398 C157 396 167 402 172 409 C175 414 171 418 166 416 C159 412 153 406 150 398 Z';
+const FINGER = (x, length) =>
+  `M${x} 392 L${x} ${412 + length} C${x} ${417 + length} ${x + 8.5} ${417 + length} ${x + 8.5} ${412 + length} L${x + 8.5} 392 Z`;
+const FINGERS = [
+  [172, 2],
+  [181, 5],
+  [190, 4.5],
+  [199, 1]
+];
+/** On the wrist the forearm meets the hand: a strap round it, the face on top. */
+const WATCH =
+  'M136 386 L136 407 M147 386 L147 405 M133 391 C133 389 134 388 136 388 L146 388 C148 388 149 389 149 391 L149 402 C149 404 148 405 146 405 L136 405 C134 405 133 404 133 402 Z';
+
+/**
+ * The hands are drawn at life size against the traced head and then grown
+ * by a third about the desk under the wrist: at the size the figure is
+ * shown on the index (~300px wide at 1440) life-size hands were a smudge
+ * at the lid's corners. Cartoon hands run large; the line weight does not
+ * grow with them, because it is the geometry that is scaled, not the layer.
+ */
+const HAND_SCALE = 1.35;
+const HAND_PIVOT = [158, DESK];
+const grow = (d) =>
+  d.replace(/([MLQC])([^MLQCZ]*)/g, (_, command, args) => {
+    const values = args
+      .trim()
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .map(Number);
+    const scaled = values.map((v, i) => {
+      const c = HAND_PIVOT[i % 2];
+      return +(c + (v - c) * HAND_SCALE).toFixed(2);
+    });
+    return `${command}${scaled.join(' ')} `;
+  });
+
+const hand = (name, side, seed) => {
+  const draw = side === 'left' ? grow : (d) => across(grow(d));
+  return layer(name, [
+    ...(side === 'right' ? [group(draw(WATCH), { fill: PAPER, width: 2.4 })] : []),
+    group(draw(THUMB), { fill: PAPER, width: 2.4 }),
+    group(draw(PALM), { fill: PAPER, width: 2.6 }),
+    ...FINGERS.map(([x, length], i) =>
+      moved(draw(FINGER(x, length)), fingerTaps(seed + i), { fill: PAPER, width: 2.4 })
+    ),
+    group(side === 'left' ? FOREARM : across(FOREARM), { fill: PAPER, width: 2.6 })
+  ]);
+};
+const hands = [hand('hand-left', 'left', 1), hand('hand-right', 'right', 6)];
+
 // ─── what is drawn here ─────────────────────────────────────────────────
 
 /**
@@ -428,7 +537,7 @@ const blink = layer(
 const lid = `M${LID.left + 12} ${LID.top} L${LID.right - 12} ${LID.top} C${LID.right - 5} ${LID.top} ${LID.right} ${LID.top + 5} ${LID.right} ${LID.top + 12} L${LID.right} ${DESK - 12} L${LID.left} ${DESK - 12} L${LID.left} ${LID.top + 12} C${LID.left} ${LID.top + 5} ${LID.left + 5} ${LID.top} ${LID.left + 12} ${LID.top} Z`;
 const hinge = `M${LID.left + 10} ${DESK - 12} L${LID.right - 10} ${DESK - 12} L${LID.right - 10} ${DESK - 6} L${LID.left + 10} ${DESK - 6} Z`;
 const base = `M${LID.left - 8} ${DESK - 6} L${LID.right + 8} ${DESK - 6} C${LID.right + 11} ${DESK - 6} ${LID.right + 12} ${DESK - 4} ${LID.right + 12} ${DESK - 2} L${LID.right + 12} ${DESK} C${LID.right + 12} ${DESK + 2} ${LID.right + 10} ${DESK + 3} ${LID.right + 7} ${DESK + 3} L${LID.left - 7} ${DESK + 3} C${LID.left - 10} ${DESK + 3} ${LID.left - 12} ${DESK + 2} ${LID.left - 12} ${DESK} L${LID.left - 12} ${DESK - 2} C${LID.left - 12} ${DESK - 4} ${LID.left - 11} ${DESK - 6} ${LID.left - 8} ${DESK - 6} Z`;
-const sticker = 'M334 368 L326 376 L334 384 M354 368 L362 376 L354 384 M347 365 L341 387';
+const sticker = 'M334 318 L326 326 L334 334 M354 318 L362 326 L354 334 M347 315 L341 337';
 
 const laptop = layer('laptop', [
   group(sticker, { width: 2.4 }),
@@ -525,7 +634,20 @@ const animation = {
   ],
   // Top first: marks and steam over everything, the laptop over the arms
   // and torso, the eyes over the head.
-  layers: [...marks, steam, mug, laptop, blink, pupils, whites, head, armLeft, armRight, torso]
+  layers: [
+    ...marks,
+    steam,
+    mug,
+    ...hands,
+    laptop,
+    blink,
+    pupils,
+    whites,
+    head,
+    armLeft,
+    armRight,
+    torso
+  ]
 };
 
 mkdirSync(dirname(OUT), { recursive: true });
