@@ -2,32 +2,46 @@
  * Writes `public/lottie/typing.json` — the owner at a laptop, typing — the
  * animation over the index's masthead.
  *
- * It is DRAWN here, not exported from After Effects: every shape below is an
- * SVG path in a 400x360 box, converted to Lottie's own bezier form, and the
- * motion is a handful of keyframes. Two reasons to keep it as a script.
- * The drawing is in the site's two inks and nothing else, and a colour
- * change is a re-run rather than a trip through an editor. And the file is
- * replaceable: `Typist` plays whatever Lottie sits at that path, so a
- * designer's version can drop in over this one without a line of code.
+ * **The figure is the owner's own portrait, traced, not redrawn.** A first
+ * version drew him from scratch in simple shapes and did not look like him.
+ * So `scripts/portrait/trace.py` vectorises the line portrait he supplied
+ * (`scripts/portrait/portrait.png`) into `scripts/portrait/paths.json`, and
+ * this script puts those exact lines on the page: his hair, his glasses, his
+ * smile, his shirt. What is added is drawn here — a laptop in front of him
+ * that hides the crossed arms, a mug, and the marks of what he types.
+ *
+ * The motion is keyed by hand. The head is the same traced shape as the
+ * body under a mask, so it can nod about the neck without a seam; the eyes
+ * blink under a paper lid; code marks rise off the lid; steam drifts.
+ *
+ * Only the site's two inks are used, copied from `global.css` (trap 7:
+ * they are copies — re-run after a palette change). `Typist` plays whatever
+ * Lottie sits at the output path, so a designer's file can replace this.
  *
  *   node scripts/typing-lottie.mjs
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '../public/lottie/typing.json');
+const HERE = dirname(fileURLToPath(import.meta.url));
+const OUT = resolve(HERE, '../public/lottie/typing.json');
+const PORTRAIT = JSON.parse(readFileSync(resolve(HERE, 'portrait/paths.json'), 'utf8'));
 
-const W = 400;
-const H = 360;
+const W = 560;
+const H = 540;
 const FPS = 30;
 const FRAMES = 120; // one 4s loop
+
+/** Where the traced portrait sits in the composition. */
+const SHIFT = [-40, -40];
 
 /** `--ink` and `--paper`, as Lottie's 0–1 channels. */
 const hex = (value) => [1, 3, 5].map((at) => Number.parseInt(value.slice(at, at + 2), 16) / 255);
 const INK = [...hex('#14110f'), 1];
 const PAPER = [...hex('#efedea'), 1];
-const LINE = 3.2;
+/** The traced lines are about this heavy; what is drawn here matches. */
+const LINE = 2.8;
 
 // ─── paths ──────────────────────────────────────────────────────────────
 
@@ -90,6 +104,18 @@ function path(d) {
   return shapes;
 }
 
+/** Move every point of an absolute path. */
+const shift = (d, [dx, dy]) =>
+  d.replace(/([MLQC])([^MLQCZ]*)/g, (_, command, args) => {
+    const values = args
+      .trim()
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .map(Number);
+    const moved = values.map((value, index) => +(value + (index % 2 === 0 ? dx : dy)).toFixed(2));
+    return `${command}${moved.join(' ')} `;
+  });
+
 /** An ellipse as four cubic arcs. */
 const ellipse = (cx, cy, rx, ry) => {
   const k = 0.5523;
@@ -101,22 +127,14 @@ const ellipse = (cx, cy, rx, ry) => {
   );
 };
 
-/** Mirror a path across the figure's centre line, x = 200. */
-const mirror = (d) =>
-  d.replace(/([MLQC])([^MLQCZ]*)/g, (_, command, args) => {
-    const values = args
-      .trim()
-      .split(/[\s,]+/)
-      .filter(Boolean)
-      .map(Number);
-    const flipped = values.map((value, index) => (index % 2 === 0 ? 400 - value : value));
-    return `${command}${flipped.join(' ')} `;
-  });
+/** A polygon, closed. */
+const poly = (points) => `M${points.map(([x, y]) => `${x} ${y}`).join(' L')} Z`;
 
 // ─── Lottie plumbing ────────────────────────────────────────────────────
 
 const still = (k) => ({ a: 0, k });
-const moving = (keys) => {
+/** Keyframes as `[frame, value]`; `hold` jumps instead of easing. */
+const moving = (keys, { hold = false } = {}) => {
   // Two keys on one frame is a jump Lottie does not need spelling out.
   const frames = keys.filter(([t], index) => index === 0 || t !== keys[index - 1][0]);
   return {
@@ -124,37 +142,50 @@ const moving = (keys) => {
     k: frames.map(([t, s], index) =>
       index === frames.length - 1
         ? { t, s }
-        : {
-            t,
-            s,
-            i: { x: s.map(() => 0.45), y: s.map(() => 1) },
-            o: { x: s.map(() => 0.55), y: s.map(() => 0) }
-          }
+        : hold
+          ? { t, s, h: 1 }
+          : {
+              t,
+              s,
+              i: { x: s.map(() => 0.45), y: s.map(() => 1) },
+              o: { x: s.map(() => 0.55), y: s.map(() => 0) }
+            }
     )
   };
 };
 
+const transform = () => ({
+  ty: 'tr',
+  p: still([0, 0]),
+  a: still([0, 0]),
+  s: still([100, 100]),
+  r: still(0),
+  o: still(100)
+});
+
 /** One group: some paths, then how they are painted. */
-function group(d, { fill = null, stroke = INK, width = LINE } = {}) {
+function group(d, { fill = null, stroke = INK, width = LINE, evenOdd = false } = {}) {
   const items = path(d).map((ks) => ({ ty: 'sh', ks: still(ks) }));
   if (stroke !== null) {
     items.push({ ty: 'st', c: still(stroke), o: still(100), w: still(width), lc: 2, lj: 2 });
   }
-  if (fill !== null) items.push({ ty: 'fl', c: still(fill), o: still(100), r: 1 });
-  items.push({
-    ty: 'tr',
-    p: still([0, 0]),
-    a: still([0, 0]),
-    s: still([100, 100]),
-    r: still(0),
-    o: still(100)
-  });
+  if (fill !== null) items.push({ ty: 'fl', c: still(fill), o: still(100), r: evenOdd ? 2 : 1 });
+  items.push(transform());
   return { ty: 'gr', it: items };
 }
 
+/** A layer mask: `mode` a(dd), s(ubtract) or i(ntersect). */
+const mask = (d, mode = 'a') => ({
+  inv: false,
+  mode,
+  pt: still(path(d)[0]),
+  o: still(100),
+  x: still(0)
+});
+
 let nextIndex = 1;
 /** A shape layer. `groups` are listed top first, as Lottie paints them. */
-function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o } = {}) {
+function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o, masks } = {}) {
   return {
     ddd: 0,
     ind: nextIndex++,
@@ -170,6 +201,7 @@ function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o } = {}) {
       s: s ?? still([100, 100, 100])
     },
     ao: 0,
+    ...(masks === undefined ? {} : { hasMask: true, masksProperties: masks }),
     shapes: groups,
     ip: 0,
     op: FRAMES,
@@ -178,138 +210,126 @@ function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o } = {}) {
   };
 }
 
-// ─── the drawing ────────────────────────────────────────────────────────
+// ─── the portrait ───────────────────────────────────────────────────────
 
-const HEAD_PIVOT = [200, 178];
-
-const head = layer(
-  'head',
-  [
-    // Hair, solid ink, spiky on top as in his portrait.
-    group(
-      'M162 108 C155 86 160 68 173 59 Q170 50 176 44 Q180 52 185 53 Q186 42 195 36 Q195 46 199 49 Q204 39 214 36 Q210 45 212 49 Q220 44 229 45 Q223 51 224 56 Q232 57 236 62 Q231 63 230 66 C241 76 244 92 238 108 C235 97 230 89 224 85 C216 90 202 92 189 87 C178 91 169 99 162 108 Z',
-      { fill: INK, width: 2.2 }
-    ),
-    // Glasses: two round rims, the bridge, the arms back to the ears.
-    group(
-      `${ellipse(185, 118, 11.5, 11)} ${ellipse(215, 118, 11.5, 11)} M196.5 116 Q200 112.5 203.5 116 M173.5 115 L166 112 M226.5 115 L234 112`,
-      { width: 2.8 }
-    ),
-    // Brows, nose, the open smile.
-    group('M176 102 Q185 97 193 101 M207 101 Q215 97 224 102 M200 123 Q196.5 133 201.5 135'),
-    group('M187 142 Q200 159 213 142 Q200 147 187 142 Z', { fill: INK, width: 2.4 }),
-    // Ears, then the face that sits over the neck.
-    group(
-      'M167 111 C158 106 155 122 159 130 C161 135 165 137 168 135 M233 111 C242 106 245 122 241 130 C239 135 235 137 232 135',
-      { fill: PAPER }
-    ),
-    group(
-      'M167 98 C165 128 171 152 187 163 C195 169 205 169 213 163 C229 152 235 128 233 98 C233 72 167 72 167 98 Z',
-      { fill: PAPER }
-    )
-  ],
-  {
-    pivot: HEAD_PIVOT,
-    // A slow nod while he reads what he typed, and back.
-    r: moving([
-      [0, [0]],
-      [30, [-2.2]],
-      [60, [0.6]],
-      [90, [-1.4]],
-      [120, [0]]
-    ])
-  }
-);
-
-// The eyes blink once a loop, squashed about their own line.
-const eyes = layer(
-  'eyes',
-  [group(`${ellipse(185, 119, 2.4, 3)} ${ellipse(215, 119, 2.4, 3)}`, { fill: INK, stroke: null })],
-  {
-    pivot: [200, 119],
-    parent: head.ind,
-    s: moving([
-      [0, [100, 100, 100]],
-      [70, [100, 100, 100]],
-      [73, [100, 8, 100]],
-      [76, [100, 100, 100]],
-      [120, [100, 100, 100]]
-    ])
-  }
-);
-
-const body = layer('body', [
-  // The open collar, the tee under it, the placket and a breast pocket.
-  group(
-    'M188 177 L168 189 L179 208 L186 189 M212 177 L232 189 L221 208 L214 189 M186 180 Q200 197 214 180 M179 208 L175 330 M221 208 L225 330 M228 240 L248 240 L248 258 L238 264 L228 258 Z'
-  ),
-  // Shirt over the shoulders, with the neck above it.
-  group(
-    'M191 160 L191 178 M209 160 L209 178 M190 176 C170 182 146 186 136 198 C126 210 121 240 119 300 L119 330 L281 330 L281 300 C279 240 274 210 264 198 C254 186 230 182 210 176 Z',
-    { fill: PAPER }
-  )
-]);
+/** Every traced line, as one even-odd ink fill — holes stay holes. */
+const portrait = () =>
+  group(PORTRAIT.paths.map((d) => shift(d, SHIFT)).join(' '), {
+    fill: INK,
+    stroke: null,
+    evenOdd: true
+  });
 
 /**
- * An arm: sleeve from the shoulder, elbow out, forearm in to the keyboard
- * behind the lid. It turns about the shoulder in short alternating taps,
- * which from the front is what typing looks like.
+ * The head, cut from the body along the neck: above the collar points and
+ * the chin, below nothing. The body carries the complement, so at rest the
+ * two layers are the one drawing, and a nod of a degree or two about the
+ * neck moves the cut by a fraction of a pixel.
  */
-const ARM =
-  'M139 197 C122 214 109 246 109 276 C109 291 117 299 132 299 L180 299 L180 276 L147 274 C146 256 150 236 155 217 Z';
-const CUFF = 'M124 271 L126 299';
+const HEAD = poly([
+  [80, 0],
+  [340, 0],
+  [340, 160],
+  [296, 176],
+  [270, 188],
+  [262, 206],
+  [200, 206],
+  [182, 196],
+  [150, 176],
+  [80, 160]
+]);
+const NECK = [231, 206];
+/** Everything above the desk; the traced shirt runs on below it. */
+const ABOVE_DESK = poly([
+  [0, 0],
+  [W, 0],
+  [W, 468],
+  [0, 468]
+]);
 
-const taps = (sign, offset) => {
-  const frames = [];
-  for (let t = 0; t <= FRAMES; t += 6) {
-    const beat = ((t + offset) / 6) % 2 === 0;
-    // A longer rest once a loop, so it reads as someone thinking.
-    const resting = t >= 60 && t < 84;
-    frames.push([t, [resting ? 0 : beat ? sign * 2.4 : sign * -0.6]]);
-  }
-  return moving(frames);
-};
+const nod = moving([
+  [0, [0]],
+  [30, [-1.6]],
+  [60, [0.5]],
+  [90, [-1]],
+  [120, [0]]
+]);
 
-const armLeft = layer('arm-left', [group(CUFF, { width: 2.4 }), group(ARM, { fill: PAPER })], {
-  pivot: [142, 202],
-  r: taps(-1, 0)
+const head = layer('head', [portrait()], {
+  pivot: NECK,
+  r: nod,
+  masks: [mask(HEAD)]
 });
-const armRight = layer(
-  'arm-right',
-  [group(mirror(CUFF), { width: 2.4 }), group(mirror(ARM), { fill: PAPER })],
-  { pivot: [258, 202], r: taps(1, 6) }
+
+const body = layer('body', [portrait()], {
+  masks: [mask(ABOVE_DESK), mask(HEAD, 's')]
+});
+
+/**
+ * A blink: paper over each pupil and a closed lid drawn across it, shown for
+ * three frames a loop. On the head, so it nods with it.
+ */
+const PUPILS = [
+  [189, 121],
+  [240, 111.5]
+];
+const blink = layer(
+  'blink',
+  [
+    group(PUPILS.map(([x, y]) => `M${x - 7} ${y} Q${x} ${y + 4} ${x + 7} ${y}`).join(' '), {
+      width: 2.4
+    }),
+    group(PUPILS.map(([x, y]) => ellipse(x, y, 7, 7.5)).join(' '), { fill: PAPER, stroke: null })
+  ],
+  {
+    parent: head.ind,
+    o: moving(
+      [
+        [0, [0]],
+        [72, [100]],
+        [76, [0]],
+        [120, [0]]
+      ],
+      { hold: true }
+    )
+  }
 );
 
-// A laptop from behind: the lid, a `</>` on it, the deck's front edge.
+// ─── what is drawn here ─────────────────────────────────────────────────
+
+/**
+ * A laptop from behind, in front of him: the lid hides the crossed arms,
+ * so the upper arms read as reaching down to the keys. A `</>` sticker, not
+ * a fruit — the mark is somebody else's.
+ */
 const laptop = layer('laptop', [
-  group('M190 259 L181 268 L190 277 M210 259 L219 268 L210 277 M203.5 256 L196.5 280', {
-    width: 2.6
+  group('M246 410 L233 423 L246 436 M280 410 L293 423 L280 436 M268 405 L258 441', {
+    width: 3
   }),
   group(
-    'M147 221 L253 221 C256 221 258 223 258 226 L262 312 C262 315 260 317 257 317 L143 317 C140 317 138 315 138 312 L142 226 C142 223 144 221 147 221 Z',
+    'M98 352 L428 352 C433 352 436 355 436 360 L442 466 C442 470 439 473 435 473 L91 473 C87 473 84 470 84 466 L90 360 C90 355 93 352 98 352 Z',
     { fill: PAPER }
   ),
-  group('M121 317 L279 317 L285 327 C285 329 284 330 281 330 L119 330 C116 330 115 329 115 327 Z', {
+  group('M66 473 L460 473 L468 486 C469 489 467 491 464 491 L62 491 C59 491 57 489 58 486 Z', {
     fill: PAPER
   })
 ]);
 
-// A mug on the desk, and steam that drifts up off it.
+/** A mug on the desk, and steam that drifts up off it. */
 const mug = layer('mug', [
-  group('M330 302 C341 302 341 321 330 321'),
-  group(
-    'M300 295 L300 326 C300 328.5 301.5 330 304 330 L326 330 C328.5 330 330 328.5 330 326 L330 295 Z',
-    { fill: PAPER }
-  )
+  group('M516 450 C530 450 530 474 516 474'),
+  group('M480 441 L480 486 C480 489 482 491 485 491 L511 491 C514 491 516 489 516 486 L516 441 Z', {
+    fill: PAPER
+  })
 ]);
 const steam = layer(
   'steam',
-  [group('M309 286 C304 278 314 272 309 264 M321 286 C316 278 326 272 321 264', { width: 2.4 })],
+  [group('M491 430 C485 420 497 413 491 403 M504 430 C498 420 510 413 504 403', { width: 2.4 })],
   {
-    pivot: [315, 286],
+    pivot: [498, 430],
     p: moving([
-      [0, [315, 290, 0]],
-      [120, [315, 276, 0]]
+      [0, [498, 436, 0]],
+      [120, [498, 420, 0]]
     ]),
     o: moving([
       [0, [0]],
@@ -332,8 +352,8 @@ const MARKS = [
 ];
 const glyph = (mark, index, from, to, start) => {
   const at = (t) => Math.min(FRAMES, t);
-  return layer(`mark-${index}`, [group(mark, { width: 2.6 })], {
-    s: still([150, 150, 100]),
+  return layer(`mark-${index}`, [group(mark, { width: 2.4 })], {
+    s: still([160, 160, 100]),
     p: moving([
       [0, [...from, 0]],
       [at(start), [...from, 0]],
@@ -351,10 +371,10 @@ const glyph = (mark, index, from, to, start) => {
   });
 };
 const marks = [
-  glyph(MARKS[0], 0, [132, 214], [104, 150], 0),
-  glyph(MARKS[1], 1, [268, 214], [298, 156], 26),
-  glyph(MARKS[2], 2, [134, 214], [110, 162], 52),
-  glyph(MARKS[3], 3, [266, 214], [292, 150], 72)
+  glyph(MARKS[0], 0, [62, 330], [34, 250], 0),
+  glyph(MARKS[1], 1, [468, 330], [500, 250], 26),
+  glyph(MARKS[2], 2, [60, 330], [40, 262], 52),
+  glyph(MARKS[3], 3, [470, 330], [498, 248], 72)
 ];
 
 const animation = {
@@ -368,10 +388,15 @@ const animation = {
   ddd: 0,
   assets: [],
   // Top first: marks and steam over everything, the laptop over the arms,
-  // the head over the shirt.
-  layers: [...marks, steam, mug, laptop, eyes, head, armLeft, armRight, body]
+  // the blink over the head.
+  layers: [...marks, steam, mug, laptop, blink, head, body]
 };
 
 mkdirSync(dirname(OUT), { recursive: true });
-writeFileSync(OUT, `${JSON.stringify(animation)}\n`);
+// Two decimals is a hundredth of a unit in a 560-unit box — far below a
+// device pixel — and it takes the file from ~240KB to a fraction of that.
+writeFileSync(
+  OUT,
+  `${JSON.stringify(animation, (_, value) => (typeof value === 'number' ? Math.round(value * 100) / 100 : value))}\n`
+);
 console.log(`wrote ${OUT}`);

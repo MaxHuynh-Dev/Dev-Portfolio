@@ -86,10 +86,10 @@ back to the first. The curve is eight CSS transforms — a point on a circle
 and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
 
-**Typing** (`Typist`, the index). The owner, drawn in the site's two inks
-from his own line portrait, at a laptop: the arms tap in short alternating
-beats, rest for a moment once a loop, the head nods, the eyes blink, and
-small marks — `{ }`, `</>`, `>_` — rise off the lid and fade. A 4s loop,
+**Typing** (`Typist`, the index). The owner's own line portrait, traced,
+at a laptop that hides his crossed arms: the head nods, the eyes blink,
+small marks — `{ }`, `</>`, `>_` — rise off the lid and fade, and steam
+drifts off a mug. A 4s loop,
 the one motion on the site that is not an answer to anything; it is
 furniture that breathes, which is why it is small, slow and ink-only. See
 trap 50.
@@ -2816,13 +2816,34 @@ and a dependency on three.js for a figure in the hero. This is a flat ink
 drawing on the paper, in the same hand as the cursors, and it is a
 picture of the person rather than a demo of a renderer.
 
-- **Drawn by a script, not exported.** `scripts/typing-lottie.mjs` writes
-  every shape as an SVG path in a 400x360 box, converts it to Lottie's
-  bezier form, and keys the motion by hand. The two inks are
+- **The figure is TRACED from his portrait, not redrawn — and that was a
+  correction.** The first build drew him from scratch in simple shapes
+  (spiky hair, round glasses, open collar) and the owner said, rightly,
+  that it did not look like him: a likeness is in the particular line,
+  not in a list of features. `scripts/portrait/trace.py` runs potrace over
+  `scripts/portrait/portrait.png` (ink below 110/255, which drops the pale
+  crop circle; the screenshot's reaction button masked out by position)
+  into `scripts/portrait/paths.json` — 35 filled curves, painted as ONE
+  even-odd ink fill so the holes stay holes.
+- **The head nods on a mask, not on a cut drawing.** The traced lines are
+  one connected shape, so the head is the same fill under a polygon mask
+  cut along the neck, and the body the same fill with that polygon
+  subtracted — at rest they are one drawing, pixel for pixel, and a nod of
+  under two degrees about the neck moves the cut by a fraction of a pixel.
+  The body is also masked above the desk line, where the laptop's deck
+  stands in for the desk. The blink is paper laid over each pupil with a
+  closed lid drawn across it, held for four frames a loop on the head.
+- **What is added is drawn by the script.** `scripts/typing-lottie.mjs`
+  writes the laptop, the mug, the steam and the marks as SVG paths,
+  converts them to Lottie's bezier form, and keys the motion by hand; the
+  output is rounded to two decimals (116KB, ~38KB gzipped, from ~240KB). The two inks are
   `--ink` / `--paper` copied in, so a palette change is a re-run (trap 7
   applies: they are copies). `Typist` plays whatever Lottie is at
   `/lottie/typing.json`, so a designer's file can replace this one with no
   code change. No Apple mark on the lid — a `</>` sticker instead.
+- **Re-run order:** `trace.py` only if the portrait changes, then
+  `node scripts/typing-lottie.mjs`. Both JSON files are generated and are
+  excluded from Biome like the other two.
 - **`flex-[1_1_0] min-h-0` is the whole layout.** A zero basis grows into
   what the section has spare and shrinks to nothing when there is none, so
   the `<h1>` sits exactly where it did — measured identical tops at nine

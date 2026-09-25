@@ -5,7 +5,8 @@
       "**",
       "!src/payload/payload-types.ts",
       "!app/(payload)/admin/importMap.js",
-      "!public/lottie/typing.json"
+      "!public/lottie/typing.json",
+      "!scripts/portrait/paths.json"
     ]
   },
   "formatter": {
