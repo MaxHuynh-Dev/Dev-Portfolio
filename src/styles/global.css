@@ -650,6 +650,55 @@ body {
     transform: none;
   }
 
+  /* A number that counts itself in — see Odometer.tsx. One window per
+     digit, one line tall, and a strip of 30 cells (0–9 three times) that
+     rolls UP through it to land on the digit, the same direction every
+     mask on this site travels.
+
+     `line-height: normal` for the reason .st-roll takes it (trap 26): it
+     is the face's own box, so a window cut to it cannot shave a glyph and
+     no number here has to track the font. Clipped vertically only — a
+     wide 0 passing through the window of a narrow 1 would otherwise lose
+     its sides mid-spin.
+
+     Parked one cell BELOW the window, so it is empty until asked for.
+     `transition-property: transform` only, so the reduced-motion block
+     flattens it to 0.01ms and the number simply arrives. */
+  .st-odo {
+    display: inline-block;
+    line-height: normal;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .st-odo-row {
+    display: inline-flex;
+  }
+
+  .st-odo-cell {
+    position: relative;
+    display: inline-block;
+    overflow-x: visible;
+    overflow-y: clip;
+  }
+
+  .st-odo-strip {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateY(calc(100% / 30));
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-duration: 1400ms;
+    transition-delay: var(--odo-delay, 0ms);
+  }
+
+  [data-in="true"] .st-odo-strip {
+    transform: translateY(calc(var(--odo-to, 0) * -100% / 30));
+  }
+
   /* An image has no lines to mask, so it arrives by opacity alone.
      This is NOT the fade-up this file threw out: that was the same
      fade-and-slide on all seven sections of the index, which is the

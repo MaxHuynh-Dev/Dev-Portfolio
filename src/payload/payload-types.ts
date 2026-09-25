@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     projects: Project;
+    experience: Experience;
     media: Media;
     users: User;
     'payload-kv': PayloadKv;
@@ -78,6 +79,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    experience: ExperienceSelect<false> | ExperienceSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -210,6 +212,43 @@ export interface Media {
   sizes?: {};
 }
 /**
+ * The /experience page. Newest first, by start month — there is nothing to drag.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "experience".
+ */
+export interface Experience {
+  id: string;
+  company: string;
+  /**
+   * As the contract said it — e.g. Front End Developer.
+   */
+  role: string;
+  /**
+   * YYYY-MM — e.g. 2023-05.
+   */
+  start: string;
+  /**
+   * YYYY-MM. Empty means you are still there.
+   */
+  end?: string | null;
+  location?: string | null;
+  /**
+   * ONE ITEM PER LINE. Each is split into its own measured lines on the page, so plain text only.
+   */
+  responsibilities: string;
+  /**
+   * Optional. What the work was done in.
+   */
+  stack?: string[] | null;
+  /**
+   * Optional. Projects built in this position — each links to its own page. Only add one that really was.
+   */
+  projects?: (string | Project)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -263,6 +302,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'projects';
         value: string | Project;
+      } | null)
+    | ({
+        relationTo: 'experience';
+        value: string | Experience;
       } | null)
     | ({
         relationTo: 'media';
@@ -337,6 +380,22 @@ export interface ProjectsSelect<T extends boolean = true> {
         tall?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "experience_select".
+ */
+export interface ExperienceSelect<T extends boolean = true> {
+  company?: T;
+  role?: T;
+  start?: T;
+  end?: T;
+  location?: T;
+  responsibilities?: T;
+  stack?: T;
+  projects?: T;
   updatedAt?: T;
   createdAt?: T;
 }

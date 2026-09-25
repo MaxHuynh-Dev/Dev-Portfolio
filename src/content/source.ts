@@ -5,7 +5,9 @@ import type {
   About,
   LinkColumn,
   MetaColumn,
+  Month,
   Portrait,
+  Position,
   Profile,
   Project,
   Shot,
@@ -219,4 +221,48 @@ export const getAbout = cache(async (): Promise<About> => {
     portrait,
     columns
   };
+});
+
+/** `YYYY-MM` from the CMS, which validates the shape on save. */
+const monthOf = (value: string): Month => ({
+  year: value.slice(0, 4),
+  month: Number(value.slice(5, 7))
+});
+
+/**
+ * Every position, newest first.
+ *
+ * The collection sorts itself by `-start`, and the dates are `YYYY-MM`
+ * text precisely so that sort is also the calendar's (see the collection).
+ * A related project that has since been deleted comes back as a bare id at
+ * this depth, and is dropped rather than rendered as a link to nowhere.
+ */
+export const getExperience = cache(async (): Promise<Position[]> => {
+  const payload = await client();
+  const { docs } = await payload.find({
+    collection: 'experience',
+    limit: 0,
+    sort: '-start',
+    depth: 1,
+    overrideAccess: true
+  });
+
+  return docs.map((doc) => ({
+    company: doc.company,
+    role: doc.role,
+    location: typeof doc.location === 'string' && doc.location.length > 0 ? doc.location : null,
+    start: monthOf(doc.start),
+    end: typeof doc.end === 'string' && doc.end.length > 0 ? monthOf(doc.end) : null,
+    // One item per line; blank lines and stray whitespace are not items.
+    responsibilities: doc.responsibilities
+      .split('\n')
+      .map((line) => line.replace(/^[\s•●\-–]+/, '').trim())
+      .filter((line) => line.length > 0),
+    stack: doc.stack ?? [],
+    projects: (doc.projects ?? []).flatMap((project) =>
+      typeof project === 'object' && project !== null
+        ? [{ slug: project.slug, name: project.name }]
+        : []
+    )
+  }));
 });

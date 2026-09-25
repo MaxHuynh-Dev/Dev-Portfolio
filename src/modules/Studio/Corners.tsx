@@ -6,7 +6,9 @@ import type React from 'react';
 import type { Profile } from '@/content/site';
 
 /**
- * Two marks, and both of them are real pages.
+ * Three marks, and all of them are real pages. `experience` sits between
+ * the work and the person because that is what it is: where the work was
+ * done, by whom.
  *
  * There were four. `contact` went when contact moved up into the opening
  * and the address left it for the corner above — a mark that says one word
@@ -30,6 +32,7 @@ import type { Profile } from '@/content/site';
  */
 const SECTIONS: { label: string; route: string }[] = [
   { label: 'work', route: '/works' },
+  { label: 'experience', route: '/experience' },
   { label: 'about', route: '/about' }
 ];
 

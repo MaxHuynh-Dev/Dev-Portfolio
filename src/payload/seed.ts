@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { getPayload } from 'payload';
 
 import config from '../../payload.config';
+import { seedExperience } from './experienceSeed';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const imageDir = path.resolve(dirname, '../../public/images/work');
@@ -295,6 +296,8 @@ async function seed(): Promise<void> {
   await payload.updateGlobal({ slug: 'about', data: ABOUT });
   await payload.updateGlobal({ slug: 'site-settings', data: SITE_SETTINGS });
   payload.logger.info('globals: profile, about, site-settings');
+
+  await seedExperience(payload, reset);
 
   payload.logger.info(
     `Seeded ${PROJECTS.length} projects and ${Object.keys(MEDIA).length} images. Open /admin to create the first user.`
