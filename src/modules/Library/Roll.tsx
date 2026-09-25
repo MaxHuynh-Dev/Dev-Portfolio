@@ -42,7 +42,7 @@ import {
  * large, so the bar is 4.5:1 — which --ink-3 (3.88:1) fails and --ink-2
  * (5.05:1) clears.
  *
- * **Below `md` every row carries its own picture**, and there is no deck
+ * **Below `lg` every row carries its own picture**, and there is no deck
  * beside the list. The deck is a preview that answers the pointer, and a
  * phone has no pointer to answer: a finger that touches a row has already
  * chosen it, so the one picture above the list sat on whatever the ring had
@@ -61,10 +61,10 @@ import {
  * same candidate out of the same srcset: one file, one request, one decode,
  * and a handover between two identical pictures.
  *
- * `100vw` below `md` because the middle cover is the column's width there;
+ * `100vw` below `lg` because the middle cover is the column's width there;
  * at `60vw` it was being drawn from a file two thirds of the size it shows.
  */
-export const COVER_SIZES = '(max-width: 48rem) 100vw, 28rem';
+export const COVER_SIZES = '(max-width: 63.99rem) 100vw, 28rem';
 
 /** The cells of one row all move together; the rows are what stagger. */
 const timing = (index: number, shown: boolean): React.CSSProperties => ({
@@ -102,7 +102,7 @@ export default function Roll({
               onFocus={() => {
                 onActive(index);
               }}
-              className="flex items-center gap-x-[0.9rem] py-[0.3rem] md:grid md:grid-cols-[2.2rem_minmax(0,1fr)_auto] md:items-baseline md:gap-x-[0.75rem] md:py-[clamp(0.1rem,0.55vh,0.45rem)]"
+              className="flex items-center gap-x-[0.9rem] py-[0.3rem] lg:grid lg:grid-cols-[2.2rem_minmax(0,1fr)_auto] lg:items-baseline lg:gap-x-[0.75rem] lg:py-[clamp(0.1rem,0.55vh,0.45rem)]"
             >
               {/* Decorative, like the cover it stands in for: the link's
                   own name already says whose picture this is.
@@ -116,7 +116,7 @@ export default function Roll({
                   thumbs.current[index] = node;
                 }}
                 style={{ opacity: 0 }}
-                className="w-[clamp(8.5rem,44%,20rem)] shrink-0 md:hidden"
+                className="w-[clamp(8.5rem,44%,20rem)] shrink-0 lg:hidden"
               >
                 <Shot
                   src={project.cover}
@@ -128,13 +128,13 @@ export default function Roll({
                 />
               </div>
 
-              {/* A column of three on a phone. Above `md` it stops being a
+              {/* A column of three on a phone. Above `lg` it stops being a
                   box and its cells become the grid's own, which is what keeps
                   the three on one baseline there. */}
-              <div className="flex min-w-0 flex-1 flex-col md:contents">
+              <div className="flex min-w-0 flex-1 flex-col lg:contents">
                 <span className="st-reveal">
                   <span
-                    className="st-reveal-line st-meta tabular-nums max-md:text-[0.9rem]"
+                    className="st-reveal-line st-meta tabular-nums max-lg:text-[0.9rem]"
                     style={pose}
                   >
                     {String(index + 1).padStart(2, '0')}
@@ -145,7 +145,7 @@ export default function Roll({
                     of the line's per-row timing and fades on its own 300ms.
                     It only dims where there is a deck for it to point at. */}
                 <span
-                  className="st-reveal text-[var(--ink)] transition-colors duration-300 md:text-[var(--row-ink)]"
+                  className="st-reveal text-[var(--ink)] transition-colors duration-300 lg:text-[var(--row-ink)]"
                   style={
                     {
                       '--row-ink': index === active ? 'var(--ink)' : 'var(--ink-2)'
@@ -153,7 +153,7 @@ export default function Roll({
                   }
                 >
                   <span
-                    className="st-reveal-line st-display text-[clamp(1.1rem,5.4vw,1.9rem)] md:text-[clamp(1rem,2.4vw,1.5rem)]"
+                    className="st-reveal-line st-display text-[clamp(1.1rem,5.4vw,1.9rem)] lg:text-[clamp(1rem,2.4vw,1.5rem)]"
                     style={pose}
                   >
                     {project.name}
@@ -162,7 +162,7 @@ export default function Roll({
 
                 <span className="st-reveal">
                   <span
-                    className="st-reveal-line st-meta whitespace-nowrap max-md:text-[0.9rem]"
+                    className="st-reveal-line st-meta whitespace-nowrap max-lg:text-[0.9rem]"
                     style={pose}
                   >
                     {project.kind.toLowerCase()},{' '}

@@ -140,6 +140,19 @@
    px — a px root overrides the reader's own font-size preference. */
 html {
   font-size: clamp(0.9375rem, 0.5vw + 0.525rem, 1.3125rem);
+  /* Below `lg`, phones and tablets share ONE layout — the phone's — and a
+     tablet is that layout scaled up, not a second arrangement. The root
+     grows in proportion to the screen against a 375x667 design, so every
+     rem (type, spacing, the pictures' boxes) and every vw scales together
+     by one factor. `min()` of the width and height ratios is "contain":
+     a tablet in portrait is relatively shorter than a phone, and scaling
+     by width alone would push the one-screen pages off the bottom. The
+     floor is the old value, so nothing at or under 375x667 changes, and
+     it is the floor that keeps the reader's own font-size preference in
+     play. At `lg` and above this rule does not apply at all. */
+  @media (width < 64rem) {
+    font-size: max(0.9375rem, min(100vw * 15 / 375, 100svh * 15 / 720));
+  }
   /* NOTE: no `scroll-behavior: smooth` — it fights Lenis. Anchor
      navigation routes through window.lenis.scrollTo instead. */
 
