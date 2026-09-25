@@ -13,10 +13,11 @@ const VISIT_WAGS = 2;
 const HOVER_WAGS = 1;
 
 /**
- * The corgi in the middle of the bottom chrome, wagging for whoever came in.
+ * The corgi in the middle of the bottom chrome, sitting up and waving a paw
+ * at whoever came in.
  *
- * It does not wag all the time. Motion on this site answers an action or
- * marks an arrival (see the a11y invariants), and a tail going forever at
+ * It does not wave all the time. Motion on this site answers an action or
+ * marks an arrival (see the a11y invariants), and a paw going forever at
  * the foot of every page would be neither — it would also be motion lasting
  * past five seconds with no way to stop it. So a VISIT is what it answers:
  * the page being handed over by the preloader, and every route change after
@@ -24,12 +25,13 @@ const HOVER_WAGS = 1;
  * still. Hovering it asks for one more.
  *
  * Under `reduce` it never plays; it stands in its resting pose, which is
- * frame 0. `useReleased` is what says the entry curtain has let go, so the
- * first wag is not spent behind the paper.
+ * frame 0 — sitting, paw down. `useReleased` is what says the entry curtain
+ * has let go, so the first wave is not spent behind the paper.
  *
- * The file is drawn by `scripts/corgi-lottie.mjs`, in two tones that
- * global.css replaces with `--ink` and `--paper` — which is what lets it sit
- * inside `.st-blend` and land as ink on paper like the words beside it.
+ * The file is drawn by `scripts/corgi-lottie.mjs` in the dog's own coat,
+ * orange-tan and white — the one exception to this site's "no accent
+ * colour", at the owner's request — which is why Corners gives it a layer
+ * of its own outside `.st-blend`.
  */
 export default function Corgi(): React.ReactElement {
   const handle = useRef<LottieHandle>(null);

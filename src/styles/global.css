@@ -359,23 +359,15 @@ body {
   }
 
   /* The corgi in the middle of the bottom chrome — see Corgi/index.tsx.
-     The Lottie file is drawn in two tones and both are replaced here: CSS
-     beats the `fill` presentation attribute lottie-web writes, so the dog is
-     painted from the same tokens as the words beside it and, inside
-     `.st-blend`, lands as ink on paper exactly as they do. It is the
-     reader's to hover, so it takes pointer events back from the row. */
+     Sitting up, so it is square rather than long, and a little bigger than
+     the words beside it. Its colours are in the file: it is the one thing
+     on the site allowed a coat of its own (the owner's call), which is also
+     why it lives OUTSIDE `.st-blend` — a difference blend would paint it
+     blue. It is the reader's to hover, so it takes pointer events back. */
   .st-corgi {
-    width: 4.2rem;
-    aspect-ratio: 3 / 2;
+    width: 3.6rem;
+    aspect-ratio: 1;
     pointer-events: auto;
-  }
-
-  .st-corgi .corgi-ink path {
-    fill: var(--ink);
-  }
-
-  .st-corgi .corgi-paper path {
-    fill: var(--paper);
   }
 
   /* The rolling readout on /works.

@@ -117,20 +117,8 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
       </div>
 
       <div className="st-fade st-blend pointer-events-none fixed inset-x-0 bottom-0 z-50 pt-[2.5rem]">
-        <div className="pointer-events-auto relative flex items-end justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pb-[var(--gut)]">
+        <div className="pointer-events-auto flex items-end justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pb-[var(--gut)]">
           <p className="st-meta">{profile.availability.toLowerCase()}</p>
-
-          {/* Centred on the row rather than a flex item between the two
-              marks, so neither mark moves to make room for it, and stood on
-              the same line the words sit on. See Corgi for when it wags.
-
-              Below 480px there is no room on that line: measured, it
-              overlapped the nav by 46px at 320 and 19px at 375, and cleared
-              it by 1px at 414. There it stands just ABOVE the words instead
-              — one line of .st-meta plus a gap — still centred. */}
-          <div className="absolute bottom-[calc(var(--gut)+1.55rem)] left-1/2 -translate-x-1/2 leading-none min-[480px]:bottom-[var(--gut)]">
-            <Corgi />
-          </div>
 
           <nav aria-label="Sections">
             <ul className="st-meta flex flex-wrap justify-end gap-x-[1.1rem] gap-y-[0.2rem]">
@@ -151,6 +139,21 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
             </ul>
           </nav>
         </div>
+      </div>
+
+      {/* The corgi, centred on the bottom edge — in its OWN fixed layer,
+          not in the row above. That row is `.st-blend`, a difference blend,
+          and blending reaches every child: the dog's orange would come out
+          blue. It is the one thing on the site with a coat of its own (the
+          owner's call), so it stays out of the blend. See Corgi for when it
+          waves.
+
+          It stands on the line the words sit on, and below 480px — where
+          that line has no room, measured overlapping the nav by 46px at 320
+          and 19px at 375 — just ABOVE them instead, one line of .st-meta
+          plus a gap. Only the dog takes pointer events, not the strip. */}
+      <div className="st-fade pointer-events-none fixed inset-x-0 bottom-[calc(var(--gut)+1.55rem)] z-50 flex justify-center leading-none min-[480px]:bottom-[var(--gut)]">
+        <Corgi />
       </div>
     </>
   );

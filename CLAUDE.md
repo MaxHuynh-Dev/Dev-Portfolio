@@ -5,7 +5,8 @@
 A portfolio for a front-end engineer, on warm paper (`#efedea`) with true
 ink type and **no accent colour at all**. Emphasis is carried by size,
 weight and position; hover and focus by an underline. The only colour the
-site will ever have is the project imagery.
+site will ever have is the project imagery — and, at the owner's request,
+the corgi in the bottom chrome, in its own orange-and-white coat.
 
 Five kinds of page:
 
@@ -84,19 +85,26 @@ back to the first. The curve is eight CSS transforms — a point on a circle
 and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
 
-**Wagging at a visit** (`Corgi`, the bottom chrome, every page). A corgi
-stands in the middle of the bottom row and wags for whoever came in: two
-2s cycles (under WCAG 2.2.2's five seconds) when the preloader lets go, two
-more on every route change as the panel starts to leave, one on hover — and
-otherwise it stands still, because motion here answers a visit or an action,
-never nothing. It is a Lottie file (`lottie-react`) DRAWN in
-`scripts/corgi-lottie.mjs`, not downloaded: a stock corgi is orange and
-licensed, this site has no accent colour, and the two tones in the file are
-replaced by `--ink` / `--paper` in CSS through the layer classes
-`corgi-ink` / `corgi-paper`, so it lands as ink on paper inside `.st-blend`
-like the words beside it. Below 480px there is no room on the row — it
-overlapped the nav by 46px at 320 — so it stands just above the words.
-Never plays under `reduce`.
+**Waving at a visit** (`Corgi`, the bottom chrome, every page). A Pembroke
+corgi sits centred on the bottom edge — facing the reader, a little round —
+and lifts a front paw to wave at whoever came in: two 2s cycles (under WCAG
+2.2.2's five seconds) when the preloader lets go, two more on every route
+change as the panel starts to leave, one on hover, and otherwise it sits
+still, because motion here answers a visit or an action, never nothing. The
+head tips into the wave and the tail sweeps behind. It is a Lottie file
+(`lottie-react`) DRAWN in `scripts/corgi-lottie.mjs`, not downloaded, so
+there is no licence to carry.
+
+**Its coat is the one exception to "no accent colour", and it is the
+owner's**, asked for against a reference photograph: orange-tan and white,
+black nose and eyes, pink tongue, the tones baked into the file. White is
+given a coat-coloured edge, because white on this paper does not read on
+its own. And it sits in a fixed layer of its OWN, not inside the bottom
+row: that row is `.st-blend`, a difference blend, which reaches every child
+and would paint the orange blue. (The first version was ink-only and did
+live in the row, taking `--ink` / `--paper` through layer classes.) Below
+480px there is no room on the row's line — it overlapped the nav by 46px at
+320 — so it sits just above the words. Never plays under `reduce`.
 
 **`@layer lottie-react;` is declared first in `global.css`, and must stay
 first.** The library injects its defaults (`width: 100%` on the display) in
