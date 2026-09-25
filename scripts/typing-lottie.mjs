@@ -19,9 +19,15 @@
  * point where its cut is — the wrist, the neck — where a degree of turn
  * moves the cut by less than the line is wide.
  *
+ * It also writes `public/lottie/wave.json`, what `Typist` plays when the
+ * figure is clicked: his second illustration, `waving.png`, one hand up,
+ * traced the same way and set down on THIS drawing's laptop and mug, the
+ * hand waving about the wrist. See "the wave" at the foot of the file.
+ *
  * Only the site's two inks are used, copied from `global.css` (trap 7:
  * they are copies — re-run after a palette change). `Typist` plays whatever
- * Lottie sits at the output path, so a designer's file can replace this.
+ * Lottie sits at the two output paths, so a designer's file can replace
+ * either, as long as the two share one canvas.
  *
  *   node scripts/typing-lottie.mjs
  */
@@ -31,7 +37,9 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, '../public/lottie/typing.json');
-const PORTRAIT = JSON.parse(readFileSync(resolve(HERE, 'portrait/paths.json'), 'utf8'));
+const WAVE_OUT = resolve(HERE, '../public/lottie/wave.json');
+const read = (name) => JSON.parse(readFileSync(resolve(HERE, 'portrait', name), 'utf8'));
+const PORTRAIT = read('paths.json');
 
 const FPS = 30;
 const FRAMES = 150; // one 5s loop
@@ -40,9 +48,14 @@ const FRAMES = 150; // one 5s loop
  * Everything below is written in the traced image's own pixels, so a number
  * can be checked against `typing.png` directly; `SHIFT` then crops that
  * image down to its ink, with a margin for the marks and the steam.
+ *
+ * The crop reaches 140px further left than the typing figure needs, and
+ * that is the wave's: its hand goes up and out past his shoulder (below).
+ * `Typist` lays the two files over each other in one box, so they have to
+ * share one canvas to the unit, or the laptop would move between them.
  */
-const SHIFT = [-150, -8];
-const W = 1230;
+const SHIFT = [-10, -8];
+const W = 1370;
 const H = 1000;
 
 /** `--ink` and `--paper`, as Lottie's 0–1 channels. */
@@ -113,17 +126,22 @@ function path(d) {
   return shapes;
 }
 
-/** Move every point of an absolute path. */
-const shift = (d, [dx, dy]) =>
+/** Put every point of an absolute path through `place`, a point to a point. */
+const mapPath = (d, place) =>
   d.replace(/([MLQC])([^MLQCZ]*)/g, (_, command, args) => {
     const values = args
       .trim()
       .split(/[\s,]+/)
       .filter(Boolean)
       .map(Number);
-    const moved = values.map((value, index) => +(value + (index % 2 === 0 ? dx : dy)).toFixed(2));
+    const moved = [];
+    for (let index = 0; index < values.length; index += 2) {
+      moved.push(...place([values[index], values[index + 1]]).map((value) => +value.toFixed(2)));
+    }
     return `${command}${moved.join(' ')} `;
   });
+/** Move every point of an absolute path. */
+const shift = (d, [dx, dy]) => mapPath(d, ([x, y]) => [x + dx, y + dy]);
 
 /** An ellipse as four cubic arcs. */
 const ellipse = (cx, cy, rx, ry) => {
@@ -194,7 +212,7 @@ const mask = (d, mode = 'a') => ({
 
 let nextIndex = 1;
 /** A shape layer. `groups` are listed top first, as Lottie paints them. */
-function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o, masks } = {}) {
+function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o, masks, op = FRAMES } = {}) {
   return {
     ddd: 0,
     ind: nextIndex++,
@@ -213,7 +231,7 @@ function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o, masks } = {})
     ...(masks === undefined ? {} : { hasMask: true, masksProperties: masks }),
     shapes: groups,
     ip: 0,
-    op: FRAMES,
+    op,
     st: 0,
     bm: 0
   };
@@ -224,10 +242,10 @@ function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o, masks } = {})
  * precomp layer onto it under its own mask — a copy of the traced
  * paths per piece would be four times the file.
  */
-function piece(name, options) {
+function piece(name, { refId = 'portrait', ...options } = {}) {
   const base = layer(name, [], options);
   delete base.shapes;
-  return { ...base, ty: 0, refId: 'portrait', w: W, h: H };
+  return { ...base, ty: 0, refId, w: W, h: H };
 }
 
 // ─── timing ─────────────────────────────────────────────────────────────
@@ -532,11 +550,240 @@ const animation = {
   layers: [...marks, steam, blink, pupils, whites, head, handLeft, handRight, scene]
 };
 
-mkdirSync(dirname(OUT), { recursive: true });
-// Two decimals is a hundredth of a unit in a 1230-unit box — far below a
+// Two decimals is a hundredth of a unit in a 1370-unit box — far below a
 // device pixel — and it takes the file from ~240KB to a fraction of that.
-writeFileSync(
-  OUT,
-  `${JSON.stringify(animation, (_, value) => (typeof value === 'number' ? Math.round(value * 100) / 100 : value))}\n`
+const write = (file, data) => {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(
+    file,
+    `${JSON.stringify(data, (_, value) => (typeof value === 'number' ? Math.round(value * 100) / 100 : value))}\n`
+  );
+  console.log(`wrote ${file}`);
+};
+write(OUT, animation);
+
+// ─── the wave ───────────────────────────────────────────────────────────
+
+/**
+ * What `Typist` plays when the figure is clicked: he looks up and waves.
+ *
+ * **It is his second illustration, `waving.png`, traced like the first**
+ * (logo masked out): hand up, mouth open. `Typist` lays it over the typing
+ * file in the same box and fades between the two, so it has to be set down
+ * on the SAME laptop — the furniture here is not the waving drawing's but
+ * this one's, the typing drawing's lid, base and mug clipped out of it, and
+ * so when one file gives way to the other only the person changes. The
+ * desk line is the waving drawing's, cut to where this one's runs, because
+ * his arm rests on it.
+ */
+const WAVING = read('waving-paths.json');
+/** Written by `region.py`: the inside of the raised hand, grown and cut. */
+const REGIONS = read('waving-regions.json');
+const WAVE_FRAMES = 54; // 1.8s
+
+/**
+ * `waving.png`'s pixels onto `typing.png`'s. Across, its lid's outer edges
+ * (402, 1006) onto this lid's (352, 972). Down, its desk line (943) onto
+ * this one (959.5), at the ratio of the two heads, hair to chin (371.5
+ * against 389). So he sits at the same desk at the same size and comes up
+ * a little taller to wave — and the two scales differ by 2%, which a line
+ * drawing does not show.
+ */
+const WAVE_SX = (972 - 352) / (1006 - 402);
+const WAVE_SY = (425 - 36) / (408.5 - 37);
+const onTyping = ([x, y]) => [352 + (x - 402) * WAVE_SX, 959.5 + (y - 943) * WAVE_SY];
+/** `waving.png`'s pixels to composition units, as `at` is for `typing.png`'s. */
+const atWave = (point) => at(onTyping(point));
+const cutWave = (points) => poly(points.map(atWave));
+const placeWave = (d) => mapPath(d, atWave);
+
+const wavingDrawing = () =>
+  group(WAVING.paths.map(placeWave).join(' '), { fill: INK, stroke: null, evenOdd: true });
+
+/**
+ * The furniture, in `typing.png`'s pixels. What the typing drawing lends
+ * the wave is its laptop, lid and base together, and its mug; what the
+ * waving drawing gives up is its own laptop — lid, base and the desk line
+ * behind them — where his lines meet it.
+ *
+ * **The lid is not a rectangle.** Its sides lean in going down, 9px over
+ * its height (outer edge 350 at y = 590 to 359 at 950 on the left, 974 to
+ * 965 on the right), so both cuts are trapezoids on those edges. Cut
+ * square, the lent lid brought the ends of the TYPING sleeves along as
+ * ticks on its lower sides, and the waving drawing's own lid, which leans
+ * in more and so stands 1.6px proud of this one near the top, showed as a
+ * second edge beside it. The lent lid stops half a pixel outside its ink;
+ * what his drawing gives up reaches a pixel and a half further, past the
+ * edge of his own lid.
+ */
+const LAPTOP = [
+  [349, 571],
+  [976, 571],
+  [966.3, 959],
+  [990, 959],
+  [990, 984],
+  [334, 984],
+  [334, 959],
+  [358.7, 959]
+];
+const MUG = [
+  [1128, 785],
+  [1356, 785],
+  [1356, 1000],
+  [1128, 1000]
+];
+const BEHIND_LAPTOP = [
+  [347.6, 572],
+  [977, 572],
+  [967.3, 959],
+  [992, 959],
+  [992, 996],
+  [332, 996],
+  [332, 959],
+  [357.2, 959]
+];
+/** His mug, and the desk line past where this drawing's ends (192 to 1116,
+ * which is where his right sleeve comes down on it). */
+const NOT_HIS = [
+  [
+    [1120, 700],
+    [1400, 700],
+    [1400, 1010],
+    [1120, 1010]
+  ],
+  [
+    [0, 945],
+    [192, 945],
+    [192, 975],
+    [0, 975]
+  ],
+  [
+    [1116, 945],
+    [1400, 945],
+    [1400, 975],
+    [1116, 975]
+  ]
+];
+
+/**
+ * The raised hand waves about the wrist. Below the hand his forearm is a
+ * straight band leaning 17° off upright — both edges at the same slope, 75px
+ * apart — and the cut runs square ACROSS that band, (243, 520) to (318,
+ * 543) in `waving.png`, not level. Turned about the middle of a square cut,
+ * each cut end moves along the band, which is along its own edge: at the
+ * full swing out it strays from the line by about a pixel. A level cut
+ * across the same wrist broke both edges by ~3 units at that swing — that
+ * was the first render. The rest gives up the hand only as far as a
+ * parallel line 12px nearer the hand, so the band between is drawn twice:
+ * one line at rest, a hair thicker mid-swing, never a gap. 12 and not 8
+ * because at the full swing out the cut's outer end draws back up the band
+ * by 39·sin 14° = 9.4px, and 8 left a white notch across that edge.
+ *
+ * The hand is outlined only, so on its own it would show the shoulder line
+ * through its palm on the swing in. `hand-fill` is the paper inside it,
+ * turning with it underneath its ink.
+ */
+const WRIST = [280.5, 531.5];
+/** The two marks beside his fingers, as drawn: they flick on at each swing out. */
+const ARCS = [
+  [148, 282],
+  [208, 282],
+  [208, 372],
+  [148, 372]
+];
+/** Out is anticlockwise, away from him; in stops short of the shoulder line. */
+const SWING_OUT = -14;
+const SWING_IN = 5;
+const swing = moving([
+  [0, [0]],
+  [6, [SWING_OUT]],
+  [12, [SWING_IN]],
+  [18, [SWING_OUT]],
+  [24, [SWING_IN]],
+  [30, [SWING_OUT]],
+  [37, [3]],
+  [44, [0]],
+  [WAVE_FRAMES, [0]]
+]);
+/** On at the first frame — the still pose is the drawing as he drew it. */
+const flicks = moving([
+  [0, [100]],
+  [3, [0]],
+  [4, [0]],
+  [6, [100]],
+  [9, [0]],
+  [16, [0]],
+  [18, [100]],
+  [21, [0]],
+  [28, [0]],
+  [30, [100]],
+  [33, [0]],
+  [WAVE_FRAMES, [0]]
+]);
+
+nextIndex = 1;
+const waveOptions = { refId: 'waving', op: WAVE_FRAMES };
+const hand = piece('hand', {
+  ...waveOptions,
+  pivot: atWave(WRIST),
+  r: swing,
+  masks: [mask(placeWave(REGIONS.hand))]
+});
+const handFill = layer(
+  'hand-fill',
+  [group(placeWave(REGIONS['hand-fill']), { fill: PAPER, stroke: null })],
+  { parent: hand.ind, op: WAVE_FRAMES }
 );
-console.log(`wrote ${OUT}`);
+const arcs = piece('arcs', {
+  ...waveOptions,
+  parent: hand.ind,
+  o: flicks,
+  masks: [mask(cutWave(ARCS))]
+});
+const body = piece('body', {
+  ...waveOptions,
+  masks: [
+    mask(
+      poly([
+        [0, 0],
+        [W, 0],
+        [W, H],
+        [0, H]
+      ])
+    ),
+    mask(cut(BEHIND_LAPTOP), 's'),
+    ...NOT_HIS.map((points) => mask(cut(points), 's')),
+    mask(placeWave(REGIONS['hand-keep']), 's'),
+    mask(cutWave(ARCS), 's')
+  ]
+});
+const furniture = piece('furniture', {
+  op: WAVE_FRAMES,
+  masks: [mask(cut(LAPTOP)), mask(cut(MUG))]
+});
+/** The same steam off the same mug, mid-drift, so it carries on through. */
+const waveSteam = layer('steam', [group(STEAM, { width: 4 })], {
+  pivot: [RIM[0], RIM[1] - 18],
+  p: moving([
+    [0, [RIM[0], RIM[1] - 16, 0]],
+    [WAVE_FRAMES, [RIM[0], RIM[1] - 28, 0]]
+  ]),
+  op: WAVE_FRAMES
+});
+
+write(WAVE_OUT, {
+  v: '5.7.4',
+  fr: FPS,
+  ip: 0,
+  op: WAVE_FRAMES,
+  w: W,
+  h: H,
+  nm: 'wave',
+  ddd: 0,
+  assets: [
+    { id: 'portrait', layers: [{ ...layer('drawing', [drawing()]), ind: 1 }] },
+    { id: 'waving', layers: [{ ...layer('drawing', [wavingDrawing()]), ind: 1 }] }
+  ],
+  // Top first: the hand over its own paper, over him, over the furniture.
+  layers: [waveSteam, arcs, hand, handFill, body, furniture]
+});

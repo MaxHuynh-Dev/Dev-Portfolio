@@ -18,7 +18,8 @@ Five kinds of page:
   the same eight projects. The corner mark that used to scroll the reader
   down this page is the one that goes there now. The block sits on the
   FOOT of the screen, not its middle (trap 41), and the paper above it
-  holds the owner at a laptop, typing — a Lottie drawn in ink (trap 50).
+  holds the owner at a laptop, typing — a Lottie drawn in ink, which looks
+  up and waves when it is pressed (trap 50).
 - **`/works`** — all of it, on a ring. The covers hang on the rim of a
   circle whose centre is far below the page; the wheel, a drag or the
   arrow keys turn it, and a readout above rolls with it — number, name,
@@ -91,10 +92,13 @@ at a MacBook, traced: a 5s loop. He types with his eyes on the screen, the
 backs of his hands lifting and falling at the lid's corners out of step,
 his head bobbing with it, marks (`{ }`, `</>`, `>_`) rising off either
 side of him and steam drifting off the mug. Then he blinks, glances up at
-the reader for most of a second, and looks back down. It is the one
+the reader for most of a second, and looks back down. The loop is the one
 motion on the site that answers nothing; it is furniture that breathes,
-which is why it is small, slow and ink-only. See
-trap 50.
+which is why it is small, slow and ink-only. **Pressed, he waves** — the
+figure is a button — from his second illustration: one hand up, waving
+about the wrist three times over 1.8s, the marks he drew beside his fingers
+flicking on at each swing out, and then back to the keys from the pose he
+left them in. See trap 50.
 
 **Leaning on the name** (`usePressure`, the index). The masthead's letters
 thin away from the pointer and stay heavy under it — reactbits'
@@ -456,8 +460,9 @@ src/components/PageTransition/  the route curtain, and the only place
 src/hooks/useFittedText.ts the fitting engine
 src/hooks/useCarousel.ts   the ring's position engine
 src/hooks/usePressure.ts   the masthead's letters under the pointer — trap 48
-src/components/Typist.tsx  the typing figure over the masthead — trap 50
-scripts/typing-lottie.mjs  draws public/lottie/typing.json — re-run it after an edit
+src/components/Typist.tsx  the typing figure over the masthead, and its wave — trap 50
+scripts/typing-lottie.mjs  draws public/lottie/typing.json AND wave.json — re-run it after an edit
+scripts/portrait/          the owner's two drawings and what is traced off them (trace.py, region.py)
 src/styles/global.css      design tokens + .st-* primitives
 public/cursors/            the five cartoon cursors (see Cursors)
 public/fonts/              Nippo (ONE variable file) + Switzer, self-hosted
@@ -2874,7 +2879,8 @@ picture of the person rather than a demo of a renderer.
   (`scene`, which subtracts the other three). At rest they add up to the
   drawing pixel for pixel. Each piece turns about the point where its cut
   is — the chin for the head, the wrist for a hand — so the cut barely
-  moves. The file is ~58KB.
+  moves. The file is ~58KB; `wave.json` is ~104KB, because it carries both
+  drawings (the laptop and mug it borrows are masks onto the typing one).
 - **The masks are measured off the trace, row by row**, and every edge
   runs through the paper between two lines, never along one. The numbers
   in the script are the image's own pixels (`at()` applies `SHIFT`), so any
@@ -2904,11 +2910,15 @@ picture of the person rather than a demo of a renderer.
   rise off either side of him into the empty paper. The two inks are
   `--ink` / `--paper` copied in, so a palette change is a re-run (trap 7
   applies: they are copies). `Typist` plays whatever Lottie is at
-  `/lottie/typing.json`, so a designer's file can replace this one with no
-  code change.
-- **Re-run order:** `trace.py` only if the picture changes, then
-  `node scripts/typing-lottie.mjs`. Both JSON files are generated and are
-  excluded from Biome like the other two.
+  `/lottie/typing.json` and `/lottie/wave.json`, so a designer's files can
+  replace these with no code change — as long as the two share one canvas
+  (see the wave, below).
+- **Re-run order:** `trace.py` only if a picture changes (`typing.png`
+  with `661,768,52`, `waving.png` with `701,770,46` — both discs are the
+  Apple logo), `region.py` if `waving.png` changes (the three specs are in
+  its docstring), then `node scripts/typing-lottie.mjs`, which writes both
+  files. Every JSON under `scripts/portrait/` and `public/lottie/` is
+  generated and excluded from Biome.
 - **`flex-[1_1_0] min-h-0` is the whole layout.** A zero basis grows into
   what the section has spare and shrinks to nothing when there is none, so
   the `<h1>` sits exactly where it did — measured identical tops at nine
@@ -2916,18 +2926,100 @@ picture of the person rather than a demo of a renderer.
   / 454 / 507), the preloader still landing at **0.00px**, and the page
   still one screen (`over` 0 at all nine). The drawing then fits that box
   by `xMidYMax meet`, standing on its foot 0.75–1.5rem above the name; it
-  is 132px tall at 320x568 and ~300px at 1440x900. `max-h-[28rem]` stops
-  it becoming a poster on a tall screen.
+  is 160px tall at 320x568, 244 at 375x667 and 319 at 1440x900 (measured
+  after the wave went in; the box itself had grown since the 132px first
+  recorded here). `max-h-[28rem]` stops it becoming a poster on a tall
+  screen. Re-verified after the wave: `<h1>` top identical with the figure
+  and with it `display: none`, at 320x568, 375x667, 414x896, 768x1024,
+  1024x768, 1366x768, 1440x900 and 1920x1080.
 - **Loaded after the curtain lets go.** The light player (SVG only, no
-  expressions) is ~150KB, so it is a dynamic import fetched with the JSON
+  expressions) is ~150KB, so it is a dynamic import fetched with both files
   once `useReleased` is true — never on the preloader's path — and the box
   washes in with `.st-wash` like the portrait on `/about`. On a route away
   the effect's cleanup destroys the animation: 0 SVGs left behind.
 - **Under `reduce` it is one still frame** (`STILL_FRAME`), loaded with
   `autoplay` and `loop` off — verified, no change across 400ms. That makes
-  EIGHT things that honour the query.
-- **`role="img"` with the name in its label**, so the drawing is one
-  described image and the SVG Lottie writes is presentational beneath it.
+  EIGHT things that honour the query. A press there swaps in the wave's
+  first frame — his drawing as drawn, hand up — for 1.6s and swaps back:
+  a change of picture, not a movement. Verified: on at once, the same
+  frame 600ms later, gone by 1.9s.
+- **It is a `<button>`, labelled** `<name> typing at a laptop. Press to wave
+  hello.`, so the drawing is one described control and both SVGs Lottie
+  writes are `aria-hidden` beneath it. Seventh tab stop at 1440, the global
+  focus ring (2px at 3px), Enter and a tap both wave.
+
+**And pressed, he waves** — `wave.json`, drawn by the same script from his
+second illustration, `scripts/portrait/waving.png`: hand up, mouth open,
+the marks of a wave beside his fingers.
+
+- **Both files share ONE canvas, and that moved the typing figure.** The
+  raised hand reaches 140px further left than the typing drawing, so the
+  crop is `SHIFT [-10, -8]`, `W 1370` for both (it was `[-150, -8]`,
+  `1230`). `Typist` stacks the two SVGs in one box, so a canvas that
+  differed by a unit would move the laptop between them. The cost is that
+  the typing figure no longer sits in the middle of its canvas: ~20px
+  right of centre at 1440, and a little smaller wherever the box is
+  width-bound. The owner took that trade over a smaller wave.
+- **His drawing is set down on THIS laptop.** `waving.png` maps onto
+  `typing.png` across by the two lids' outer edges (402→352, 1006→972) and
+  down by the two desk lines (943→959.5) at the ratio of the two heads,
+  hair to chin (371.5 against 389): same desk, same size, sitting up a
+  little taller to wave. The laptop, lid and base, and the mug in the wave
+  are the TYPING drawing's own, clipped out of it — measured on a render,
+  the lid, its edges, the base and the mug are identical to the pixel
+  between the two files (max difference 0).
+- **The lid is a trapezoid, not a rectangle.** Its sides lean in 9px over
+  its height, and the waving drawing's lid leans in more. Cut square, the
+  lent lid brought the ends of the typing sleeves along as ticks on its
+  lower sides, and the waving lid showed as a second edge near the top.
+  Both cuts follow the typing lid's measured edges now.
+- **The cross-fade is ONE layer over another, on paper.** The wave's box
+  has an opaque `--paper` ground and fades in over the typing one in
+  `--t-quick`. Where the files agree, a paper-backed copy on top IS what is
+  under it at every opacity, so only the person changes; two transparent
+  files faded against each other would thin the laptop to three-quarter
+  ink at the midpoint. Measured through a fade slowed to 4s, at 23%: the
+  lid and the mug unchanged, the only differing pixels on the lid's
+  outside edge where the arms meet it. The typing loop is paused under the
+  wave and resumes from that pose: 1 distinct typing state across the
+  1.77s wave, 47–52 after it.
+- **That paper only works with `relative z-[1]` on the wave's box.**
+  Lottie gives each SVG a `translate3d` transform, which paints it in the
+  positioned layer — after every plain block's background. So at full
+  opacity the wave's paper was drawn UNDER the typing SVG and he showed
+  through himself, two heads and a floating `</>`; mid-fade it looked
+  right, because opacity under 1 makes the box its own stacking context.
+  It was only caught by photographing the finished pose.
+- **The hand waves about the wrist, cut SQUARE across the forearm.** Below
+  the hand the forearm is a straight band leaning 17° (both edges at one
+  slope, 75px apart). A level cut there broke both edges by ~3 units at
+  the full swing; a cut square to the band, (243, 520) to (318, 543) in
+  `waving.png`, slides each end along its own edge instead, off the line
+  by about a pixel at 14°. The rest keeps a band 12px deep on the hand's
+  side of the cut: at the full swing out the outer end draws back up the
+  band by 39·sin 14° = 9.4px, and an 8px band left a white notch there.
+- **`region.py` traces the INSIDE of the hand**, flood-filled from the palm
+  with the drawing's own lines as walls: grown 9px it is the hand's mask,
+  grown 2px it is `hand-fill`, the paper that turns with the hand under its
+  ink, so the swing in covers the shoulder line instead of showing it
+  through an outline. potracer traces what is FALSE — `trace.py` hands it
+  `~ink` for the same reason — and passing the region itself traced the
+  whole image border instead.
+- **The marks beside his fingers are his, not drawn here.** They are
+  traced with the rest and turn with the hand as a piece of their own,
+  flicking on at each swing out; at frame 0 they are on, so the still
+  pose under `reduce` is his drawing exactly.
+- **The button is the drawing, not the row.** Sized in container units off
+  the box (`w-[min(100cqw,137cqh)]` at the canvas's ratio, on the box's
+  foot), because `h-full` plus an aspect ratio stops being that ratio the
+  moment `max-w-full` clamps it: at 414x896 the button was 376x418 round a
+  274px-tall picture, and a press on the paper above him waved. Now
+  376x274 there, and the SVGs fill the button at all eight sizes.
+
+Measured on `next dev` at 1440x900: the wave layer fully up 167ms after the
+press, the wave 1.77s, gone 167ms after it ends; 186 distinct wave poses,
+median frame 8.3ms, 0 over 20ms; both files destroyed on a route away (0
+SVGs on `/about`) and rebuilt on the way back, still waving.
 
 ## Accessibility invariants
 
@@ -3055,7 +3147,8 @@ Other invariants:
   reach. The reference suppresses its own arrival entirely rather than
   shortening it, which is what this does too.
 - Eight things honour `prefers-reduced-motion` — the typing figure on the
-  index (a still frame, trap 50), and the CSS block, Lenis
+  index (a still frame, and a press swaps in the wave's still pose rather
+  than playing it — trap 50), and the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which
   drops the wipe for a fade), `/works`, where both the ring and the

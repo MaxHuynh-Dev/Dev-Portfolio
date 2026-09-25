@@ -6,7 +6,10 @@
       "!src/payload/payload-types.ts",
       "!app/(payload)/admin/importMap.js",
       "!public/lottie/typing.json",
-      "!scripts/portrait/paths.json"
+      "!public/lottie/wave.json",
+      "!scripts/portrait/paths.json",
+      "!scripts/portrait/waving-paths.json",
+      "!scripts/portrait/waving-regions.json"
     ]
   },
   "formatter": {
