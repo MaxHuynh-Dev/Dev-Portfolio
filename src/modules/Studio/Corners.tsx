@@ -42,16 +42,25 @@ const SECTIONS: { label: string; route: string }[] = [
  * page, above each section. That treatment is a reliable tell and it also
  * pushed the actual content down the screen.
  *
- * Fixed, so they hold the frame while the page scrolls. The paper gradient
- * behind each row is what stops body copy sliding underneath and colliding;
- * it is invisible against a flat ground until something passes under it.
- * `pointer-events` is off on the gradient and back on for the text, or the
- * bands would swallow clicks across the full width of the page.
+ * Fixed, so they hold the frame while the page scrolls — and they float:
+ * there is no band behind them. There used to be a paper gradient behind
+ * each row, solid for 72% and fading out below, which stopped body copy
+ * sliding underneath; the owner asked for it to go, so on a page that
+ * scrolls, a shot or a paragraph now passes UNDER the marks' text. That is
+ * the trade, taken knowingly.
  *
- * On the index nothing passes under them at all now — that page is one
- * screen and does not scroll — but the gradient stays, because these are
- * the same marks on `/works`, `/about` and every project page, where things
- * very much do.
+ * What keeps them legible over a shot is `.st-blend`: each row paints by
+ * `mix-blend-mode: difference`, with the palette re-derived inside it so
+ * that over paper it comes out as exactly the ink it always was, and over
+ * a dark picture it comes out light. See global.css for the arithmetic.
+ *
+ * The rows keep the 2.5rem the gradient used to fade across, as empty
+ * clearance: `--chrome-top` and `--chrome-bottom` are measured off exactly
+ * these boxes, and every sticky offset and `scroll-padding-top` is
+ * expressed against them, so where content comes to REST is unchanged —
+ * a sticky column still parks clear of the marks. `pointer-events` is off
+ * on each full-width row and back on for the text, or the rows would
+ * swallow clicks across the full width of the page.
  */
 export default function Corners({ profile }: { profile: Profile }): React.ReactElement {
   const time = useLocalClock(profile.timeZone);
@@ -61,7 +70,7 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
 
   return (
     <>
-      <div className="st-fade pointer-events-none fixed inset-x-0 top-0 z-50 bg-[linear-gradient(to_bottom,var(--paper)_0%,var(--paper)_72%,transparent_100%)] pb-[2.5rem]">
+      <div className="st-fade st-blend pointer-events-none fixed inset-x-0 top-0 z-50 pb-[2.5rem]">
         <div className="pointer-events-auto flex items-start justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pt-[var(--gut)]">
           <p className="st-meta">
             {/* EVERY internal Link on this site needs `data-transition-label`.
@@ -103,7 +112,7 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
         </div>
       </div>
 
-      <div className="st-fade pointer-events-none fixed inset-x-0 bottom-0 z-50 bg-[linear-gradient(to_top,var(--paper)_0%,var(--paper)_72%,transparent_100%)] pt-[2.5rem]">
+      <div className="st-fade st-blend pointer-events-none fixed inset-x-0 bottom-0 z-50 pt-[2.5rem]">
         <div className="pointer-events-auto flex items-end justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pb-[var(--gut)]">
           <p className="st-meta">{profile.availability.toLowerCase()}</p>
 

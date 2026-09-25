@@ -101,13 +101,14 @@
 
   /* How much of the top of the viewport the fixed corner marks own.
      Derived from the three things that actually size them — the gutter
-     above the text, two lines of .st-meta (0.78rem at 1.45), and the
-     gradient below it — so it cannot drift out of step the way a
+     above the text, two lines of .st-meta (0.78rem at 1.45), and 2.5rem
+     of clearance below it (a paper gradient once, empty now — see
+     Corners) — so it cannot drift out of step the way a
      hand-tuned number does. Anything that sticks or scrolls into view
      near the top offsets by this. */
   --chrome-top: calc(var(--gut) + 2.3rem + 2.5rem);
   /* And the bottom, the same way: the gutter below the text, ONE line of
-     .st-meta, and the gradient above it. Within 0.3px of the measured bar
+     .st-meta, and the same 2.5rem of clearance above it. Within 0.3px of the measured bar
      from 768 to 1920, always on the long side. */
   --chrome-bottom: calc(var(--gut) + 1.15rem + 2.5rem);
 
@@ -318,6 +319,34 @@ body {
 
   .st-fade {
     animation: st-fade 0.9s ease both;
+  }
+
+  /* The corner marks, which float over the page with no band behind them
+     (see Corners), keep themselves legible by DIFFERENCE: every pixel they
+     paint is |what is under it - their own colour|, so over a dark shot
+     they come out light and over paper they come out as ink.
+
+     On paper they have to come out as EXACTLY the ink they always were,
+     so the palette is re-derived inside the rows rather than inverted by
+     eye: each colour is --paper minus the colour it has to land on, channel
+     by channel, and |paper - (paper - ink)| is ink. #efedea - #14110f is
+     #dbdcdb, - #6b635b is #848a8f, - #7d756d is #72787d. --paper itself
+     goes to black, because |paper - 0| is paper — that is what keeps the
+     selection (paper on ink) and anything else asking for paper correct.
+     These are DERIVED numbers: change --paper or any ink and they have to
+     be worked out again (trap 7).
+
+     It has to be on the fixed row itself, not on the text inside it. A
+     fixed, z-indexed row is a stacking context, and blending never reaches
+     past the stacking context it happens in — text blended inside the row
+     would blend with the row's own transparent nothing and change no
+     pixel. */
+  .st-blend {
+    mix-blend-mode: difference;
+    --paper: #000000;
+    --ink: #dbdcdb;
+    --ink-2: #848a8f;
+    --ink-3: #72787d;
   }
 
   /* The rolling readout on /works.
