@@ -519,6 +519,12 @@ It is *darker* than paper so it reads as a blocked-out area rather than a
 wash, which is also what lets its label be `--ink` rather than `--ink-2` at
 a marginal 4.03:1.
 
+**The corner marks carry a second, derived palette** — `.st-blend`
+redefines `--paper` and the three inks as `--paper` minus each, because
+they paint by difference (see the a11y invariants). Change the ground or
+any ink and those four numbers have to be worked out again, or the marks
+stop landing on ink over paper.
+
 **It was `#d9d5cf` at 1.25:1 and is `#c0b9ae` at 1.67:1.** 1.25 is a wash:
 photographed, the portrait field on `/about` read as a smudge rather than as
 a reserved rectangle, and the owner asked for the frame to be clearer. This
@@ -635,8 +641,9 @@ Four more things about the assembling line specifically:
 
 **11. `--chrome-top` is derived; do not replace it with a number.**
 The fixed corner marks own the top of the viewport, and their height is
-`var(--gut) + 2.3rem + 2.5rem` — the gutter, two lines of `.st-meta`, the
-gradient. Every sticky offset and `scroll-padding-top` is expressed against
+`var(--gut) + 2.3rem + 2.5rem` — the gutter, two lines of `.st-meta`, and
+2.5rem of clearance (a paper gradient until the owner asked for it to go;
+the room stayed, empty). Every sticky offset and `scroll-padding-top` is expressed against
 it. A hand-tuned `7rem` was 12px short at desktop and clipped the project
 page's spec sheet under the band; the gutter is fluid, so any fixed value
 is wrong at some width.
@@ -2238,7 +2245,7 @@ build. So the column now sticks by whichever end it has to.
 box's height, and `top` moves the box without resizing it.
 
 `--chrome-bottom` is new and derived the way `--chrome-top` is — gutter,
-one line of `.st-meta`, the gradient — and resolves within **0.3px** of
+one line of `.st-meta`, the 2.5rem of clearance — and resolves within **0.3px** of
 the measured bar at 768, 1024, 1366, 1440 and 1920, always on the long
 side (103.2 against 102.9 at 1440x900).
 
@@ -2432,10 +2439,54 @@ Other invariants:
 
 - **Do not dim whole rows.** `Work` dims only the large title; the readout
   beside it stays at full ink.
-- **The fixed corner marks must stay opaque behind their own text.** The
-  paper gradient behind each row is what stops body copy sliding under
-  them; `pointer-events` is off on the gradient and back on for the text,
-  or the bands swallow clicks across the full width.
+- **The fixed corner marks float, and on a page that scrolls, content
+  passes under their text. That is a decision the owner took, not a
+  defect.** Until then a paper gradient behind each row (solid for 72%,
+  fading out) kept body copy from sliding under them, and this line read
+  "must stay opaque behind their own text". The owner asked for the band to
+  go. Measured on `/work/soluis` straight after, sampling every 20px of
+  scroll: a mark's text sits over an image at **96%** of positions and over
+  a line of text at **13%** at 1440x900, and **90% / 48%** at 375x667,
+  where the marks span the same width as the column and the spec sheet's
+  prose runs straight through `Max Huynh` and the address. Even at rest, at
+  1440x900 the first shot's right edge sits 10px under `work`. What did
+  NOT change is where content comes to rest: the rows keep their 2.5rem
+  of clearance, so `--chrome-top` / `--chrome-bottom`, the sticky spec
+  sheet (still 136.62px at 1440x900) and `scroll-padding-top` are exactly
+  what they were. `pointer-events` is still off on each full-width row and
+  back on for the text, or the rows would swallow clicks across the page.
+
+  **What keeps them legible over a shot is `mix-blend-mode: difference`**
+  (`.st-blend`, the owner's pick over hiding them on scroll). Three things
+  it turned on:
+
+  - **It goes on the fixed ROW, not the text.** A fixed, z-indexed row is a
+    stacking context, and blending never reaches past the one it happens
+    in: text blended inside the row blends with the row's own transparent
+    nothing and changes no pixel.
+  - **The palette is re-derived inside the rows, not inverted by eye.**
+    Difference paints `|backdrop - colour|`, so each colour is `--paper`
+    minus the ink it has to land on, per channel — `#dbdcdb`, `#848a8f`,
+    `#72787d` — and `--paper` goes to `#000` so the selection still reads
+    paper on ink. Verified on flat paper at 1440 and 375, DPR 2, against the
+    same rows with the blend switched off in the same run: at most **1/255**
+    on ~2,500 edge pixels, rest, focus ring and selection alike, with a
+    control of **0**. These are derived numbers; trap 7 applies to them.
+  - **It is better, not solved.** Over content on `/work/soluis`, every
+    40px of scroll, ~330 text boxes per width: median contrast **5.16:1**
+    at 1440 and **4.99:1** at 375, against **1.93 / 2.3** for plain ink with
+    no band; the blend wins in 73–79% of cases. But **40% / 47%** are still
+    under 4.5:1 and **25% / 26%** under 3:1 — difference has a dead zone
+    wherever the backdrop is near half the source colour, and these are
+    0.78rem labels. Over a coloured picture the marks also take a hue from
+    it (bluish on beige, tan on sky), which is the one place type on this
+    site is ever not ink — derived from the imagery, which is the only
+    colour the site allows. And it does nothing for text over TEXT: at 375
+    the spec sheet's prose still runs straight through `Max Huynh`.
+
+  (The dev server served the old `global.css` after this rule went in —
+  the class was in the HTML and not in the chunk. Trap 42 again; it was
+  measured on `next start`.)
 - **Visual echoes are `aria-hidden`, and what they echo must exist
   elsewhere.** The ring's readout is hidden, so each cover link's own
   accessible name carries the name, summary, category and year. The empty
