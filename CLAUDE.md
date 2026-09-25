@@ -734,6 +734,17 @@ is the whole reason this works. The alternative was a module-scope `await`
 on the server metadata path, and that is the one place in this app that
 cannot have one.
 
+**`DOMAIN_URL` is the production deployment, and it was `example.com`
+until the share card went in.** Every absolute URL the metadata hands out
+is built on it: `og:image`, `og:url`, the sitemap and robots all pointed at
+example.com, so no share of this site ever had a picture. The card is
+`public/images/og-image.jpg`, the owner's illustration at 1200x630 (a 2:1
+file padded with 15px of its own edge rows, not cropped), with the Apple
+logo painted out for trap 50's reason. Its alt is a constant beside it,
+because the name is baked into the picture, not read from the CMS. A
+project page sets `og:image` to its cover and leaves `twitter:image` to the
+layout, so on X a project link shows the site card.
+
 **7. Palette values do not survive a change of ground — re-derive, don't nudge.**
 The ground has moved three times (`#0a0a0a` → `#ececec` → `#0d1117` →
 `#efedea`). Dimming pulls text *toward* the ground, so the dim that was used

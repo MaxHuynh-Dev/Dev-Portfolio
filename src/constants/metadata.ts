@@ -1,4 +1,4 @@
-import { APP_KEYWORDS, APP_OG_IMAGE, DOMAIN_URL } from '@Constants/common';
+import { APP_KEYWORDS, APP_OG_IMAGE, APP_OG_IMAGE_ALT, DOMAIN_URL } from '@Constants/common';
 import type { Metadata } from 'next';
 import { getFullName, getProfile } from '@/content/source';
 
@@ -50,9 +50,10 @@ export async function buildDefaultMetadata(): Promise<Metadata> {
       images: [
         {
           url: APP_OG_IMAGE,
+          type: 'image/jpeg',
           width: 1200,
           height: 630,
-          alt: fullName
+          alt: APP_OG_IMAGE_ALT
         }
       ],
       description: profile.intro
@@ -66,9 +67,10 @@ export async function buildDefaultMetadata(): Promise<Metadata> {
       images: [
         {
           url: APP_OG_IMAGE,
+          type: 'image/jpeg',
           width: 1200,
           height: 630,
-          alt: fullName
+          alt: APP_OG_IMAGE_ALT
         }
       ],
       description: profile.intro
