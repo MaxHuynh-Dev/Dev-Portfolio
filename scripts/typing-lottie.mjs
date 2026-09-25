@@ -312,6 +312,24 @@ const HANDS = [
     [LID.right, DESK]
   ])
 ];
+/**
+ * The traced arms from just below the shoulder down, taken away: the drawn
+ * sleeves (below) replace them, starting exactly where these cuts are.
+ */
+const BELOW_SHOULDER = {
+  left: poly([
+    [0, 292],
+    [LID.left + 10, 292],
+    [LID.left + 10, DESK + 4],
+    [0, DESK + 4]
+  ]),
+  right: poly([
+    [LID.right - 10, 298],
+    [W, 298],
+    [W, DESK + 4],
+    [LID.right - 10, DESK + 4]
+  ])
+};
 const SHOULDER_LEFT = [106, 250];
 const SHOULDER_RIGHT = [404, 246];
 
@@ -349,12 +367,12 @@ const head = piece('head', { pivot: NECK, r: nod, masks: [mask(HEAD)] });
 const armLeft = piece('arm-left', {
   pivot: SHOULDER_LEFT,
   r: taps(-1, 0),
-  masks: [mask(ARM_LEFT), mask(HANDS[0], 's')]
+  masks: [mask(ARM_LEFT), mask(HANDS[0], 's'), mask(BELOW_SHOULDER.left, 's')]
 });
 const armRight = piece('arm-right', {
   pivot: SHOULDER_RIGHT,
   r: taps(1, 2),
-  masks: [mask(ARM_RIGHT), mask(HANDS[1], 's')]
+  masks: [mask(ARM_RIGHT), mask(HANDS[1], 's'), mask(BELOW_SHOULDER.right, 's')]
 });
 const torso = piece('torso', {
   masks: [mask(ABOVE_DESK), mask(HEAD, 's'), mask(ARM_LEFT, 's'), mask(ARM_RIGHT, 's')]
@@ -417,52 +435,57 @@ const blink = layer(
 // ─── the forearms ───────────────────────────────────────────────────────
 
 /**
- * The forearms — and no hands. He faces us across the laptop and types
- * on its keys, which are on the far side of the lid, so his hands are
- * wholly behind it: a drawn hand anywhere a reader could see it is a hand
- * that is not on the keyboard. What does show is the arm doing the
- * typing: the traced upper arm comes down from the shoulder, bends at the
- * elbow on the desk, and the sleeved forearm runs forward and in until the
- * lid's edge cuts it off. Drawn in the portrait's own manner — a paper
- * silhouette, an ink contour, the sleeve's creases as loose strokes, as the
- * owner's reference draws them — and each rides on its arm's layer, so the
- * shoulders' typing beat moves the whole arm down to where it disappears.
- *
- * Three builds were thrown out on the way, all at the owner's word: hands
- * in front of the lid (on the wrong side of the screen), capsule fingers
- * (a robot's), and hands peeking out past the lid's edges (still hands
- * that could not be on the keys). The left forearm is drawn; the right is
- * the same shapes mirrored about the lid's centre.
+ * No hands: he types on keys on the far side of the lid, so a hand a
+ * reader could see is a hand that is not typing. Four builds of drawn
+ * hands were thrown out at the owner's word — in front of the lid, as
+ * capsule fingers, peeking past the lid's edges — and then an arm that
+ * was the traced upper arm with a forearm bolted on at the desk, whose
+ * elbow read as wrong. What shows now is the arm, drawn as a sleeve.
  */
-const AXIS = LID.left + LID.right;
-const across = (d) =>
-  d.replace(/([MLQC])([^MLQCZ]*)/g, (_, command, args) => {
-    const values = args
-      .trim()
-      .split(/[\s,]+/)
-      .filter(Boolean)
-      .map(Number);
-    return `${command}${values.map((v, i) => (i % 2 === 0 ? AXIS - v : v)).join(' ')} `;
-  });
+/**
+ * Each arm below the shoulder is drawn whole — upper arm, elbow and
+ * forearm as ONE sleeve — rather than the traced upper arm with a
+ * forearm stuck on at the desk, which read as two parts meeting at an
+ * angle no elbow makes. The traced line is kept down to where it leaves
+ * the shoulder, and the new contour starts ON it and carries it down:
+ * the upper arm hangs to a rounded elbow resting on the desk, the inner
+ * line of the arm folds into a crease at the inside of the elbow, and
+ * the forearm runs from there, forward and in, until the lid's edge cuts
+ * it off. A paper silhouette hides the traced crossed arms beneath it;
+ * the sleeve's folds are loose strokes, as the portrait draws them.
+ *
+ * Drawn per side, not mirrored: the portrait's arms are crossed, so its
+ * right upper arm splays out further than its left, and each contour has
+ * to start on its own traced line.
+ */
+const ARMS = {
+  left: {
+    fill: `M86 292 C80 312 77 342 75 372 C73 394 70 410 72 418 C74 425 80 ${DESK + 2} 90 ${DESK + 2} L${LID.left + 10} ${DESK + 2} L${LID.left + 10} 394 C118 393 108 392 103 388 C105 362 110 320 115 292 Z`,
+    contour: `M86 292 C80 312 77 342 75 372 C73 394 70 410 72 418 C74 425 80 ${DESK + 2} 90 ${DESK + 2} L${LID.left + 4} ${DESK + 2} M115 292 C110 320 105 362 103 388 C109 392 116 393 ${LID.left + 4} 394`,
+    folds:
+      'M89 332 C93 342 95 354 94 366 M80 403 C85 407 90 408 96 406 M83 414 C89 417 96 417 103 414 M108 403 C113 407 118 408 123 407'
+  },
+  right: {
+    fill: `M423 298 C430 315 437 340 444 358 C452 378 458 398 458 412 C458 422 452 ${DESK + 2} 442 ${DESK + 2} L${LID.right - 10} ${DESK + 2} L${LID.right - 10} 394 C400 393 410 392 416 388 C412 364 408 334 404 306 Z`,
+    contour: `M423 298 C430 315 437 340 444 358 C452 378 458 398 458 412 C458 422 452 ${DESK + 2} 442 ${DESK + 2} L${LID.right - 4} ${DESK + 2} M404 306 C408 334 412 364 416 388 C410 392 402 393 ${LID.right - 4} 394`,
+    folds:
+      'M426 334 C428 346 432 356 437 364 M452 404 C446 408 440 409 434 407 M450 415 C444 418 436 418 429 415 M412 403 C407 407 402 408 397 407'
+  }
+};
 
-/** Elbow on the desk, the sleeve running in behind the lid's edge. */
-const FOREARM =
-  'M62 398 C80 389 106 386 134 388 L134 420 C110 421 86 423 60 426 C57 416 58 405 62 398 Z';
-/** The sleeve's creases, the way the reference draws them. */
-const CREASES =
-  'M82 394 C87 401 92 405 99 407 M99 389 C104 396 109 399 116 400 M76 414 C84 413 92 414 99 416';
-
-const forearm = (name, side, parent) => {
-  const draw = side === 'left' ? (d) => d : across;
-  return layer(
+const arm = (name, side, parent) =>
+  layer(
     name,
-    [group(draw(CREASES), { width: 2.2 }), group(draw(FOREARM), { fill: PAPER, width: 2.6 })],
+    [
+      group(ARMS[side].folds, { width: 2.2 }),
+      group(ARMS[side].contour, { width: 2.8 }),
+      group(ARMS[side].fill, { fill: PAPER, stroke: null })
+    ],
     { parent: parent.ind }
   );
-};
 const forearms = [
-  forearm('forearm-left', 'left', armLeft),
-  forearm('forearm-right', 'right', armRight)
+  arm('arm-drawn-left', 'left', armLeft),
+  arm('arm-drawn-right', 'right', armRight)
 ];
 
 // ─── what is drawn here ─────────────────────────────────────────────────

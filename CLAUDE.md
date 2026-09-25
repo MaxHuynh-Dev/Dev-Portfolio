@@ -2861,21 +2861,25 @@ picture of the person rather than a demo of a renderer.
   pivot, where a degree of turn moves nothing. The folded hands that
   peeked out either side of the lid are masked away, and everything is
   masked above the desk line.
-- **There are no hands, because they are on the keys.** He faces us
-  across the laptop and the keyboard is on the far side of the lid, so a
-  hand anywhere a reader could see it is a hand that is not typing. What
-  shows is the ARM doing the typing: the traced upper arm down from the
-  shoulder, the elbow on the desk, and the sleeved forearm running forward
-  and in until the lid's edge cuts it off — a paper silhouette, an ink
-  contour and the sleeve's creases, as the owner's reference portrait
-  draws them. Each forearm is parented to its arm's layer, so the
-  shoulders' typing beat carries the whole arm down to where it
-  disappears. It took four builds, each corrected by the owner: hands in
-  FRONT of the lid (the wrong side of the screen), fingers as capsules on
-  a domed palm (a robot's), hands peeking out past the lid's edges (still
-  hands that could not be on the keys), and this. The lesson is the first
-  line of this bullet — draw what the viewpoint shows, and let the lid do
-  its job.
+- **There are no hands, because they are on the keys** — the keyboard is
+  on the far side of the lid, so a hand a reader could see is a hand that
+  is not typing. Four builds of drawn hands went at the owner's word (in
+  front of the lid, capsule fingers, hands peeking past the lid's edges).
+- **Each arm below the shoulder is DRAWN WHOLE, as one sleeve.** The build
+  before kept the traced upper arm and bolted a forearm on at the desk,
+  and the owner found the elbow strange, rightly: the traced arm is a
+  CROSSED arm, so its lower half was never the shape of an arm reaching
+  for keys, and two parts meeting at the desk is not an elbow. Now the
+  traced arm is masked away from just below each shoulder
+  (`BELOW_SHOULDER`) and a drawn sleeve starts exactly on the traced line
+  where it was cut — measured onto it at 5x, so there is no step — and
+  carries it down: the upper arm hangs to a rounded elbow resting on the
+  desk, the arm's inner line folds into a crease at the inside of the
+  elbow, and the forearm runs forward and in until the lid's edge cuts it
+  off. Paper silhouette, ink contour, loose folds. Drawn per side, not
+  mirrored, because the portrait's right upper arm splays further than its
+  left. Each is parented to its arm's layer, so the typing beat at the
+  shoulder carries the whole sleeve.
 - **The mug is a mug, at a mug's size.** The first was a 36-unit box with
   a C for a handle, and the owner found it unconvincing and small. It is
   now seen a little from above — an elliptical rim with the coffee in it,
