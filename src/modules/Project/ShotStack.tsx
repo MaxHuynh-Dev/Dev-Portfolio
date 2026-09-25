@@ -248,21 +248,20 @@ export default function ShotStack({
                 data-shot={index}
                 className="m-0"
               >
-                {/* ONLY the first one, and only on arrival. The rest are
-                    reached by scrolling, and a shot that washed in as it
-                    came into view would be the fade-up on every block
-                    wearing a new hat. An image has no lines to mask, so
-                    this one carries no movement at all — the name beside it
-                    is doing that. The others are not wrapped at all rather
-                    than wrapped and switched off, so the stack's markup
-                    says which shot is special. */}
-                {index === 0 ? (
-                  <Reveal on="load" className="st-wash block" delay={260}>
-                    {media}
-                  </Reveal>
-                ) : (
-                  media
-                )}
+                {/* The first on arrival, the rest as they are reached — at
+                    the owner's request. Each is one element fading on the
+                    spot, no travel: the name beside the first is what
+                    moves. `scroll` asks "at or above the line", so a shot
+                    already passed (a jump, a restored scroll) is shown, not
+                    stranded at 0 (trap 24). Opacity only, so no box moves
+                    and the rail's marker reads the same centres (trap 25). */}
+                <Reveal
+                  on={index === 0 ? 'load' : 'scroll'}
+                  className="st-wash block"
+                  delay={index === 0 ? 260 : 0}
+                >
+                  {media}
+                </Reveal>
               </figure>
             );
           })}
