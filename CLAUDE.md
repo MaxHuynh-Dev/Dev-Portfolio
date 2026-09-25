@@ -851,6 +851,27 @@ it. A hand-tuned `7rem` was 12px short at desktop and clipped the project
 page's spec sheet under the band; the gutter is fluid, so any fixed value
 is wrong at some width.
 
+**The marks' type is `--corner-size`, and from `lg` up it is 0.9rem, not
+0.78rem.** The owner found the corners small on desktop, and they were:
+below `lg` the root scales with the screen (a tablet's marks are 16.6px),
+at `lg` it stops, and 0.78rem fell to **11.7px** at 1024 and 12.1 at 1440.
+They are now 13.5 / 13.6 / 14.0 / 16.1px at 1024 / 1366 / 1440 / 1920, and
+nothing below `lg` moved — 768 measures identical to the pixel. The two
+chrome heights are overridden in the same `@media` block in `global.css`,
+`2.62rem` and `1.32rem` (two lines and one of 0.9rem at 1.45, rounded up):
+measured against the real rows, **0.15–0.18px** long at the top and
+**0.22–0.26px** at the bottom from 1024 to 1920. Change the size and change
+those two with it — they are declared beside it for that reason.
+
+What it moved, measured against the old values forced back into the same
+page: `/works` pads its stage by `--chrome-top`, so the stage is 9.6–11.4px
+shorter at every desktop size, the ring's cover is the SAME width at all six
+(1024x768 to 1920x1080 — the height does not bind there), it still clears
+the stage by at least 29.2px (1366x768), and the list still has 136px to
+spare. The index and `/about` are still exactly one screen, every mark is
+still on one line, and the sticky spec sheet parks at 141.59px at 1440x900
+(136.62 before) and 163.48 at 1920x1080.
+
 **12. Do not put an ARIA role on a shape or a div — use the element.**
 Biome's `useSemanticElements` has been right every time it has fired here.
 
@@ -2527,8 +2548,10 @@ side (103.2 against 102.9 at 1440x900).
 Verified mid-scroll at 1366x657, 1280x720 and 1366x768 on the two tallest
 sheets: the link **15px** clear of the bottom chrome everywhere (1rem at
 that root size), against **-126px** with the old fixed top as the control.
-At 1440x900 and 1920x1080 the computed `top` is 136.62 and 157.74px — the
-old value exactly, so a sheet that fits behaves as it always did. The cost
+At 1440x900 and 1920x1080 the computed `top` was 136.62 and 157.74px — the
+old value exactly, so a sheet that fits behaves as it always did. (141.59
+and 163.48 since the marks' type grew from `lg` up, trap 11 — still the
+fixed-top branch of the `min()`, just against a taller bar.) The cost
 is the other end: when the sheet does not fit, its HEAD scrolls away under
 the top chrome instead. That is the right end to lose — the label `about`
 has already been read, and the link has not been reached.
@@ -2854,8 +2877,8 @@ Other invariants:
   1440x900 the first shot's right edge sits 10px under `work`. What did
   NOT change is where content comes to rest: the rows keep their 2.5rem
   of clearance, so `--chrome-top` / `--chrome-bottom`, the sticky spec
-  sheet (still 136.62px at 1440x900) and `scroll-padding-top` are exactly
-  what they were. `pointer-events` is still off on each full-width row and
+  sheet (still 136.62px at 1440x900 then — 141.59 since the marks grew,
+  trap 11) and `scroll-padding-top` are exactly what they were. `pointer-events` is still off on each full-width row and
   back on for the text, or the rows would swallow clicks across the page.
 
   **What keeps them legible over a shot is `mix-blend-mode: difference`**
@@ -2879,8 +2902,8 @@ Other invariants:
     at 1440 and **4.99:1** at 375, against **1.93 / 2.3** for plain ink with
     no band; the blend wins in 73–79% of cases. But **40% / 47%** are still
     under 4.5:1 and **25% / 26%** under 3:1 — difference has a dead zone
-    wherever the backdrop is near half the source colour, and these are
-    0.78rem labels. Over a coloured picture the marks also take a hue from
+    wherever the backdrop is near half the source colour, and these were
+    0.78rem labels (0.9rem from `lg` up since; not re-measured). Over a coloured picture the marks also take a hue from
     it (bluish on beige, tan on sky), which is the one place type on this
     site is ever not ink — derived from the imagery, which is the only
     colour the site allows. And it does nothing for text over TEXT: at 375
