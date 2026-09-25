@@ -84,6 +84,35 @@ back to the first. The curve is eight CSS transforms — a point on a circle
 and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
 
+**Redrawing the M** (`Mark`, the header, every page). A heavy, square-cornered
+M sits centred in the top row as a logo — a link home, carrying the name as
+its `data-transition-label` (trap 42). It moves only when asked: on hover or
+keyboard focus it plays once, 1.2s — the stroke wipes out left to right and
+draws itself back in left to right, one direction like the route curtain,
+and the valley drops and springs back as the pen passes through it. A play
+already running is not restarted. It is a Lottie file (`lottie-react`)
+DRAWN in `scripts/mark-lottie.mjs` in a placeholder tone that CSS replaces
+with `--ink` through the layer class `mark-ink`, so it lands as ink on paper
+inside `.st-blend` like the words beside it. Below 400px the row has no room
+— it overlapped the address by 42px at 320 — so it sits just under the two
+lines, at 1.9rem, inside the row's 2.5rem of clearance, so nothing moves for
+it. Never plays under `reduce`.
+
+The wipe accelerates out and the redraw starts already moving: with an ease
+on both halves the M was simply gone for ~300ms in the middle, which read as
+a flicker; it is ~100ms now. **And `rm -rf .next` before judging a CSS
+change here** — the first build after adding `.st-mark` served the old
+stylesheet from the build cache, and the logo measured at its file's 100x84
+in a raw ink colour, which looked exactly like a cascade bug. Trap 42's
+stale bundle, arriving from `next build` rather than `next dev`.
+
+**`@layer lottie-react;` is declared first in `global.css`, and must stay
+first.** The library injects its defaults (`width: 100%` on the display) in
+that layer at RUN time, after the site's CSS, and a layer ranks by where it
+is first declared — so undeclared it would land above `components` and beat
+any size the site gives a Lottie. Trap 1's cascade, arriving from a
+dependency.
+
 **Leaning on the name** (`usePressure`, the index). The masthead's letters
 thin away from the pointer and stay heavy under it — reactbits'
 TextPressure, on the one axis Nippo has. The original moves weight, width
@@ -324,8 +353,9 @@ yarn generate:importmap   # app/(payload)/admin/importMap.js, after a config cha
 ```
 
 Biome, not ESLint/Prettier. 2-space, single quotes, semicolons, width 100.
-The two generated files are excluded from it in `biome.json`, because both are
-rewritten by their generator and formatting them lasts until the next run.
+The generated files — `payload-types.ts`, `importMap.js` and the M's
+`mark.json` — are excluded from it in `biome.json`, because each is
+rewritten by its generator and formatting it lasts until the next run.
 
 ## Where things live
 
@@ -352,6 +382,8 @@ src/modules/About/
 src/modules/Experience/
   index.tsx        /experience — one entry per position, newest first
 src/components/Odometer.tsx  the year that counts itself in on /experience
+src/components/Mark/       the M logo in the header; mark.json is GENERATED
+                           by scripts/mark-lottie.mjs
 src/modules/Library/
   index.tsx        /works — the ring, its geometry, and the view switch
   Readout.tsx      the rolling number / name / year above it
@@ -2569,7 +2601,8 @@ Other invariants:
   and for the same reason: a rAF loop is somewhere the CSS block cannot
   reach. The reference suppresses its own arrival entirely rather than
   shortening it, which is what this does too.
-- Seven things honour `prefers-reduced-motion` — the CSS block, Lenis
+- Eight things honour `prefers-reduced-motion` — the M in the header, which
+  never plays under it, and the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which
   drops the wipe for a fade), `/works`, where both the ring and the

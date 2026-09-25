@@ -1,7 +1,12 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
   "files": {
-    "includes": ["**", "!src/payload/payload-types.ts", "!app/(payload)/admin/importMap.js"]
+    "includes": [
+      "**",
+      "!src/payload/payload-types.ts",
+      "!app/(payload)/admin/importMap.js",
+      "!src/components/Mark/mark.json"
+    ]
   },
   "formatter": {
     "enabled": true,

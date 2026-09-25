@@ -19,6 +19,13 @@
  * inverts with the ground and the value does not survive being carried
  * over. See CLAUDE.md.
  * ─────────────────────────────────────────────────────────────────── */
+/* lottie-react injects its defaults (`width: 100%; height: 100%` on the
+   display) inside `@layer lottie-react`, at RUN time — after this file. A
+   layer ranks by where it is first declared, so left undeclared that one
+   lands above `components` and beats any size the site gives a Lottie.
+   Naming it here, first, ranks it below everything the site writes. */
+@layer lottie-react;
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -347,6 +354,28 @@ body {
     --ink: #dbdcdb;
     --ink-2: #848a8f;
     --ink-3: #72787d;
+  }
+
+  /* The M in the middle of the header — see Mark/index.tsx. As tall as the
+     two lines of .st-meta beside it, so the three read as one row. The file
+     is drawn in a placeholder tone; CSS beats the `stroke` attribute
+     lottie-web writes, so the M is painted from the same token as the
+     words and, inside `.st-blend`, lands as ink on paper as they do. */
+  .st-mark {
+    height: 2.3rem;
+    aspect-ratio: 100 / 84;
+  }
+
+  /* Below 400px it sits under the row instead of in it (see Corners), in
+     the 2.5rem of clearance: 1.9rem plus its 0.25rem gap still fits. */
+  @media (max-width: 399.98px) {
+    .st-mark {
+      height: 1.9rem;
+    }
+  }
+
+  .st-mark .mark-ink path {
+    stroke: var(--ink);
   }
 
   /* The rolling readout on /works.

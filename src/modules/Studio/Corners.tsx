@@ -1,5 +1,6 @@
 'use client';
 
+import Mark from '@Components/Mark';
 import { useLocalClock } from '@Hooks/useLocalClock';
 import Link from 'next/link';
 import type React from 'react';
@@ -74,7 +75,19 @@ export default function Corners({ profile }: { profile: Profile }): React.ReactE
   return (
     <>
       <div className="st-fade st-blend pointer-events-none fixed inset-x-0 top-0 z-50 pb-[2.5rem]">
-        <div className="pointer-events-auto flex items-start justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pt-[var(--gut)]">
+        <div className="pointer-events-auto relative flex items-start justify-between gap-[clamp(1rem,5vw,4rem)] px-[var(--gut)] pt-[var(--gut)]">
+          {/* The M, centred on the row rather than a flex item between the
+              two marks, so neither moves to make room for it.
+
+              Below 400px the row has no room for it — measured, it
+              overlapped the address by 42px at 320 and 15px at 375 — so
+              there it sits just UNDER the two lines instead, smaller, inside
+              the 2.5rem of clearance the row already keeps below itself
+              (trap 11), so nothing on the page moves for it. */}
+          <div className="absolute top-[calc(var(--gut)+2.55rem)] left-1/2 -translate-x-1/2 min-[400px]:top-[var(--gut)]">
+            <Mark name={fullName} />
+          </div>
+
           <p className="st-meta">
             {/* EVERY internal Link on this site needs `data-transition-label`.
                 The route curtain reads it off the dataset and spells it out
