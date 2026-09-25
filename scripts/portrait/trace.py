@@ -3,12 +3,14 @@ Traces the owner's line portrait into filled vector paths for
 scripts/typing-lottie.mjs.
 
     pip install potracer pillow numpy
-    python3 scripts/portrait/trace.py scripts/portrait/portrait.png scripts/portrait/paths.json
+    python3 scripts/portrait/trace.py scripts/portrait/typing.png scripts/portrait/paths.json 661,768,52
 
-Ink is anything darker than 110 of 255, which drops the pale circle the
-avatar was cropped in; the reaction button the screenshot caught at the
-bottom right is masked out by position. Traced at 2x for smoother curves,
-written back at 1x.
+Ink is anything darker than 110 of 255 — which keeps the drawing's lines
+and drops every flat tone (skin, the laptop's grey, the steam), so the
+result is in the site's two inks. The optional third argument is a list of
+discs to leave out, `x,y,r;x,y,r` in the image's own pixels: for
+`typing.png` that is the fruit on the lid, which is somebody else's mark.
+Traced at 2x for smoother curves, written back at 1x.
 """
 import json, sys
 import numpy as np, potrace
@@ -18,10 +20,11 @@ im=Image.open(src).convert('RGBA')
 bg=Image.new('RGBA',im.size,(255,255,255,255)); bg.alpha_composite(im)
 g=np.asarray(bg.convert('L').resize((im.width*2,im.height*2),Image.LANCZOS)).astype(float)
 ink=g<110
-# drop the reaction button the screenshot caught at bottom right
 H,W=ink.shape
 yy,xx=np.mgrid[0:H,0:W]
-ink[(xx-2*528)**2+(yy-2*472)**2 < (2*40)**2]=False
+for disc in (sys.argv[3].split(';') if len(sys.argv)>3 and sys.argv[3] else []):
+    x,y,r=(float(v) for v in disc.split(','))
+    ink[(xx-2*x)**2+(yy-2*y)**2 < (2*r)**2]=False
 bm=potrace.Bitmap(~ink)
 path=bm.trace(turdsize=6, alphamax=1.0, opticurve=True, opttolerance=0.2)
 out=[]

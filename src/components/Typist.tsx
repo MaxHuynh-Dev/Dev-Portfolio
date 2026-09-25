@@ -8,8 +8,8 @@ import { useEffect, useRef } from 'react';
 
 /** Written by `scripts/typing-lottie.mjs`; any Lottie at this path plays. */
 const SRC = '/lottie/typing.json';
-/** The pose shown under reduced motion: hands down, eyes open. */
-const STILL_FRAME = 64;
+/** The pose shown under reduced motion: hands down, eyes on the reader — the illustration's own. */
+const STILL_FRAME = 115;
 
 /**
  * The owner at a laptop, typing — the field of paper above the masthead.

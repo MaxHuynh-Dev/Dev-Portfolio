@@ -86,14 +86,14 @@ back to the first. The curve is eight CSS transforms — a point on a circle
 and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
 
-**Typing** (`Typist`, the index). The owner's own line portrait, traced,
-behind a MacBook: a 5s loop in which he types with his eyes on the screen
-— his hands out of sight on the keys behind the lid, his arms rocking
-about the shoulders down to the elbows on the desk, marks
-(`{ }`, `</>`, `>_`) rising off either side of the lid — then blinks,
-glances up at the reader for most of a second, and looks back down. A 4s loop,
-the one motion on the site that is not an answer to anything; it is
-furniture that breathes, which is why it is small, slow and ink-only. See
+**Typing** (`Typist`, the index). The owner's own illustration of himself
+at a MacBook, traced: a 5s loop. He types with his eyes on the screen, the
+backs of his hands lifting and falling at the lid's corners out of step,
+his head bobbing with it, marks (`{ }`, `</>`, `>_`) rising off either
+side of him and steam drifting off the mug. Then he blinks, glances up at
+the reader for most of a second, and looks back down. It is the one
+motion on the site that answers nothing; it is furniture that breathes,
+which is why it is small, slow and ink-only. See
 trap 50.
 
 **Leaning on the name** (`usePressure`, the index). The masthead's letters
@@ -2832,8 +2832,8 @@ bar is still hidden with nothing to scroll.
 
 **50. A picture over the masthead has to take the room, not make it.**
 The index's block rests on the foot (trap 41), which left a field of paper
-above the name, and the owner asked for himself in it: the line portrait
-he supplied, at a MacBook, typing, as a Lottie.
+above the name, and the owner asked for himself in it: at his MacBook,
+typing, as a Lottie — drawn, in the end, from an illustration he supplied.
 
 It is not the `DeskScene.tsx` this file lists as rejected, and the
 difference is the reason that one went: that was a WebGL scene, a canvas
@@ -2841,75 +2841,64 @@ and a dependency on three.js for a figure in the hero. This is a flat ink
 drawing on the paper, in the same hand as the cursors, and it is a
 picture of the person rather than a demo of a renderer.
 
-- **The figure is TRACED from his portrait, not redrawn — and that was a
-  correction.** The first build drew him from scratch in simple shapes
-  (spiky hair, round glasses, open collar) and the owner said, rightly,
-  that it did not look like him: a likeness is in the particular line,
-  not in a list of features. `scripts/portrait/trace.py` runs potrace over
-  `scripts/portrait/portrait.png` (ink below 110/255, which drops the pale
-  crop circle; the screenshot's reaction button masked out by position)
-  into `scripts/portrait/paths.json` — 35 filled curves, painted as ONE
-  even-odd ink fill so the holes stay holes.
-- **The head nods on a mask, not on a cut drawing.** The traced lines are
-  one connected shape, so the head is the same fill under a polygon mask
-  cut along the neck, and the body the same fill with that polygon
-  subtracted — at rest they are one drawing, pixel for pixel, and a nod of
-  under two degrees about the neck moves the cut by a fraction of a pixel.
-  The same trick cuts each ARM out about its shoulder, so they can tap:
-  every window's inner edge runs down under the lid, and the only cut
-  anyone can see is the few pixels above the lid at the shoulder — the
-  pivot, where a degree of turn moves nothing. The folded hands that
-  peeked out either side of the lid are masked away, and everything is
-  masked above the desk line.
-- **There are no hands, because they are on the keys** — the keyboard is
-  on the far side of the lid, so a hand a reader could see is a hand that
-  is not typing. Four builds of drawn hands went at the owner's word (in
-  front of the lid, capsule fingers, hands peeking past the lid's edges).
-- **Each arm below the shoulder is DRAWN WHOLE, as one sleeve.** The build
-  before kept the traced upper arm and bolted a forearm on at the desk,
-  and the owner found the elbow strange, rightly: the traced arm is a
-  CROSSED arm, so its lower half was never the shape of an arm reaching
-  for keys, and two parts meeting at the desk is not an elbow. Now the
-  traced arm is masked away from just below each shoulder
-  (`BELOW_SHOULDER`) and a drawn sleeve starts exactly on the traced line
-  where it was cut — measured onto it at 5x, so there is no step — and
-  carries it down: the upper arm hangs to a rounded elbow resting on the
-  desk, the arm's inner line folds into a crease at the inside of the
-  elbow, and the forearm runs forward and in until the lid's edge cuts it
-  off. Paper silhouette, ink contour, loose folds. Drawn per side, not
-  mirrored, because the portrait's right upper arm splays further than its
-  left. Each is parented to its arm's layer, so the typing beat at the
-  shoulder carries the whole sleeve.
-- **The mug is a mug, at a mug's size.** The first was a 36-unit box with
-  a C for a handle, and the owner found it unconvincing and small. It is
-  now seen a little from above — an elliptical rim with the coffee in it,
-  a body tapering to a rounded foot, a handle with an outer and an inner
-  loop, one glaze stroke — and 70 units tall, about four tenths of his
-  head, which is a real mug beside him. Its handle is drawn for a 60-unit
-  mug and scaled by the height (`K`), so resizing the mug is one number.
+- **The whole scene is the owner's OWN illustration, traced — and it
+  replaced a scene that was built up piece by piece.** The builds before
+  traced only his line portrait and drew everything around it here: a
+  laptop, a mug, then hands (four ways, all thrown out), then no hands and
+  whole drawn sleeves, then a bigger mug. Every round was the owner
+  correcting a part that did not look right. He then supplied the finished
+  picture himself — him at a MacBook, hands at the lid's lower corners, a
+  mug beside it — and the brief became "draw it as this, and make it
+  type". So nothing in the scene is drawn by the script any more except
+  what moves on its own (below). The lesson is the one the first
+  correction already taught: **a likeness is in the particular line**, and
+  the owner's own drawing beats any number of rounds of describing it.
+- **`scripts/portrait/trace.py` runs potrace over
+  `scripts/portrait/typing.png`** (ink below 110/255, which keeps the
+  lines and drops the fills, the grey lid and the grey steam — none of
+  them are this site's two inks) into `scripts/portrait/paths.json`: 35
+  filled curves, painted as ONE even-odd ink fill so the holes stay holes.
+  Its third argument is a list of `x,y,r` discs to blank before tracing;
+  the call used is `661,768,52`, which is the Apple logo on the lid. It is
+  somebody else's mark, and it stays off this site.
+- **Every moving part is the same drawing under a mask**, one precomp
+  asset and four precomp layers onto it: the head, each hand, and the rest
+  (`scene`, which subtracts the other three). At rest they add up to the
+  drawing pixel for pixel. Each piece turns about the point where its cut
+  is — the chin for the head, the wrist for a hand — so the cut barely
+  moves. The file is ~58KB.
+- **The masks are measured off the trace, row by row**, and every edge
+  runs through the paper between two lines, never along one. The numbers
+  in the script are the image's own pixels (`at()` applies `SHIFT`), so any
+  one of them can be checked against `typing.png` directly. Re-trace the
+  image and they have to be measured again.
+- **Where two pieces meet, they OVERLAP; they do not abut.** The rest of
+  the drawing gives up a few pixels less than a moving piece takes
+  (`HEAD_KEEP`, `HAND_*_KEEP`), so a band across the cut is drawn twice.
+  At rest that is one line twice in one place. Mid-turn it is a line a
+  hair thicker, where an exact cut opened a hairline of paper across the
+  neck. That hairline was visible on the first render and gone on the
+  next.
+- **A hand lifts about its wrist, and takes the desk under it with it.**
+  The fingers are on the far side of the lid, so a tap reads as the back
+  of the hand rising 4.5° and coming down, the two hands out of step. The
+  hand's window includes the stretch of desk line under it, and the rest
+  keeps that stretch too. Lifted, the copy closes the hand off along the
+  bottom. Without it the hand's outline left its foot behind on the desk
+  as a stray tick.
 - **The eyes are redrawn, not traced.** The traced pupils sit under paper
-  for good and new ones are drawn over them, so they can move: down and
-  in, at the screen, while he types; straight out while he looks up. The
-  blink is a closed lid on paper, held four frames.
-- **The laptop is a MacBook's shape, and was corrected to it.** The first
-  lid was 2.9:1, a slab — the owner uses a MacBook and read it as squashed.
-  It is ~1.5:1 now (270 by 162 before the base, a little under the real
-  1.55 because the lid tips back away from us), corners rounded, a hinge
-  bar across its foot, the thin base below. No logo; a `</>` sticker sits
-  off-centre where a sticker actually goes.
-- **The portrait is drawn ONCE, as a precomp asset**, and the head, both
-  arms and the torso are precomp layers onto it under their own masks.
-  Four copies of the traced paths made the file 227KB; one is 73KB, and
-  with the hands ~99KB, about 22KB gzipped.
-- **What is added is drawn by the script.** `scripts/typing-lottie.mjs`
-  writes the laptop, the mug, the steam, the pupils and the marks as SVG
-  paths, converts them to Lottie's bezier form, and keys the motion by
-  hand; the output is rounded to two decimals. The two inks are
+  for good and new ones are drawn over them, on the head. They look 3px
+  down at the screen while he types, and go back to where the illustration
+  has them, on the reader, while he looks up. The blink is a closed lid on
+  paper, held four frames.
+- **The steam is drawn in ink, because the illustration's is grey.** Three
+  wisps off the mug's rim. The code marks (`{ }`, `</>`, `...`, `>_`)
+  rise off either side of him into the empty paper. The two inks are
   `--ink` / `--paper` copied in, so a palette change is a re-run (trap 7
   applies: they are copies). `Typist` plays whatever Lottie is at
   `/lottie/typing.json`, so a designer's file can replace this one with no
-  code change. No Apple mark on the lid — a `</>` sticker instead.
-- **Re-run order:** `trace.py` only if the portrait changes, then
+  code change.
+- **Re-run order:** `trace.py` only if the picture changes, then
   `node scripts/typing-lottie.mjs`. Both JSON files are generated and are
   excluded from Biome like the other two.
 - **`flex-[1_1_0] min-h-0` is the whole layout.** A zero basis grows into
