@@ -218,8 +218,15 @@ and clear. The spec sheet comes up a row at a time behind the name, and the
 first shot washes in. Before that, a project was the one place on this site
 where the curtain opened onto a still picture.
 
-**Only `/experience` reveals on `scroll`.** Every masked block on every
-OTHER page waits for `load` — 18 call sites, and all 18 pass `on="load"`,
+**Only `/experience` reveals on `scroll` — and the project page's shots.**
+Every shot after the first on `/work/<slug>` washes in as it is scrolled to
+(`Reveal on="scroll"` round each one in `ShotStack`), at the owner's
+request: the first came up on arrival and the rest were simply there, which
+read as broken. Opacity only, no travel, so no box moves and the thumbnail
+rail's marker (trap 25) reads the same centres. Measured at 1440x900 and
+375x667, on the route path and a cold load: shot two at opacity 0 on
+arrival, starting its fade as its top crosses the 88% line, 1 once passed.
+Apart from those, every masked block on every OTHER page waits for `load` — 18 call sites, and all 18 pass `on="load"`,
 checked rather than assumed. The index cannot scroll at all now (trap 41),
 the address arrives with the opening because that is where it lives (trap
 38), and `/about` is a page where everything arrives on `load` with the
@@ -250,8 +257,9 @@ the same fade-and-slide-up on all seven sections. What is here is a mask per
 *measured* line, on chosen pieces of type, in the idiom the site already
 speaks — the preloader's letters, the readout on `/works`, that page's list.
 `Lines` measures where a paragraph actually breaks, `Headline` masks display
-type, and `useReveal` decides when. The single element that fades rather
-than rises is the first shot, which has no lines to mask.
+type, and `useReveal` decides when. The elements that fade rather than rise are
+the shots on a project page and the portrait on `/about`, which have no
+lines to mask.
 
 The shape was measured off the page the owner asked for rather than copied
 by eye: its masked lines sit in a box the height of the line itself and
