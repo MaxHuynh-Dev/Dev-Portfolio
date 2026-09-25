@@ -17,7 +17,8 @@ Five kinds of page:
   (trap 38), and the work list went to `/works`, which was already showing
   the same eight projects. The corner mark that used to scroll the reader
   down this page is the one that goes there now. The block sits on the
-  FOOT of the screen, not its middle (trap 41).
+  FOOT of the screen, not its middle (trap 41), and the paper above it
+  holds the owner at a laptop, typing — a Lottie drawn in ink (trap 50).
 - **`/works`** — all of it, on a ring. The covers hang on the rim of a
   circle whose centre is far below the page; the wheel, a drag or the
   arrow keys turn it, and a readout above rolls with it — number, name,
@@ -84,6 +85,16 @@ toward a target and settles on a whole project; it wraps, so the last leads
 back to the first. The curve is eight CSS transforms — a point on a circle
 and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
+
+**Typing** (`Typist`, the index). The owner's own illustration of himself
+at a MacBook, traced: a 5s loop. He types with his eyes on the screen, the
+backs of his hands lifting and falling at the lid's corners out of step,
+his head bobbing with it, marks (`{ }`, `</>`, `>_`) rising off either
+side of him and steam drifting off the mug. Then he blinks, glances up at
+the reader for most of a second, and looks back down. It is the one
+motion on the site that answers nothing; it is furniture that breathes,
+which is why it is small, slow and ink-only. See
+trap 50.
 
 **Leaning on the name** (`usePressure`, the index). The masthead's letters
 thin away from the pointer and stay heavy under it — reactbits'
@@ -445,6 +456,8 @@ src/components/PageTransition/  the route curtain, and the only place
 src/hooks/useFittedText.ts the fitting engine
 src/hooks/useCarousel.ts   the ring's position engine
 src/hooks/usePressure.ts   the masthead's letters under the pointer — trap 48
+src/components/Typist.tsx  the typing figure over the masthead — trap 50
+scripts/typing-lottie.mjs  draws public/lottie/typing.json — re-run it after an edit
 src/styles/global.css      design tokens + .st-* primitives
 public/cursors/            the five cartoon cursors (see Cursors)
 public/fonts/              Nippo (ONE variable file) + Switzer, self-hosted
@@ -2817,6 +2830,97 @@ switch there and back. At 768 and 1440 nothing changed: thumbnails
 follow the pointer (hovering row three puts cover three on top), and the
 bar is still hidden with nothing to scroll.
 
+**50. A picture over the masthead has to take the room, not make it.**
+The index's block rests on the foot (trap 41), which left a field of paper
+above the name, and the owner asked for himself in it: at his MacBook,
+typing, as a Lottie — drawn, in the end, from an illustration he supplied.
+
+It is not the `DeskScene.tsx` this file lists as rejected, and the
+difference is the reason that one went: that was a WebGL scene, a canvas
+and a dependency on three.js for a figure in the hero. This is a flat ink
+drawing on the paper, in the same hand as the cursors, and it is a
+picture of the person rather than a demo of a renderer.
+
+- **The whole scene is the owner's OWN illustration, traced — and it
+  replaced a scene that was built up piece by piece.** The builds before
+  traced only his line portrait and drew everything around it here: a
+  laptop, a mug, then hands (four ways, all thrown out), then no hands and
+  whole drawn sleeves, then a bigger mug. Every round was the owner
+  correcting a part that did not look right. He then supplied the finished
+  picture himself — him at a MacBook, hands at the lid's lower corners, a
+  mug beside it — and the brief became "draw it as this, and make it
+  type". So nothing in the scene is drawn by the script any more except
+  what moves on its own (below). The lesson is the one the first
+  correction already taught: **a likeness is in the particular line**, and
+  the owner's own drawing beats any number of rounds of describing it.
+- **`scripts/portrait/trace.py` runs potrace over
+  `scripts/portrait/typing.png`** (ink below 110/255, which keeps the
+  lines and drops the fills, the grey lid and the grey steam — none of
+  them are this site's two inks) into `scripts/portrait/paths.json`: 35
+  filled curves, painted as ONE even-odd ink fill so the holes stay holes.
+  Its third argument is a list of `x,y,r` discs to blank before tracing;
+  the call used is `661,768,52`, which is the Apple logo on the lid. It is
+  somebody else's mark, and it stays off this site.
+- **Every moving part is the same drawing under a mask**, one precomp
+  asset and four precomp layers onto it: the head, each hand, and the rest
+  (`scene`, which subtracts the other three). At rest they add up to the
+  drawing pixel for pixel. Each piece turns about the point where its cut
+  is — the chin for the head, the wrist for a hand — so the cut barely
+  moves. The file is ~58KB.
+- **The masks are measured off the trace, row by row**, and every edge
+  runs through the paper between two lines, never along one. The numbers
+  in the script are the image's own pixels (`at()` applies `SHIFT`), so any
+  one of them can be checked against `typing.png` directly. Re-trace the
+  image and they have to be measured again.
+- **Where two pieces meet, they OVERLAP; they do not abut.** The rest of
+  the drawing gives up a few pixels less than a moving piece takes
+  (`HEAD_KEEP`, `HAND_*_KEEP`), so a band across the cut is drawn twice.
+  At rest that is one line twice in one place. Mid-turn it is a line a
+  hair thicker, where an exact cut opened a hairline of paper across the
+  neck. That hairline was visible on the first render and gone on the
+  next.
+- **A hand lifts about its wrist, and takes the desk under it with it.**
+  The fingers are on the far side of the lid, so a tap reads as the back
+  of the hand rising 4.5° and coming down, the two hands out of step. The
+  hand's window includes the stretch of desk line under it, and the rest
+  keeps that stretch too. Lifted, the copy closes the hand off along the
+  bottom. Without it the hand's outline left its foot behind on the desk
+  as a stray tick.
+- **The eyes are redrawn, not traced.** The traced pupils sit under paper
+  for good and new ones are drawn over them, on the head. They look 3px
+  down at the screen while he types, and go back to where the illustration
+  has them, on the reader, while he looks up. The blink is a closed lid on
+  paper, held four frames.
+- **The steam is drawn in ink, because the illustration's is grey.** Three
+  wisps off the mug's rim. The code marks (`{ }`, `</>`, `...`, `>_`)
+  rise off either side of him into the empty paper. The two inks are
+  `--ink` / `--paper` copied in, so a palette change is a re-run (trap 7
+  applies: they are copies). `Typist` plays whatever Lottie is at
+  `/lottie/typing.json`, so a designer's file can replace this one with no
+  code change.
+- **Re-run order:** `trace.py` only if the picture changes, then
+  `node scripts/typing-lottie.mjs`. Both JSON files are generated and are
+  excluded from Biome like the other two.
+- **`flex-[1_1_0] min-h-0` is the whole layout.** A zero basis grows into
+  what the section has spare and shrinks to nothing when there is none, so
+  the `<h1>` sits exactly where it did — measured identical tops at nine
+  sizes from 320x568 to 1920x1080 (278 / 366 / 554 / 543 / 290 / 419 / 348
+  / 454 / 507), the preloader still landing at **0.00px**, and the page
+  still one screen (`over` 0 at all nine). The drawing then fits that box
+  by `xMidYMax meet`, standing on its foot 0.75–1.5rem above the name; it
+  is 132px tall at 320x568 and ~300px at 1440x900. `max-h-[28rem]` stops
+  it becoming a poster on a tall screen.
+- **Loaded after the curtain lets go.** The light player (SVG only, no
+  expressions) is ~150KB, so it is a dynamic import fetched with the JSON
+  once `useReleased` is true — never on the preloader's path — and the box
+  washes in with `.st-wash` like the portrait on `/about`. On a route away
+  the effect's cleanup destroys the animation: 0 SVGs left behind.
+- **Under `reduce` it is one still frame** (`STILL_FRAME`), loaded with
+  `autoplay` and `loop` off — verified, no change across 400ms. That makes
+  EIGHT things that honour the query.
+- **`role="img"` with the name in its label**, so the drawing is one
+  described image and the SVG Lottie writes is presentational beneath it.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -2942,7 +3046,8 @@ Other invariants:
   and for the same reason: a rAF loop is somewhere the CSS block cannot
   reach. The reference suppresses its own arrival entirely rather than
   shortening it, which is what this does too.
-- Seven things honour `prefers-reduced-motion` — the CSS block, Lenis
+- Eight things honour `prefers-reduced-motion` — the typing figure on the
+  index (a still frame, trap 50), and the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which
   drops the wipe for a fade), `/works`, where both the ring and the

@@ -4,6 +4,7 @@ import Headline from '@Components/Headline';
 import Lines from '@Components/Lines';
 import Reveal from '@Components/Reveal';
 import SocialIcon, { markFor } from '@Components/SocialIcon';
+import Typist from '@Components/Typist';
 import { useFittedText } from '@Hooks/useFittedText';
 import { usePressure } from '@Hooks/usePressure';
 import { useViaRoute } from '@Hooks/useReveal';
@@ -147,6 +148,12 @@ export default function Open({
           `useFittedText` solves against its container's content box, so a
           wrapper between the two would hand the fit a width that is not the
           column's (trap 8). */}
+      {/* The field of paper above the name, which the block resting on the
+          foot left empty. It takes only what is spare — see Typist — so the
+          heading below it does not move. A SIBLING of the heading, never a
+          wrapper round it: the fit reads the section's box (trap 38). */}
+      <Typist label={`${FULL_NAME} typing at a laptop`} />
+
       <h1
         ref={ref as React.RefObject<HTMLHeadingElement>}
         id="open-heading"
