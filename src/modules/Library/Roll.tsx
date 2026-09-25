@@ -105,13 +105,18 @@ export default function Roll({
               className="flex items-center gap-x-[0.9rem] py-[0.3rem] md:grid md:grid-cols-[2.2rem_minmax(0,1fr)_auto] md:items-baseline md:gap-x-[0.75rem] md:py-[clamp(0.1rem,0.55vh,0.45rem)]"
             >
               {/* Decorative, like the cover it stands in for: the link's
-                  own name already says whose picture this is. */}
+                  own name already says whose picture this is.
+
+                  A share of the row, not a fixed width: at a fixed 8.5rem a
+                  wider phone only grew the empty paper to the right of the
+                  type. 8.5rem is still the floor, which is exactly what 320
+                  gets. */}
               <div
                 ref={(node) => {
                   thumbs.current[index] = node;
                 }}
                 style={{ opacity: 0 }}
-                className="w-[8.5rem] shrink-0 md:hidden"
+                className="w-[clamp(8.5rem,44%,20rem)] shrink-0 md:hidden"
               >
                 <Shot
                   src={project.cover}
@@ -128,7 +133,10 @@ export default function Roll({
                   the three on one baseline there. */}
               <div className="flex min-w-0 flex-1 flex-col md:contents">
                 <span className="st-reveal">
-                  <span className="st-reveal-line st-meta tabular-nums" style={pose}>
+                  <span
+                    className="st-reveal-line st-meta tabular-nums max-md:text-[0.9rem]"
+                    style={pose}
+                  >
                     {String(index + 1).padStart(2, '0')}
                   </span>
                 </span>
@@ -145,7 +153,7 @@ export default function Roll({
                   }
                 >
                   <span
-                    className="st-reveal-line st-display text-[clamp(1rem,2.4vw,1.5rem)]"
+                    className="st-reveal-line st-display text-[clamp(1.1rem,5.4vw,1.9rem)] md:text-[clamp(1rem,2.4vw,1.5rem)]"
                     style={pose}
                   >
                     {project.name}
@@ -153,7 +161,10 @@ export default function Roll({
                 </span>
 
                 <span className="st-reveal">
-                  <span className="st-reveal-line st-meta whitespace-nowrap" style={pose}>
+                  <span
+                    className="st-reveal-line st-meta whitespace-nowrap max-md:text-[0.9rem]"
+                    style={pose}
+                  >
                     {project.kind.toLowerCase()},{' '}
                     <span className="tabular-nums">{project.year}</span>
                   </span>

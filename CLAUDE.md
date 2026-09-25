@@ -157,17 +157,28 @@ one there, verified — the wheel moves it 36px and tabbing to the eighth row
 scrolls it into view.
 
 **Below `md` the list is not held to the screen at all — the page
-scrolls.** A row with a thumbnail is ~81px against ~28px without, and the
-list went through three answers to that in one sitting, each at the
+scrolls.** A row with a thumbnail is 81–103px on a phone against ~28px
+without, and the list went through three answers to that in one sitting, each at the
 owner's word: a scroll region with its bar shown; then the bar hidden, with
 the thumbnail sized by `svh` so a row was always visibly cut (a fixed
 8.5rem at 320x568 cut EXACTLY between rows four and five, and with no bar
 the fifth project was simply not there); then "show all of it". So while
 the list is up below `md`, neither the list nor the grid round it clips,
 the rows run on past the stage, and the DOCUMENT scrolls — by exactly what
-runs past the list's box: **83px at 320x568, 0 from 375x667 up, 282 on a
-phone held sideways at 667x375**. The stage keeps its one-screen box, so the
-ring is never asked to re-solve; its digest is identical before and after.
+runs past the list's box: **83px at 320x568, 50 at 375x667, 0 from
+390x844 up, 692 on a phone held sideways at 667x375**. The stage keeps its
+one-screen box, so the ring is never asked to re-solve; its digest is
+identical before and after.
+
+**The row scales with the phone, because a fixed one left the right half
+empty.** At a fixed 8.5rem thumbnail and 15px name the owner found too much
+bare paper to the right of the type — measured, about 90px of it at 375.
+The thumbnail is `clamp(8.5rem, 44%, 20rem)` of the row, the name
+`clamp(1.1rem, 5.4vw, 1.9rem)` and the number and kind 0.9rem, all below
+`md` only. 320 keeps the old 8.5rem floor; 375 gets 150px and 20px type
+with 26px to spare; 414 gets 167px. The longest name, `Mark Woodland`, is
+on one line at every width from 320 to 700 — the thing that fails first if
+this is pushed, because `.st-display` breaks anywhere rather than overflow.
 
 - **The last row stops where the list's box ends.** Overflowing content
   does not get the section's padding, so the list carries the section's own
@@ -2590,9 +2601,10 @@ begins. Four things that decided how:
   breakpoint kept in step by hand with a class in `Roll`.
 - **Same `src`, same `sizes`, so the same file.** `COVER_SIZES` lives in
   `Roll` and both call sites use it, so both images pick the same candidate
-  out of the same srcset — verified at every width from 320 to 700: `w=384`
-  at 320, `w=640` at 375–414, `w=1080` at 700, identical for cover and
-  thumbnail. No extra request, and nothing to decode at the handover.
+  out of the same srcset — verified again after `COVER_SIZES` went to
+  `100vw` below `md` (trap 26): `w=640` at 320, `w=750` at 375, `w=828` at
+  414, `w=1920` sideways at 667x375, identical for cover and thumbnail. No
+  extra request, and nothing to decode at the handover.
 - **Landed exactly, and still not identical — so it dissolves.** The
   landing is trap 22's arithmetic, now a `landing()` helper shared by the
   deck and the rows: every cover within **0.009px** of its thumbnail's rect
