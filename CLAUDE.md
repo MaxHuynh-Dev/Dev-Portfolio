@@ -1036,7 +1036,11 @@ flag. Three things about that:
   It had — the route commits and its pictures are decoded before `leaving`
   is raised (trap 47); it was only still ARRIVING.
 
-  `useReleased` now counts `data-routing="leaving"` as released. Measured
+  `useReleased` now counts `data-routing="leaving"` as released — after
+  `LEAVING_LEAD_MS` (300ms), which the owner asked for when 0 felt a touch
+  early. At 300ms the panel is ~19% up (its ease is slow to start) and it
+  is gone at ~650ms, so the type is mid-flight through most of the sweep.
+  That constant is the knob. Measured
   after, 1440x900, production build: **26–38 of 38** uncover frames moving,
   every picture at opacity 1 when the sweep starts, and the tail after the
   panel is gone down to **0.4–0.9s** (2.05s on `/works`, whose readout
