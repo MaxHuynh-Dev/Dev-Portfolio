@@ -29,9 +29,9 @@ const OUT = resolve(HERE, '../public/lottie/typing.json');
 const PORTRAIT = JSON.parse(readFileSync(resolve(HERE, 'portrait/paths.json'), 'utf8'));
 
 const W = 560;
-const H = 540;
+const H = 460;
 const FPS = 30;
-const FRAMES = 120; // one 4s loop
+const FRAMES = 150; // one 5s loop
 
 /** Where the traced portrait sits in the composition. */
 const SHIFT = [-40, -40];
@@ -210,6 +210,28 @@ function layer(name, groups, { pivot = [0, 0], parent, r, p, s, o, masks } = {})
   };
 }
 
+/**
+ * The portrait is drawn ONCE, as an asset, and every piece of him is a
+ * precomp layer onto it under its own mask — four copies of the traced
+ * paths would be four times the file.
+ */
+function piece(name, options) {
+  const base = layer(name, [], options);
+  delete base.shapes;
+  return { ...base, ty: 0, refId: 'portrait', w: W, h: H };
+}
+
+// ─── timing ─────────────────────────────────────────────────────────────
+
+/**
+ * One loop, as a small story: he types, looking down at the screen; blinks;
+ * glances up at the reader for a moment; looks back down and carries on.
+ */
+const TYPE_END = 96;
+const BLINK = [96, 100];
+const LOOK_UP = [100, 126];
+const BACK_DOWN = 132;
+
 // ─── the portrait ───────────────────────────────────────────────────────
 
 /** Every traced line, as one even-odd ink fill — holes stay holes. */
@@ -221,10 +243,11 @@ const portrait = () =>
   });
 
 /**
- * The head, cut from the body along the neck: above the collar points and
- * the chin, below nothing. The body carries the complement, so at rest the
- * two layers are the one drawing, and a nod of a degree or two about the
- * neck moves the cut by a fraction of a pixel.
+ * The traced drawing is one connected shape, so it is cut into pieces by
+ * MASKS rather than by editing lines: every piece is the whole drawing
+ * under a different window, so at rest they add up to it pixel for pixel.
+ *
+ * The head: above the collar points and the chin.
  */
 const HEAD = poly([
   [80, 0],
@@ -239,56 +262,154 @@ const HEAD = poly([
   [80, 160]
 ]);
 const NECK = [231, 206];
-/** Everything above the desk; the traced shirt runs on below it. */
+
+/** Where the desk is. The traced shirt runs on below it, out of sight. */
+const DESK = 426;
 const ABOVE_DESK = poly([
   [0, 0],
   [W, 0],
-  [W, 468],
-  [0, 468]
+  [W, DESK],
+  [0, DESK]
 ]);
 
+/**
+ * The arms, outside the lid. Each window's inner edge runs under the lid
+ * from its top down, so the only stretch of cut anyone can see is the few
+ * pixels above the lid by the shoulder — which is where each arm turns
+ * about, so it barely moves there.
+ */
+const LID = { left: 124, right: 394, top: 252 };
+const ARM_LEFT = poly([
+  [0, 232],
+  [112, 232],
+  [LID.left + 6, LID.top + 4],
+  [LID.left + 6, DESK],
+  [0, DESK]
+]);
+const ARM_RIGHT = poly([
+  [398, 226],
+  [W, 226],
+  [W, DESK],
+  [LID.right - 6, DESK],
+  [LID.right - 6, LID.top + 4]
+]);
+/**
+ * The crossed arms' hands, which the portrait has folded in front of him,
+ * peek out either side of the lid. Cut away: from behind a laptop his
+ * hands are on its keys, where nobody can see them.
+ */
+const HANDS = [
+  poly([
+    [100, 358],
+    [LID.left, 358],
+    [LID.left, DESK],
+    [100, DESK]
+  ]),
+  poly([
+    [LID.right, 330],
+    [434, 330],
+    [434, 382],
+    [460, 382],
+    [460, DESK],
+    [LID.right, DESK]
+  ])
+];
+const SHOULDER_LEFT = [106, 250];
+const SHOULDER_RIGHT = [404, 246];
+
+/**
+ * Typing, from the front: each arm turns a degree or so about its shoulder
+ * in short beats, the two out of step, as hands on keys do. Still while he
+ * looks up.
+ */
+const taps = (sign, offset) => {
+  const keys = [[0, [0]]];
+  for (let t = offset; t < TYPE_END; t += 5)
+    keys.push([t, [(Math.floor(t / 5) % 2 ? 1 : -0.4) * sign * 1.3]]);
+  keys.push([TYPE_END + 2, [0]], [BACK_DOWN + 2, [0]]);
+  for (let t = BACK_DOWN + 4 + offset; t < FRAMES - 2; t += 5) {
+    keys.push([t, [(Math.floor(t / 5) % 2 ? 1 : -0.4) * sign * 1.3]]);
+  }
+  keys.push([FRAMES, [0]]);
+  return moving(keys);
+};
+
+/** A small bob while typing; a tilt of the head while he looks up. */
 const nod = moving([
-  [0, [0]],
-  [30, [-1.6]],
-  [60, [0.5]],
-  [90, [-1]],
-  [120, [0]]
+  [0, [0.6]],
+  [24, [1.2]],
+  [48, [0.4]],
+  [72, [1.1]],
+  [TYPE_END, [0.6]],
+  [LOOK_UP[0] + 6, [-1.8]],
+  [LOOK_UP[1], [-1.4]],
+  [BACK_DOWN + 4, [0.6]],
+  [FRAMES, [0.6]]
 ]);
 
-const head = layer('head', [portrait()], {
-  pivot: NECK,
-  r: nod,
-  masks: [mask(HEAD)]
+const head = piece('head', { pivot: NECK, r: nod, masks: [mask(HEAD)] });
+const armLeft = piece('arm-left', {
+  pivot: SHOULDER_LEFT,
+  r: taps(-1, 0),
+  masks: [mask(ARM_LEFT), mask(HANDS[0], 's')]
 });
-
-const body = layer('body', [portrait()], {
-  masks: [mask(ABOVE_DESK), mask(HEAD, 's')]
+const armRight = piece('arm-right', {
+  pivot: SHOULDER_RIGHT,
+  r: taps(1, 2),
+  masks: [mask(ARM_RIGHT), mask(HANDS[1], 's')]
+});
+const torso = piece('torso', {
+  masks: [mask(ABOVE_DESK), mask(HEAD, 's'), mask(ARM_LEFT, 's'), mask(ARM_RIGHT, 's')]
 });
 
 /**
- * A blink: paper over each pupil and a closed lid drawn across it, shown for
- * three frames a loop. On the head, so it nods with it.
+ * The eyes. The traced pupils are covered with paper for good, and drawn
+ * again here so they can move: down and in, at the screen, while he types;
+ * straight out, at the reader, while he looks up. All on the head.
  */
 const PUPILS = [
   [189, 121],
   [240, 111.5]
 ];
+const whites = layer(
+  'whites',
+  [group(PUPILS.map(([x, y]) => ellipse(x, y, 6.5, 7.5)).join(' '), { fill: PAPER, stroke: null })],
+  { parent: head.ind }
+);
+const AT_SCREEN = [1.5, 4.5];
+const AT_READER = [0, 0];
+const pupils = layer(
+  'pupils',
+  [group(PUPILS.map(([x, y]) => ellipse(x, y, 3.6, 4.8)).join(' '), { fill: INK, stroke: null })],
+  {
+    parent: head.ind,
+    p: moving([
+      [0, [...AT_SCREEN, 0]],
+      [LOOK_UP[0], [...AT_SCREEN, 0]],
+      [LOOK_UP[0] + 4, [...AT_READER, 0]],
+      [LOOK_UP[1], [...AT_READER, 0]],
+      [BACK_DOWN, [...AT_SCREEN, 0]],
+      [FRAMES, [...AT_SCREEN, 0]]
+    ])
+  }
+);
+/** A blink: a closed lid across each eye, on paper, for four frames. */
 const blink = layer(
   'blink',
   [
     group(PUPILS.map(([x, y]) => `M${x - 7} ${y} Q${x} ${y + 4} ${x + 7} ${y}`).join(' '), {
       width: 2.4
     }),
-    group(PUPILS.map(([x, y]) => ellipse(x, y, 7, 7.5)).join(' '), { fill: PAPER, stroke: null })
+    group(PUPILS.map(([x, y]) => ellipse(x, y, 7.5, 8.5)).join(' '), { fill: PAPER, stroke: null })
   ],
   {
     parent: head.ind,
     o: moving(
       [
         [0, [0]],
-        [72, [100]],
-        [76, [0]],
-        [120, [0]]
+        [BLINK[0], [100]],
+        [BLINK[1], [0]],
+        [FRAMES, [0]]
       ],
       { hold: true }
     )
@@ -298,51 +419,61 @@ const blink = layer(
 // ─── what is drawn here ─────────────────────────────────────────────────
 
 /**
- * A laptop from behind, in front of him: the lid hides the crossed arms,
- * so the upper arms read as reaching down to the keys. A `</>` sticker, not
- * a fruit — the mark is somebody else's.
+ * A MacBook from behind, in front of him — at a MacBook's proportions: the
+ * lid about 1.5 times as wide as it stands tall (a little less, tipped back
+ * away from us), corners rounded, a hinge bar across its foot and the thin
+ * base below. No logo — the mark is somebody else's — and a `</>` sticker
+ * off-centre, the way a sticker actually goes on.
  */
+const lid = `M${LID.left + 12} ${LID.top} L${LID.right - 12} ${LID.top} C${LID.right - 5} ${LID.top} ${LID.right} ${LID.top + 5} ${LID.right} ${LID.top + 12} L${LID.right} ${DESK - 12} L${LID.left} ${DESK - 12} L${LID.left} ${LID.top + 12} C${LID.left} ${LID.top + 5} ${LID.left + 5} ${LID.top} ${LID.left + 12} ${LID.top} Z`;
+const hinge = `M${LID.left + 10} ${DESK - 12} L${LID.right - 10} ${DESK - 12} L${LID.right - 10} ${DESK - 6} L${LID.left + 10} ${DESK - 6} Z`;
+const base = `M${LID.left - 8} ${DESK - 6} L${LID.right + 8} ${DESK - 6} C${LID.right + 11} ${DESK - 6} ${LID.right + 12} ${DESK - 4} ${LID.right + 12} ${DESK - 2} L${LID.right + 12} ${DESK} C${LID.right + 12} ${DESK + 2} ${LID.right + 10} ${DESK + 3} ${LID.right + 7} ${DESK + 3} L${LID.left - 7} ${DESK + 3} C${LID.left - 10} ${DESK + 3} ${LID.left - 12} ${DESK + 2} ${LID.left - 12} ${DESK} L${LID.left - 12} ${DESK - 2} C${LID.left - 12} ${DESK - 4} ${LID.left - 11} ${DESK - 6} ${LID.left - 8} ${DESK - 6} Z`;
+const sticker = 'M334 368 L326 376 L334 384 M354 368 L362 376 L354 384 M347 365 L341 387';
+
 const laptop = layer('laptop', [
-  group('M246 410 L233 423 L246 436 M280 410 L293 423 L280 436 M268 405 L258 441', {
-    width: 3
-  }),
-  group(
-    'M98 352 L428 352 C433 352 436 355 436 360 L442 466 C442 470 439 473 435 473 L91 473 C87 473 84 470 84 466 L90 360 C90 355 93 352 98 352 Z',
-    { fill: PAPER }
-  ),
-  group('M66 473 L460 473 L468 486 C469 489 467 491 464 491 L62 491 C59 491 57 489 58 486 Z', {
-    fill: PAPER
-  })
+  group(sticker, { width: 2.4 }),
+  group(`${hinge}`, { fill: PAPER, width: 2.2 }),
+  group(lid, { fill: PAPER }),
+  group(base, { fill: PAPER, width: 2.4 })
 ]);
 
 /** A mug on the desk, and steam that drifts up off it. */
+const MUG = 474;
 const mug = layer('mug', [
-  group('M516 450 C530 450 530 474 516 474'),
-  group('M480 441 L480 486 C480 489 482 491 485 491 L511 491 C514 491 516 489 516 486 L516 441 Z', {
-    fill: PAPER
-  })
+  group(
+    `M${MUG + 36} ${DESK - 36} C${MUG + 50} ${DESK - 36} ${MUG + 50} ${DESK - 12} ${MUG + 36} ${DESK - 12}`
+  ),
+  group(
+    `M${MUG} ${DESK - 45} L${MUG} ${DESK - 3} C${MUG} ${DESK - 1} ${MUG + 2} ${DESK + 1} ${MUG + 5} ${DESK + 1} L${MUG + 31} ${DESK + 1} C${MUG + 34} ${DESK + 1} ${MUG + 36} ${DESK - 1} ${MUG + 36} ${DESK - 3} L${MUG + 36} ${DESK - 45} Z`,
+    { fill: PAPER }
+  )
 ]);
 const steam = layer(
   'steam',
-  [group('M491 430 C485 420 497 413 491 403 M504 430 C498 420 510 413 504 403', { width: 2.4 })],
+  [
+    group(
+      `M${MUG + 11} ${DESK - 56} C${MUG + 5} ${DESK - 66} ${MUG + 17} ${DESK - 73} ${MUG + 11} ${DESK - 83} M${MUG + 24} ${DESK - 56} C${MUG + 18} ${DESK - 66} ${MUG + 30} ${DESK - 73} ${MUG + 24} ${DESK - 83}`,
+      { width: 2.4 }
+    )
+  ],
   {
-    pivot: [498, 430],
+    pivot: [MUG + 18, DESK - 56],
     p: moving([
-      [0, [498, 436, 0]],
-      [120, [498, 420, 0]]
+      [0, [MUG + 18, DESK - 50, 0]],
+      [FRAMES, [MUG + 18, DESK - 68, 0]]
     ]),
     o: moving([
       [0, [0]],
-      [30, [100]],
-      [90, [100]],
-      [120, [0]]
+      [36, [100]],
+      [114, [100]],
+      [FRAMES, [0]]
     ])
   }
 );
 
 /**
  * What he is typing, as it leaves the screen: small marks that rise off
- * either side of the lid and fade. Drawn about their own origin.
+ * either side of the lid and fade. Only while he types.
  */
 const MARKS = [
   'M-4 -9 Q-8 -9 -8 -5 L-8 -2 Q-8 0 -11 0 Q-8 0 -8 2 L-8 5 Q-8 9 -4 9 M4 -9 Q8 -9 8 -5 L8 -2 Q8 0 11 0 Q8 0 8 2 L8 5 Q8 9 4 9',
@@ -353,7 +484,7 @@ const MARKS = [
 const glyph = (mark, index, from, to, start) => {
   const at = (t) => Math.min(FRAMES, t);
   return layer(`mark-${index}`, [group(mark, { width: 2.4 })], {
-    s: still([160, 160, 100]),
+    s: still([150, 150, 100]),
     p: moving([
       [0, [...from, 0]],
       [at(start), [...from, 0]],
@@ -371,10 +502,10 @@ const glyph = (mark, index, from, to, start) => {
   });
 };
 const marks = [
-  glyph(MARKS[0], 0, [62, 330], [34, 250], 0),
-  glyph(MARKS[1], 1, [468, 330], [500, 250], 26),
-  glyph(MARKS[2], 2, [60, 330], [40, 262], 52),
-  glyph(MARKS[3], 3, [470, 330], [498, 248], 72)
+  glyph(MARKS[0], 0, [62, 236], [36, 170], 4),
+  glyph(MARKS[1], 1, [470, 232], [498, 166], 26),
+  glyph(MARKS[2], 2, [60, 238], [40, 178], 50),
+  glyph(MARKS[3], 3, [472, 230], [494, 170], 102)
 ];
 
 const animation = {
@@ -386,10 +517,15 @@ const animation = {
   h: H,
   nm: 'typing',
   ddd: 0,
-  assets: [],
-  // Top first: marks and steam over everything, the laptop over the arms,
-  // the blink over the head.
-  layers: [...marks, steam, mug, laptop, blink, head, body]
+  assets: [
+    {
+      id: 'portrait',
+      layers: [{ ...layer('portrait', [portrait()]), ind: 1 }]
+    }
+  ],
+  // Top first: marks and steam over everything, the laptop over the arms
+  // and torso, the eyes over the head.
+  layers: [...marks, steam, mug, laptop, blink, pupils, whites, head, armLeft, armRight, torso]
 };
 
 mkdirSync(dirname(OUT), { recursive: true });

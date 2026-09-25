@@ -87,9 +87,10 @@ and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
 
 **Typing** (`Typist`, the index). The owner's own line portrait, traced,
-at a laptop that hides his crossed arms: the head nods, the eyes blink,
-small marks — `{ }`, `</>`, `>_` — rise off the lid and fade, and steam
-drifts off a mug. A 4s loop,
+behind a MacBook: a 5s loop in which he types with his eyes on the screen
+— each arm tapping about its shoulder, out of step with the other, marks
+(`{ }`, `</>`, `>_`) rising off either side of the lid — then blinks,
+glances up at the reader for most of a second, and looks back down. A 4s loop,
 the one motion on the site that is not an answer to anything; it is
 furniture that breathes, which is why it is small, slow and ink-only. See
 trap 50.
@@ -2853,13 +2854,30 @@ picture of the person rather than a demo of a renderer.
   cut along the neck, and the body the same fill with that polygon
   subtracted — at rest they are one drawing, pixel for pixel, and a nod of
   under two degrees about the neck moves the cut by a fraction of a pixel.
-  The body is also masked above the desk line, where the laptop's deck
-  stands in for the desk. The blink is paper laid over each pupil with a
-  closed lid drawn across it, held for four frames a loop on the head.
+  The same trick cuts each ARM out about its shoulder, so they can tap:
+  every window's inner edge runs down under the lid, and the only cut
+  anyone can see is the few pixels above the lid at the shoulder — the
+  pivot, where a degree of turn moves nothing. The folded hands that
+  peeked out either side of the lid are masked away, and everything is
+  masked above the desk line.
+- **The eyes are redrawn, not traced.** The traced pupils sit under paper
+  for good and new ones are drawn over them, so they can move: down and
+  in, at the screen, while he types; straight out while he looks up. The
+  blink is a closed lid on paper, held four frames.
+- **The laptop is a MacBook's shape, and was corrected to it.** The first
+  lid was 2.9:1, a slab — the owner uses a MacBook and read it as squashed.
+  It is ~1.5:1 now (270 by 162 before the base, a little under the real
+  1.55 because the lid tips back away from us), corners rounded, a hinge
+  bar across its foot, the thin base below. No logo; a `</>` sticker sits
+  off-centre where a sticker actually goes.
+- **The portrait is drawn ONCE, as a precomp asset**, and the head, both
+  arms and the torso are precomp layers onto it under their own masks.
+  Four copies of the traced paths made the file 227KB; one is 73KB, about
+  20KB gzipped.
 - **What is added is drawn by the script.** `scripts/typing-lottie.mjs`
-  writes the laptop, the mug, the steam and the marks as SVG paths,
-  converts them to Lottie's bezier form, and keys the motion by hand; the
-  output is rounded to two decimals (116KB, ~38KB gzipped, from ~240KB). The two inks are
+  writes the laptop, the mug, the steam, the pupils and the marks as SVG
+  paths, converts them to Lottie's bezier form, and keys the motion by
+  hand; the output is rounded to two decimals. The two inks are
   `--ink` / `--paper` copied in, so a palette change is a re-run (trap 7
   applies: they are copies). `Typist` plays whatever Lottie is at
   `/lottie/typing.json`, so a designer's file can replace this one with no
