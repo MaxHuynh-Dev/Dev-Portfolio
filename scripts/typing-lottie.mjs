@@ -308,9 +308,7 @@ const HANDS = [
   poly([
     [LID.right, 330],
     [434, 330],
-    [434, 382],
-    [460, 382],
-    [460, DESK],
+    [434, DESK],
     [LID.right, DESK]
   ])
 ];
@@ -416,34 +414,25 @@ const blink = layer(
   }
 );
 
-// ─── the hands ──────────────────────────────────────────────────────────
-
-/** True while he is typing rather than looking up. */
-const typing = (t) => t < TYPE_END || t >= BACK_DOWN + 4;
-
-/** A group whose whole drawing moves by `p`. */
-function moved(d, p, options) {
-  const g = group(d, options);
-  g.it[g.it.length - 1] = { ...transform(), p };
-  return g;
-}
+// ─── the forearms ───────────────────────────────────────────────────────
 
 /**
- * The hands, BEHIND the lid — which is where they are. He faces us across
- * the laptop, so his hands are on the keys on the far side of the screen,
- * fingertips toward us, and the lid hides all but their outer edges: the
- * wrist, the back of the hand, the little and ring fingers, standing out
- * past each side of the lid. An earlier build put whole hands in front of
- * the lid for visibility and the owner read it, rightly, as wrong; the
- * one before that drew fingers as capsules and it read as a robot. These
- * are drawn in the traced portrait's own manner — one silhouette in paper
- * to hide what is behind it, and loose ink strokes for knuckles, the gaps
- * between fingers and the nails — and each hand bobs on its own beat as
- * the keys go down. The sleeves are rolled, as in the portrait, and the
- * watch is on his left wrist.
+ * The forearms — and no hands. He faces us across the laptop and types
+ * on its keys, which are on the far side of the lid, so his hands are
+ * wholly behind it: a drawn hand anywhere a reader could see it is a hand
+ * that is not on the keyboard. What does show is the arm doing the
+ * typing: the traced upper arm comes down from the shoulder, bends at the
+ * elbow on the desk, and the sleeved forearm runs forward and in until the
+ * lid's edge cuts it off. Drawn in the portrait's own manner — a paper
+ * silhouette, an ink contour, the sleeve's creases as loose strokes, as the
+ * owner's reference draws them — and each rides on its arm's layer, so the
+ * shoulders' typing beat moves the whole arm down to where it disappears.
  *
- * The left hand is drawn; the right is the same shapes mirrored about the
- * lid's centre.
+ * Three builds were thrown out on the way, all at the owner's word: hands
+ * in front of the lid (on the wrong side of the screen), capsule fingers
+ * (a robot's), and hands peeking out past the lid's edges (still hands
+ * that could not be on the keys). The left forearm is drawn; the right is
+ * the same shapes mirrored about the lid's centre.
  */
 const AXIS = LID.left + LID.right;
 const across = (d) =>
@@ -456,50 +445,25 @@ const across = (d) =>
     return `${command}${values.map((v, i) => (i % 2 === 0 ? AXIS - v : v)).join(' ')} `;
   });
 
-/**
- * From the traced elbow toward the keys — foreshortened, since it points
- * at us — with the shirt sleeve rolled back off it in a band.
- */
+/** Elbow on the desk, the sleeve running in behind the lid's edge. */
 const FOREARM =
-  'M58 386 C64 378 72 372 82 369 L80 400 C72 405 64 412 58 420 C55 408 55 396 58 386 Z';
-const SLEEVE = 'M62 382 C66 392 67 404 64 416 M68 377 C72 388 73 399 71 410';
-/**
- * The hand's silhouette, in paper, so the lines behind it go: the back of
- * the hand from the wrist, the fingers curling down onto the keys, the
- * index and thumb out of sight behind the lid.
- */
-const HAND =
-  'M78 372 C96 364 124 362 152 366 L156 414 C140 418 118 419 98 417 C86 415 77 409 74 400 C71 390 72 379 78 372 Z';
-/** Knuckles, the gaps between fingers, the nails, two tendons. */
-const HAND_LINES =
-  'M79 388 C83 384 88 384 92 388 M93 387 C97 383 103 383 107 387 M108 387 C112 383 118 383 122 387 M92 391 C94 399 95 407 94 416 M107 391 C109 399 110 408 109 417 M122 391 C124 399 125 408 124 417 M79 408 C81 412 86 413 89 411 M96 412 C98 415 103 416 106 414 M111 413 C113 416 118 417 121 415 M86 375 C92 379 98 381 104 381 M102 371 C108 375 114 377 120 377';
-/** Strap across the wrist and the face on top of it. */
-const WATCH =
-  'M76 373 C78 384 78 394 76 404 M87 369 C89 380 89 390 87 400 M74 380 C74 378 75 377 77 377 L86 377 C88 377 89 378 89 380 L89 392 C89 394 88 395 86 395 L77 395 C75 395 74 394 74 392 Z';
+  'M62 398 C80 389 106 386 134 388 L134 420 C110 421 86 423 60 426 C57 416 58 405 62 398 Z';
+/** The sleeve's creases, the way the reference draws them. */
+const CREASES =
+  'M82 394 C87 401 92 405 99 407 M99 389 C104 396 109 399 116 400 M76 414 C84 413 92 414 99 416';
 
-/** A hand bobbing a unit or two as a key goes down under it. */
-const bob = (seed) => {
-  const keys = [[0, [0, 0]]];
-  for (let t = 2 + seed; t < FRAMES - 4; t += 6 + ((seed * 3) % 3)) {
-    if (!typing(t) || !typing(t + 3)) continue;
-    keys.push([t, [0, 0]], [t + 2, [0.3, 1.8]], [t + 4, [0, 0]]);
-  }
-  keys.push([FRAMES, [0, 0]]);
-  return moving(keys);
-};
-
-const hand = (name, side, seed) => {
+const forearm = (name, side, parent) => {
   const draw = side === 'left' ? (d) => d : across;
-  const beat = bob(seed);
-  return layer(name, [
-    ...(side === 'right' ? [moved(draw(WATCH), beat, { fill: PAPER, width: 2.2 })] : []),
-    moved(draw(HAND_LINES), beat, { width: 2.2 }),
-    moved(draw(HAND), beat, { fill: PAPER, width: 2.6 }),
-    group(draw(SLEEVE), { width: 2.2 }),
-    group(draw(FOREARM), { fill: PAPER, width: 2.6 })
-  ]);
+  return layer(
+    name,
+    [group(draw(CREASES), { width: 2.2 }), group(draw(FOREARM), { fill: PAPER, width: 2.6 })],
+    { parent: parent.ind }
+  );
 };
-const hands = [hand('hand-left', 'left', 0), hand('hand-right', 'right', 3)];
+const forearms = [
+  forearm('forearm-left', 'left', armLeft),
+  forearm('forearm-right', 'right', armRight)
+];
 
 // ─── what is drawn here ─────────────────────────────────────────────────
 
@@ -615,7 +579,7 @@ const animation = {
     steam,
     mug,
     laptop,
-    ...hands,
+    ...forearms,
     blink,
     pupils,
     whites,
