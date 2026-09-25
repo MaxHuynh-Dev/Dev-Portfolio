@@ -158,6 +158,8 @@ export interface Position {
   company: string;
   role: string;
   location: string | null;
+  /** The company's site. null hides the link rather than pointing at nothing. */
+  url: string | null;
   start: Month;
   end: Month | null;
   responsibilities: string[];

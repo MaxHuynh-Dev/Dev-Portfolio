@@ -74,6 +74,18 @@ export const Experience: CollectionConfig = {
       ]
     },
     {
+      name: 'url',
+      type: 'text',
+      admin: {
+        description:
+          "The company's site. Left empty the link is absent rather than dead — a link with nowhere to go is worse than no link."
+      },
+      validate: (value: string | null | undefined) =>
+        value === null || value === undefined || value === '' || /^https?:\/\/\S+$/.test(value)
+          ? true
+          : 'A full address, starting with https://.'
+    },
+    {
       name: 'responsibilities',
       type: 'textarea',
       required: true,
