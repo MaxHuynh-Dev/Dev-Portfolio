@@ -99,6 +99,11 @@ export const Profile: GlobalConfig = {
     {
       name: 'cv',
       type: 'text',
+      // The file the owner handed over, served from /public. A DEFAULT, so
+      // it applies to the Profile already in the database without anyone
+      // opening the admin — Payload fills a missing field from its default
+      // on read — and a link typed here, or the field cleared, still wins.
+      defaultValue: '/cv/huynh-tan-dat-cv.pdf',
       admin: {
         description:
           'A public link to your CV — a PDF on Google Drive, Dropbox, or under /public. Leave empty and every cv link on the site disappears.'

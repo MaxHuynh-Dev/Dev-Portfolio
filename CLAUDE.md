@@ -609,7 +609,11 @@ Three standing rules:
   its award list, and `aboutMeta` is a free list of columns rather than a
   fixed `awards` field sitting empty asking to be filled.
 - **The CV is a link, not an upload.** `profile.cv` is an optional URL —
-  Google Drive, Dropbox, or a path under `/public`. A free Cloudinary
+  Google Drive, Dropbox, or a path under `/public`. Its DEFAULT is
+  `/cv/huynh-tan-dat-cv.pdf`, the owner's own file in `public/cv/`, and a
+  default is what puts it live without an admin edit: Payload fills a field
+  missing from a stored global from its `defaultValue` on read. Replace the
+  PDF in place to update it; type a link or clear the field to override. A free Cloudinary
   account refuses to DELIVER PDFs until support switches it on, so an
   uploaded CV would have been a link that answers 401, and `Media` is
   images-only with an `alt` that means nothing for a document. Empty, and
