@@ -1,5 +1,6 @@
 'use client';
 
+import Shot from '@Components/Shot';
 import Link from 'next/link';
 import type React from 'react';
 import type { Project } from '@/content/site';
@@ -40,7 +41,27 @@ import {
  * name computes to about 17px, under the 18.66px where bold type counts as
  * large, so the bar is 4.5:1 — which --ink-3 (3.88:1) fails and --ink-2
  * (5.05:1) clears.
+ *
+ * **Below `md` every row carries its own picture**, and there is no deck
+ * beside the list. The deck is a preview that answers the pointer, and a
+ * phone has no pointer to answer: a finger that touches a row has already
+ * chosen it, so the one picture above the list sat on whatever the ring had
+ * stopped on and never changed. With a picture per row there is nothing
+ * left to preview, so nothing dims there either — every name is at full
+ * ink.
+ *
+ * The thumbnail is never animated here. `Library` flies each cover onto its
+ * own row's thumbnail and hands over to it (trap 49), and `draw` is the only
+ * thing that writes its opacity. It starts at 0 so the first paint, before
+ * `draw` has run, does not show five pictures under the ring.
  */
+
+/**
+ * The ring's covers ask for this and so do the thumbnails, so both pick the
+ * same candidate out of the same srcset: one file, one request, one decode,
+ * and a handover between two identical pictures.
+ */
+export const COVER_SIZES = '(max-width: 48rem) 60vw, 28rem';
 
 /** The cells of one row all move together; the rows are what stagger. */
 const timing = (index: number, shown: boolean): React.CSSProperties => ({
@@ -52,13 +73,16 @@ export default function Roll({
   projects,
   active,
   shown,
-  onActive
+  onActive,
+  thumbs
 }: {
   projects: Project[];
   active: number;
   /** True once the list is the view being asked for. Drives the rise. */
   shown: boolean;
   onActive: (index: number) => void;
+  /** Each row's thumbnail box, in list order — what the covers land on. */
+  thumbs: React.RefObject<(HTMLDivElement | null)[]>;
 }): React.ReactElement {
   return (
     <ol data-in={shown} className="m-0 list-none p-0">
@@ -75,35 +99,63 @@ export default function Roll({
               onFocus={() => {
                 onActive(index);
               }}
-              className="grid grid-cols-[2.2rem_minmax(0,1fr)_auto] items-baseline gap-x-[0.75rem] py-[clamp(0.1rem,0.55vh,0.45rem)]"
+              className="flex items-center gap-x-[0.9rem] py-[0.3rem] md:grid md:grid-cols-[2.2rem_minmax(0,1fr)_auto] md:items-baseline md:gap-x-[0.75rem] md:py-[clamp(0.1rem,0.55vh,0.45rem)]"
             >
-              <span className="st-reveal">
-                <span className="st-reveal-line st-meta tabular-nums" style={pose}>
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-              </span>
-
-              {/* The colour lives on the mask, not the line, so it is free of
-                  the line's per-row timing and fades on its own 300ms. */}
-              <span
-                className="st-reveal transition-colors duration-300"
-                style={{
-                  color: index === active ? 'var(--ink)' : 'var(--ink-2)'
+              {/* Decorative, like the cover it stands in for: the link's
+                  own name already says whose picture this is. */}
+              <div
+                ref={(node) => {
+                  thumbs.current[index] = node;
                 }}
+                style={{ opacity: 0 }}
+                className="w-[8.5rem] shrink-0 md:hidden"
               >
-                <span
-                  className="st-reveal-line st-display text-[clamp(1rem,2.4vw,1.5rem)]"
-                  style={pose}
-                >
-                  {project.name}
-                </span>
-              </span>
+                <Shot
+                  src={project.cover}
+                  alt=""
+                  ratio="16 / 9"
+                  label="cover, 16:9"
+                  sizes={COVER_SIZES}
+                  eager
+                />
+              </div>
 
-              <span className="st-reveal">
-                <span className="st-reveal-line st-meta whitespace-nowrap" style={pose}>
-                  {project.kind.toLowerCase()}, <span className="tabular-nums">{project.year}</span>
+              {/* A column of three on a phone. Above `md` it stops being a
+                  box and its cells become the grid's own, which is what keeps
+                  the three on one baseline there. */}
+              <div className="flex min-w-0 flex-1 flex-col md:contents">
+                <span className="st-reveal">
+                  <span className="st-reveal-line st-meta tabular-nums" style={pose}>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
                 </span>
-              </span>
+
+                {/* The colour lives on the mask, not the line, so it is free
+                    of the line's per-row timing and fades on its own 300ms.
+                    It only dims where there is a deck for it to point at. */}
+                <span
+                  className="st-reveal text-[var(--ink)] transition-colors duration-300 md:text-[var(--row-ink)]"
+                  style={
+                    {
+                      '--row-ink': index === active ? 'var(--ink)' : 'var(--ink-2)'
+                    } as React.CSSProperties
+                  }
+                >
+                  <span
+                    className="st-reveal-line st-display text-[clamp(1rem,2.4vw,1.5rem)]"
+                    style={pose}
+                  >
+                    {project.name}
+                  </span>
+                </span>
+
+                <span className="st-reveal">
+                  <span className="st-reveal-line st-meta whitespace-nowrap" style={pose}>
+                    {project.kind.toLowerCase()},{' '}
+                    <span className="tabular-nums">{project.year}</span>
+                  </span>
+                </span>
+              </div>
 
               {/* The readout above this list and the cover beside it are both
                   visual echoes and both hidden, so the one line describing

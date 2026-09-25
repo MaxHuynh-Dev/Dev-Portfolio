@@ -106,6 +106,29 @@ the gather rather than after it — waiting for the covers to land first reads
 as two things in turn, overlapping reads as one. All of it lives in
 `Library/timing.ts`.
 
+**Below `md` there is no deck, and every cover goes to its own row.** The
+deck is a preview that answers the pointer — hover a row, its picture comes
+to the top — and a phone has no pointer: a finger that touches a row has
+already chosen it, so the one picture above the list sat on whatever the
+ring had stopped on and never changed. The owner asked for the list to show
+its pictures on a phone, so there every row carries a 16:9 thumbnail beside
+its number, name and kind, and nothing dims. The gather is the same gesture
+with a different destination: each cover flies onto its own row's
+thumbnail, upright, and dissolves into it. See trap 49 for why the covers
+hand over rather than stay, and why it is a dissolve.
+
+**And the readout goes while the list is up, below `md`.** The owner asked
+for it: every row already carries its own picture, name and year, so the
+readout above them only said one of them again — and on a phone it never
+changed. It fades out inside the rows' lead (`READOUT_OUT_MS`, 200ms) and
+back only once the last row has fallen (`readoutBackAt`), and the list is
+drawn in the room it leaves. That room is taken by OVERLAY, not reflow: the
+readout's row and the stage are one grid, and below `md` the list spans
+both rows. Collapsing the readout instead would have grown the stage, and
+the ring would re-solve and jump under covers that are on their way out of
+it. Above `md` the readout stays — it names the deck's top card, which the
+rows do not show.
+
 The shape came from the page the owner asked for, measured rather than
 copied by eye: its rows began rising 557ms after the click, 39ms apart, each
 taking 587ms, while its covers were still gathering. Ours is that,
@@ -118,7 +141,8 @@ does and does not give: all eight names at once, a keyboard path that does
 not go through the ring, and a plain scroll region the wheel drives natively
 rather than a hijacked one. What it no longer gives is document scrolling:
 both views are one screen tall, which is what lets them share a stage and
-animate into each other.
+animate into each other — **except the list below `md`**, which runs on
+down the page (see below).
 
 **The list is sized to fit, and only then is its scrollbar taken away.**
 Those are one decision, in that order. The row rhythm was set by eye at
@@ -131,6 +155,36 @@ is nothing left for it to report. The one size still short is 320x568, by
 37px, where the half-cut row is the affordance; the region is still a real
 one there, verified — the wheel moves it 36px and tabbing to the eighth row
 scrolls it into view.
+
+**Below `md` the list is not held to the screen at all — the page
+scrolls.** A row with a thumbnail is ~81px against ~28px without, and the
+list went through three answers to that in one sitting, each at the
+owner's word: a scroll region with its bar shown; then the bar hidden, with
+the thumbnail sized by `svh` so a row was always visibly cut (a fixed
+8.5rem at 320x568 cut EXACTLY between rows four and five, and with no bar
+the fifth project was simply not there); then "show all of it". So while
+the list is up below `md`, neither the list nor the grid round it clips,
+the rows run on past the stage, and the DOCUMENT scrolls — by exactly what
+runs past the list's box: **83px at 320x568, 0 from 375x667 up, 282 on a
+phone held sideways at 667x375**. The stage keeps its one-screen box, so the
+ring is never asked to re-solve; its digest is identical before and after.
+
+- **The last row stops where the list's box ends.** Overflowing content
+  does not get the section's padding, so the list carries the section's own
+  foot padding below `md` — which also means it only lengthens the page
+  when a row actually runs past that line. Scrolled to the foot at 320, the
+  last row ends at 471px against the bottom marks' text at 535.
+- **Going back to the ring goes to the top first.** The ring is one screen,
+  so `long` stays on for a beat after the switch: a scrolled reader is
+  taken up over `SCROLL_BACK_MS` (Lenis, or at once under `reduce`) while
+  the rows fall, and only then is the page one screen again. Shortening it
+  under a scrolled reader would clamp the scroll in one jump. Measured from
+  the foot at 320 and 667x375: the page became one screen at 375ms and
+  365ms, both times at scrollY **0**.
+- **A mouse wheel over the list scrolls the page** — `data-lenis-prevent`
+  on the list hands the gesture to the browser, and there is no inner
+  scroller below `md` to take it, so it scrolls the document natively
+  (verified at 320, 83px).
 
 **Arriving, after whichever curtain brought you.** Type rises out of its
 own mask once the page has been handed back — by the preloader on a cold
@@ -2484,6 +2538,132 @@ masthead at **0px** on every frame of the dissolve, and the mask's headroom
 reads 13.0/4.0 at 320 — trap 29's numbers, unchanged, as identical outlines
 at 700 said they would be.
 
+**49. A picture a finger scrolls has to live in the scroller, and "the same
+file in the same box" is still not the same picture.**
+Below `md` the list on `/works` gives every row its own thumbnail and the
+covers gather into those instead of a deck (see Switching views). The
+obvious build is to let the covers BE the thumbnails — fly them onto the
+rows and keep them there, following the list as it scrolls. That is what
+the deck already did: `onScroll={redraw}` re-places it from the slot's rect.
+It is also wrong the moment scrolling is the main thing the list is for.
+A touch scroll runs on the compositor, off the main thread; the scroll
+event that asks `draw` to follow arrives after the frame has already moved,
+so a cover positioned from JS is always one frame behind the row it sits
+on, and on a fling that shows as the pictures swimming against the type.
+With one deck at the top of a list that barely overflowed, nobody could
+see it. With five pictures in a list that is scrolled on purpose, everybody
+would.
+
+(That was the argument while the list was a scroll region below `md`. It
+now runs on down the page and the DOCUMENT scrolls — see "the list is not
+held to the screen" — and a document scroll carries the stage and the rows
+together, so a cover left on a row would no longer lag it. The handover
+stays anyway, for the raster reason in the third bullet below, and because
+above `md` the list is still a region.)
+
+So the covers only exist for the flight. Each row renders a real `Shot` in
+the list, scrolled natively with its own type, and `draw` hands the
+picture over when the flight ends and takes it back when the next one
+begins. Four things that decided how:
+
+- **Which layout is live is read off the layout.** A thumbnail below `md`
+  has a box; above it, `md:hidden` gives it none, and the deck is what has
+  a box. `draw` asks the thumbnails for rects and uses them only if all of
+  them have a width. Restating `md` as a number in `Library` would be a
+  breakpoint kept in step by hand with a class in `Roll`.
+- **Same `src`, same `sizes`, so the same file.** `COVER_SIZES` lives in
+  `Roll` and both call sites use it, so both images pick the same candidate
+  out of the same srcset — verified at every width from 320 to 700: `w=384`
+  at 320, `w=640` at 375–414, `w=1080` at 700, identical for cover and
+  thumbnail. No extra request, and nothing to decode at the handover.
+- **Landed exactly, and still not identical — so it dissolves.** The
+  landing is trap 22's arithmetic, now a `landing()` helper shared by the
+  deck and the rows: every cover within **0.009px** of its thumbnail's rect
+  at every width. Photographed with the cover forced back over its own
+  thumbnail, the two still differ — median 1/255, but p95 **50/255** — and
+  the difference is two things: the cover is drawn at its ring size (200px
+  at 375) on its own composited layer and scaled down 0.64 by the
+  compositor, so it is **~6% softer** (mean gradient 33.6 against 35.7);
+  and its edges sit on a fractional device pixel, so an outline shows round
+  the box. A hard swap reads as the picture sharpening with a blink at the
+  edge. `HANDOFF_MS` (160ms) dissolves the cover off the top of the
+  thumbnail once the flight has stopped, with nothing moving: 12 frames,
+  opacity falling linearly from ~0.97 to ~0.06, **one** pose throughout.
+  This is trap 10's lesson from the other side — there the fix was to take
+  the transform away before the handover; here the cover cannot lose its
+  transform, because the transform is where it is.
+- **The way back takes the pictures back at once.** `handoff` goes to 0 as
+  the covers leave, because they are about to move and a picture in motion
+  does not show its raster. Verified from the foot of a scrolled list at
+  320: the first frame of the return has every cover visible and within
+  **0.01px** of its thumbnail, no frame shows neither, and the ring comes
+  back to exactly the pose it left.
+
+And one guard: if the effect that walks `blend` re-runs with the flight
+already over, it completes the handover outright instead of returning. The
+early return it replaced would have left a cover half-dissolved over its
+row for good the first time `redraw` changed identity mid-dissolve.
+
+**When the list took the readout's room, three things moved with it.** The
+readout and the stage became one grid (`grid-rows-[auto_minmax(0,1fr)]`),
+and below `md` the list spans both rows. Each of these was found by
+measuring, not foreseen:
+
+- **The clip moved off the covers' layer and onto the grid.** A cover flying
+  to the first row now lands ABOVE the stage, and the covers' own
+  `overflow: clip` would have cut it off at the stage's top edge. The grid is
+  full-bleed (`mx-[calc(var(--gut)*-1)]` with the gutter put back as
+  padding), so its clip is the same box the covers' was at the sides and
+  the bottom, and only reaches higher. Below `md`, while the list is up, it
+  comes off altogether — the rows run past it — and it is back once the
+  page is one screen again; `html`'s `overflow-x: clip` holds the sides. Verified the cover is painted there:
+  forced over its own thumbnail, the first row's box differs from the
+  thumbnail by a mean of **6.9/255** — the resampling above — against
+  **176** with neither showing.
+- **The ring did not move, to the bit.** The stage is still the row under
+  the readout at every width, so the ring solves against the same box. A
+  digest of every cover's transform, opacity and rect after the arrival is
+  identical before and after at 320, 375, 414, 768 and 1440, as are the
+  stage's rect and `--cover`. Checked against the LIVE markup (the list's
+  parent computes `display: grid`), so it is not a stale bundle agreeing
+  with itself.
+- **Two layers stole the rows' hits.** The stage now comes after the list
+  in the grid and is positioned, so it took every hit over the rows below
+  the readout — no row in the list could be clicked. It is
+  `pointer-events-none`, and only the covers' layer takes hits back, only in
+  the ring. Then the readout: at opacity 0 it still hit-tested, and because
+  its lines carry transforms they sit above the list's unpositioned rows —
+  every tap on the first row at 320 and 375 landed on it. It is
+  `pointer-events-none` while it is gone. A grid of points over every
+  visible row now lands in that row's own link at **161–175 of 161–175**
+  points per width, at 320, 375, 768 and 1440; the run before the second
+  fix is the control, failing on row one. (Once the list runs down the
+  page, a row that sits under the fixed corner marks loses its hits to
+  them where their text is, as content does on every page that scrolls;
+  scrolled clear, every point lands. The only other things a sweep finds
+  in `next dev` are Next's dev badge and the React Scan toolbar, which are
+  not in a production build.)
+- **The list is `relative`, and that is a clip, not a style.** Each row's
+  `sr-only` line is absolutely positioned, and an absolute box escapes
+  every `overflow: clip` between itself and its containing block. While the
+  list was `absolute inset-0` it was that block; as a static grid item it
+  was not, the SECTION was, and the parked rows' lines made the one-screen
+  ring view scroll by **140px** on a phone held sideways — found by hiding
+  the grid's children one at a time until the extra height went. `relative`
+  makes the list the block again: 0 at every size, sideways included.
+
+Verified at 320, 375, 390, 414 and 700 on `next dev`: no frame in which
+neither the cover nor the thumbnail is showing; covers at opacity 0 and
+thumbnails at 1 once landed, and still so after scrolling; 40 distinct
+cover poses across the flight; median frame 13.3ms and **0** over 20ms;
+every name at full ink; no text node on two lines; no horizontal overflow.
+A single tap on the fourth row at 375 goes to `/work/system-one`. Under
+`reduce` the covers and thumbnails take exactly **two** states across a
+switch there and back. At 768 and 1440 nothing changed: thumbnails
+`display: none`, the deck lands at **0.004 / 0.002px**, the names dim and
+follow the pointer (hovering row three puts cover three on top), and the
+bar is still hidden with nothing to scroll.
+
 ## Accessibility invariants
 
 Measured in the browser, not computed from the tokens alone: `--ink`
@@ -2646,9 +2826,10 @@ Other invariants:
   That is defensible only because the `list` view is one click away, is
   reachable by keyboard before either set of links is (the switch sits
   earlier in the tab order than both), shows all eight names at once, and
-  carries the same links. Where the rows do not fit — measured at 320x568,
-  and nowhere else — the list is a plain scroll region the wheel drives
-  natively; it is not hijacked, it is just not the document. The two
+  carries the same links. Above `md`, where the rows do not fit, the list is
+  a plain scroll region the wheel drives natively; it is not hijacked, it is
+  just not the document. Below `md` it is not a region at all: it runs on
+  down the page and the document scrolls. The two
   buttons say which view is on with `aria-pressed`, not with the underline
   alone.
 - **`.st-quiet-scroll` is not a general-purpose class.** It removes the
@@ -2656,7 +2837,9 @@ Other invariants:
   scroll-into-view all still work — and it is applied to exactly one
   element, whose content is sized to fit first. A hidden bar on a region
   that genuinely overflows is how a page ends up cutting its own content
-  off without saying so.
+  off without saying so. Below `md` the question does not arise: while the
+  list is up it is not a scroll container there, and the page's own
+  scrollbar is the browser's.
 - **Both views are always mounted, and exactly one of them is live.** The
   covers and the rows are two sets of links to the same eight projects, so
   the set that is not the current view carries `inert` *and* `aria-hidden`:
@@ -2671,7 +2854,14 @@ Other invariants:
 - The list's rows dim to `--ink-2`, not `--ink-3`. At 320 the name computes
   to about 17px, under the 18.66px where bold type counts as large, so the
   bar is 4.5:1 and `--ink-3` (3.88:1) fails it. Only the name dims; the
-  number and the metadata beside it stay put.
+  number and the metadata beside it stay put. And only from `md` up, where
+  there is a deck for the dim to point at; on a phone every row has its own
+  picture and every name is at full ink.
+- **A row's thumbnail is decorative, like the cover it stands in for.**
+  `alt=""`, because it sits inside the row's link and the link's own name
+  already says whose picture it is — a described image there would read
+  the project out twice. The rule that every image needs a real `alt` is
+  about images that are the only account of what they show.
 - **The route curtain must always let go.** `PageTransition` caps the hold
   at 3s for the ROUTE, and once the route has arrived gives its pictures at
   most 4s more (trap 47), and reveals anyway; its cleanup calls `lenis.start()` even if the
