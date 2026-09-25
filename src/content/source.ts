@@ -129,6 +129,10 @@ export const getProject = cache(async (slug: string): Promise<Project | null> =>
   return projects.find((project) => project.slug === slug) ?? null;
 });
 
+/** A link field read as a link or nothing: blank is the same as absent. */
+const linkOrNull = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+
 export const getProfile = cache(async (): Promise<Profile> => {
   const payload = await client();
   const doc = await payload.findGlobal({
@@ -144,7 +148,8 @@ export const getProfile = cache(async (): Promise<Profile> => {
     timeZone: doc.timeZone,
     email: doc.email,
     availability: doc.availability,
-    cv: typeof doc.cv === 'string' && doc.cv.trim() !== '' ? doc.cv.trim() : null,
+    cv: linkOrNull(doc.cv),
+    cvVi: linkOrNull(doc.cvVi),
     intro: doc.intro,
     bio: doc.bio
   };

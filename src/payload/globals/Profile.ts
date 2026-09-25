@@ -106,12 +106,27 @@ export const Profile: GlobalConfig = {
       defaultValue: '/cv/huynh-tan-dat-cv.pdf',
       admin: {
         description:
-          'A public link to your CV — a PDF on Google Drive, Dropbox, or under /public. Leave empty and every cv link on the site disappears.'
+          'Your CV in English: a public link — a PDF on Google Drive, Dropbox, or under /public. Leave empty and every English cv link disappears — the hero, /about and the invitation.'
       },
       // A link rather than an upload, and that is the Cloudinary account
       // talking: a free account refuses to DELIVER PDFs until support turns
       // it on, so an uploaded CV would be a link that 401s. `Media` is also
       // images only, with a required `alt` that means nothing for a PDF.
+      validate: (value: string | null | undefined) => {
+        if (value === null || value === undefined || value === '') return true;
+        if (value.startsWith('/') || /^https?:\/\//.test(value)) return true;
+        return 'A full https:// address, or a path under /public starting with /.';
+      }
+    },
+    {
+      name: 'cvVi',
+      type: 'text',
+      // The Vietnamese copy of the file above, defaulted the same way.
+      defaultValue: '/cv/huynh-tan-dat-cv-vi.pdf',
+      admin: {
+        description:
+          'The same CV in Vietnamese. Same rules as the field above; leave empty and only the Vietnamese link disappears.'
+      },
       validate: (value: string | null | undefined) => {
         if (value === null || value === undefined || value === '') return true;
         if (value.startsWith('/') || /^https?:\/\//.test(value)) return true;

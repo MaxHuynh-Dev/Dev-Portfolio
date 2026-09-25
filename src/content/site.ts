@@ -38,8 +38,10 @@ export interface Profile {
   timeZone: string;
   email: string;
   availability: string;
-  /** A public link to the CV, or null — in which case no cv link renders. */
+  /** A public link to the CV in English, or null — no English cv link renders. */
   cv: string | null;
+  /** The same CV in Vietnamese, or null — no Vietnamese cv link renders. */
+  cvVi: string | null;
   intro: string;
   bio: string;
 }

@@ -512,9 +512,13 @@ export interface Profile {
    */
   availability: string;
   /**
-   * A public link to your CV — a PDF on Google Drive, Dropbox, or under /public. Leave empty and every cv link on the site disappears.
+   * Your CV in English: a public link — a PDF on Google Drive, Dropbox, or under /public. Leave empty and every English cv link disappears — the hero, /about and the invitation.
    */
   cv?: string | null;
+  /**
+   * The same CV in Vietnamese. Same rules as the field above; leave empty and only the Vietnamese link disappears.
+   */
+  cvVi?: string | null;
   /**
    * The line under the masthead, and the site description. Split into measured lines, so plain text only.
    */
@@ -601,6 +605,7 @@ export interface ProfileSelect<T extends boolean = true> {
   email?: T;
   availability?: T;
   cv?: T;
+  cvVi?: T;
   intro?: T;
   bio?: T;
   updatedAt?: T;

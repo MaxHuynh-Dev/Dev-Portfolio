@@ -626,12 +626,20 @@ Three standing rules:
   `/cv/huynh-tan-dat-cv.pdf`, the owner's own file in `public/cv/`, and a
   default is what puts it live without an admin edit: Payload fills a field
   missing from a stored global from its `defaultValue` on read. Replace the
-  PDF in place to update it; type a link or clear the field to override. A free Cloudinary
+  PDF in place to update it; type a link or clear the field to override.
+  **There are two, English and Vietnamese**: `profile.cvVi` is the same kind
+  of field, defaulting to `/cv/huynh-tan-dat-cv-vi.pdf`. On the index they
+  are their own group after the social marks, labelled `cv`, with `EN` and `VN`
+  (the owner's choice over the words; each carries `lang` / `hrefLang` and
+  the language's name as visually hidden text) — the owner
+  asked for the CV to leave the social row, because it is a document and
+  not a place the work lives. `/about` and the invitation link the English
+  one only. A free Cloudinary
   account refuses to DELIVER PDFs until support switches it on, so an
   uploaded CV would have been a link that answers 401, and `Media` is
   images-only with an `alt` that means nothing for a document. Empty, and
-  every cv link on the site disappears rather than going dead: the word
-  `cv` at the end of the index's contact row, `read the cv` beside the
+  every English cv link on the site disappears rather than going dead: the
+  `EN` link in the index's `cv` group, `read the cv` beside the
   availability line on `/about`, and under the invitation (below).
 - **The invitation, `Invite.tsx`, is at the foot of every page that runs
   long** — each project, beside `next project`, and `/experience`, in the
