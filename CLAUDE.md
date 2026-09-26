@@ -38,7 +38,10 @@ Five kinds of page:
   page's grammar underneath it: a narrow column of what he does, the prose
   in the middle, and a portrait where the project page puts its rail. On a
   phone the lists and the portrait share a row rather than stacking.
-  Reached from the corner marks as `about`. See traps 39 and 43.
+  **The portrait is the index's wave, looping** (`Waving`, see Motion) —
+  the owner's pick over their photograph, which is kept in the CMS as the
+  fallback for when the drawing cannot load. Reached from the corner marks
+  as `about`. See traps 39 and 43.
 - **`/experience`** — where he has worked, newest first, from the
   `experience` collection. The project page's grammar on its side: the
   year the job started in a narrow left column, counting itself in on an
@@ -93,12 +96,28 @@ backs of his hands lifting and falling at the lid's corners out of step,
 his head bobbing with it, marks (`{ }`, `</>`, `>_`) rising off either
 side of him and steam drifting off the mug. Then he blinks, glances up at
 the reader for most of a second, and looks back down. The loop is the one
-motion on the site that answers nothing; it is furniture that breathes,
+motion on the index that answers nothing; it is furniture that breathes,
 which is why it is small, slow and ink-only. **Pressed, he waves** — the
 figure is a button — from his second illustration: one hand up, waving
 about the wrist three times over 1.8s, the marks he drew beside his fingers
 flicking on at each swing out, and then back to the keys from the pose he
 left them in. See trap 50.
+
+**Waving** (`Waving`, `/about`). The same `wave.json`, played on its own
+in the picture column — the whole scene, laptop and mug, standing on the
+box's foot (the owner chose it over a crop to the head and hand, which
+filled the frame). It waves 700ms after the page is let go, holds the
+drawn pose for 2.6s, and waves again, for as long as the page is open: the
+site's second loop that answers nothing, and the owner asked for it to
+loop. Measured at 1440x900: the box 228x293 and the drawing filling it,
+waves of 1.76s exactly 2600ms apart, 416 poses across 9s, median frame
+8.3ms, 0 over 20ms; the page still one screen at 375, 414, 768, 1440 and
+1920. On a phone the box is 98px wide, so the scene is small there — the
+cost of the whole scene in a column cut for a portrait. The CMS portrait
+renders ONLY when the player or the file fails (verified by failing
+`wave.json`: the photograph loads, the page is still one screen), and is
+not in the document otherwise, so it never flashes in first. Under
+`reduce` it is the drawn pose, one pose throughout.
 
 **Leaning on the name** (`usePressure`, the index). The masthead's letters
 thin away from the pointer and stay heavy under it — reactbits'
@@ -461,6 +480,8 @@ src/hooks/useFittedText.ts the fitting engine
 src/hooks/useCarousel.ts   the ring's position engine
 src/hooks/usePressure.ts   the masthead's letters under the pointer — trap 48
 src/components/Typist.tsx  the typing figure over the masthead, and its wave — trap 50
+src/components/Waving.tsx  the same wave, looping, as /about's portrait
+src/utils/lottie.ts        both Lottie paths, the light player's import, the fetch
 scripts/typing-lottie.mjs  draws public/lottie/typing.json AND wave.json — re-run it after an edit
 scripts/portrait/          the owner's two drawings and what is traced off them (trace.py, region.py)
 src/styles/global.css      design tokens + .st-* primitives
@@ -2921,7 +2942,8 @@ picture of the person rather than a demo of a renderer.
   rise off either side of him into the empty paper. The two inks are
   `--ink` / `--paper` copied in, so a palette change is a re-run (trap 7
   applies: they are copies). `Typist` plays whatever Lottie is at
-  `/lottie/typing.json` and `/lottie/wave.json`, so a designer's files can
+  `/lottie/typing.json` and `/lottie/wave.json` (and `Waving` the second,
+  on `/about`), so a designer's files can
   replace these with no code change — as long as the two share one canvas
   (see the wave, below).
 - **Re-run order:** `trace.py` only if a picture changes (`typing.png`
@@ -2950,7 +2972,7 @@ picture of the person rather than a demo of a renderer.
   the effect's cleanup destroys the animation: 0 SVGs left behind.
 - **Under `reduce` it is one still frame** (`STILL_FRAME`), loaded with
   `autoplay` and `loop` off — verified, no change across 400ms. That makes
-  EIGHT things that honour the query. A press there swaps in the wave's
+  EIGHT things that honour the query (nine since `/about`'s wave). A press there swaps in the wave's
   first frame — his drawing as drawn, hand up — for 1.6s and swaps back:
   a change of picture, not a movement. Verified: on at once, the same
   frame 600ms later, gone by 1.9s.
@@ -3157,9 +3179,10 @@ Other invariants:
   and for the same reason: a rAF loop is somewhere the CSS block cannot
   reach. The reference suppresses its own arrival entirely rather than
   shortening it, which is what this does too.
-- Eight things honour `prefers-reduced-motion` — the typing figure on the
+- Nine things honour `prefers-reduced-motion` — the typing figure on the
   index (a still frame, and a press swaps in the wave's still pose rather
-  than playing it — trap 50), and the CSS block, Lenis
+  than playing it — trap 50), the wave on `/about` (the drawn pose, never
+  the loop), and the CSS block, Lenis
   (which is not constructed at all under `reduce`), the preloader (which
   shows the line assembled instead of assembling), `PageTransition` (which
   drops the wipe for a fade), `/works`, where both the ring and the
@@ -3190,7 +3213,9 @@ Other invariants:
   click, the ring a wheel, a drag or an arrow key, a project page's
   thumbnail marker the reader's own scroll position, and the masthead's
   letters the pointer — which is also why they do nothing until the pointer
-  first moves.
+  first moves. The two exceptions are loops the owner asked for, and both
+  are his own drawing in ink, small, and still under `reduce`: the typing
+  on the index and the wave on `/about`.
 - **A page that takes the wheel owes the reader a way out.** `/works` is
   exactly one screen tall in both views and the document never scrolls.
   That is defensible only because the `list` view is one click away, is

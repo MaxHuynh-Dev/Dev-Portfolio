@@ -1,6 +1,7 @@
 import Lines from '@Components/Lines';
 import Reveal from '@Components/Reveal';
 import Shot from '@Components/Shot';
+import Waving from '@Components/Waving';
 import type React from 'react';
 import type { About as AboutContent, Profile } from '@/content/site';
 
@@ -248,15 +249,23 @@ export default function About({
                 `Shot`'s box is fine, because by then the parent is
                 definite. */}
             <div className="aspect-[4/5] w-[clamp(5.5rem,26vw,8rem)] shrink-0 lg:order-3 lg:aspect-auto lg:w-[clamp(9rem,16vw,15rem)]">
+              {/* The picture is the owner waving — the index's `wave.json`,
+                  looping (see `Waving`). The CMS portrait is only its
+                  fallback, for when the drawing cannot be loaded. */}
               <Reveal on="load" className="st-wash block h-full" delay={LEAD_MS + STATEMENT_MS}>
-                <Shot
-                  stretch
-                  src={about.portrait === null ? null : about.portrait.src}
-                  alt={about.portrait === null ? '' : about.portrait.alt}
-                  ratio="4 / 5"
-                  label="portrait"
-                  sizes="(max-width: 63.99rem) 26vw, 15rem"
-                  size={about.portrait === null ? null : about.portrait.size}
+                <Waving
+                  label={`${profile.firstName} ${profile.lastName}, drawn waving from behind a laptop, a mug beside it.`}
+                  fallback={
+                    <Shot
+                      stretch
+                      src={about.portrait === null ? null : about.portrait.src}
+                      alt={about.portrait === null ? '' : about.portrait.alt}
+                      ratio="4 / 5"
+                      label="portrait"
+                      sizes="(max-width: 63.99rem) 26vw, 15rem"
+                      size={about.portrait === null ? null : about.portrait.size}
+                    />
+                  }
                 />
               </Reveal>
             </div>

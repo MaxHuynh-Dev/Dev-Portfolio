@@ -2,13 +2,11 @@
 
 import Reveal from '@Components/Reveal';
 import { useReleased } from '@Hooks/useReveal';
+import { fetchJson, LOTTIE_TYPING, LOTTIE_WAVE, loadPlayer } from '@Utils/lottie';
 import type { AnimationItem } from 'lottie-web';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-/** Both written by `scripts/typing-lottie.mjs`, on one canvas; any Lottie at these paths plays. */
-const TYPING = '/lottie/typing.json';
-const WAVE = '/lottie/wave.json';
 /** The pose shown under reduced motion: hands down, eyes on the reader — the illustration's own. */
 const STILL_FRAME = 115;
 /** Under reduced motion a click shows the wave's still pose — his drawing, hand up — for this long. */
@@ -25,15 +23,6 @@ const WAVE_STILL_MS = 1600;
 const CANVAS = 'aspect-[137/100] w-[min(100cqw,137cqh)]';
 
 const REDUCE = '(prefers-reduced-motion: reduce)';
-
-async function fetchJson(src: string): Promise<object | null> {
-  try {
-    const response = await fetch(src);
-    return response.ok ? ((await response.json()) as object) : null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * The owner at a laptop, typing — the field of paper above the masthead —
@@ -83,10 +72,10 @@ export default function Typist({ label }: { label: string }): React.ReactElement
     let cancelled = false;
 
     void (async () => {
-      const [{ default: lottie }, typingData, waveData] = await Promise.all([
-        import('lottie-web/build/player/lottie_light'),
-        fetchJson(TYPING),
-        fetchJson(WAVE)
+      const [lottie, typingData, waveData] = await Promise.all([
+        loadPlayer(),
+        fetchJson(LOTTIE_TYPING),
+        fetchJson(LOTTIE_WAVE)
       ]);
       if (cancelled || typingData === null) return;
 
