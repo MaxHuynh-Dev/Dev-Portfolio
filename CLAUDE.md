@@ -3115,9 +3115,10 @@ Verified on `next start` with `VERCEL_ENV=production`: `robots.txt` allows
 every project; every page has its own title, a 114–159 character
 description, its own canonical and `og:url`, and a JSON-LD graph that
 parses; `/manifest.json` is gone and `/manifest.webmanifest` carries the
-name. **What it cannot fix is content**: the five `Sample 0X` projects are
-in the CMS, so they are in the sitemap and `/works`'s description until
-they are deleted in `/admin`.
+name. The projects are all placeholders now, by the employer's rule (see
+Content), and the sitemap and `/works`'s description list them like any
+others: they follow the CMS, so real work replaces them there with no
+change here.
 
 ## Accessibility invariants
 
