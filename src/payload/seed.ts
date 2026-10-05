@@ -23,10 +23,9 @@ const imageDir = path.resolve(dirname, '../../public/images/work');
  *
  * The copy below is the placeholder set that was in `src/content/site.ts`,
  * carried over verbatim so that nothing about the site changed on the day
- * it started reading from the CMS. The one thing that is NOT carried over
- * is the shots' `alt` text: those were all `TODO — describe this shot`,
- * and an alt is the only description a screen reader gets. They were
- * written by looking at the four files.
+ * it started reading from the CMS — minus its pictures, which were of client
+ * work that may not be shown here (see MEDIA). Every shot is an empty,
+ * labelled field until an image of your own is added.
  */
 
 type SeedShot = { file?: string; tall?: boolean };
@@ -45,37 +44,35 @@ type SeedProject = {
   shots: SeedShot[];
 };
 
-/** filename → what the image actually shows. */
-const MEDIA: Record<string, string> = {
-  'hylix-1.png':
-    'The Hylix site shown at an angle on pale green, cropped close: the wordmark and the Expertises / Services / Solutions menu above a headline in heavy white caps running off the right edge.',
-  'hylix-2.png':
-    'The Hylix home page on a dark green ground. "Simplifying IT. Powering the Future." fills the upper half in white caps, with a two-line summary and a pale green Contact us button beneath it, over a field of rectangular blocks that fades in from the lower edge.',
-  'soluis-1.png':
-    'The Soluis home page over a photoreal render of curved white waterfront apartment towers behind palm trees and turquoise water, with "Building Memories of the Future" set large in a serif at the lower left.',
-  'soluis-2.png':
-    'The Soluis "What we do" section: an aerial night render of a city drawn as lit points and lines with a river running through it, and a numbered list — Virtual Twin, Immersive Sales Tours, Visual Storytelling, Immersive Activations — where the first is in white and the rest are dimmed.'
-};
+/**
+ * filename in `public/images/work` → what the image actually shows.
+ *
+ * Empty on purpose. It held four screenshots of client sites the owner built
+ * at work, and those projects may not appear in this portfolio: the shots
+ * were taken out of the repo and the projects out of the CMS. Add your own
+ * work here — a file in `public/images/work` and an alt that describes it —
+ * and point a project's `cover` or a shot's `file` at the filename.
+ */
+const MEDIA: Record<string, string> = {};
 
 const PLACEHOLDER_ABOUT =
   'Replace this with a short paragraph: what the project was, what you were asked to solve, and what you actually built. Two or three sentences is plenty.';
 
 const PROJECTS: SeedProject[] = [
   {
-    slug: 'hylix',
-    name: 'Hylix',
+    slug: 'project-one',
+    name: 'Project One',
     kind: 'Category',
     year: '2025',
     summary: 'One line on what it is.',
     about: PLACEHOLDER_ABOUT,
     role: ['Front-end build'],
     stack: ['React / Next', 'TypeScript'],
-    cover: 'hylix-2.png',
-    shots: [{ file: 'hylix-2.png' }, { file: 'hylix-1.png' }, {}]
+    shots: [{}, {}, {}]
   },
   {
-    slug: 'soluis',
-    name: 'Soluis',
+    slug: 'project-two',
+    name: 'Project Two',
     kind: 'Category',
     year: '2025',
     summary: 'One line on what it is.',
@@ -83,8 +80,7 @@ const PROJECTS: SeedProject[] = [
       'Replace this with a short paragraph: what the project was, what you were asked to solve, and what you actually built.',
     role: ['Front-end build'],
     stack: ['React / Next', 'TypeScript'],
-    cover: 'soluis-1.png',
-    shots: [{ file: 'soluis-1.png' }, { file: 'soluis-2.png' }]
+    shots: [{}, {}]
   },
   {
     slug: 'project-three',

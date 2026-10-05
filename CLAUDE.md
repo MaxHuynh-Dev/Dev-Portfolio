@@ -211,7 +211,7 @@ bare paper to the right of the type — measured, about 90px of it at 375.
 The thumbnail is `clamp(8.5rem, 44%, 20rem)` of the row, the name
 `clamp(1.1rem, 5.4vw, 1.9rem)` and the number and kind 0.9rem, all below
 `md` only. 320 keeps the old 8.5rem floor; 375 gets 150px and 20px type
-with 26px to spare; 414 gets 167px. The longest name, `Mark Woodland`, is
+with 26px to spare; 414 gets 167px. The longest name measured then, 13 characters, was
 on one line at every width from 320 to 700 — the thing that fails first if
 this is pushed, because `.st-display` breaks anywhere rather than overflow.
 
@@ -643,6 +643,18 @@ in the admin or the next deploy.
 
 Three standing rules:
 
+- **Never show work the employer has not cleared.** The projects built at
+  work — client sites — may not appear in this portfolio, by the
+  employer's rule. They were removed on 2026-10-05: the three live projects
+  were overwritten in place as `Sample 01`–`03` (so the order held), every
+  image of client work was deleted from the CMS and from Cloudinary (the
+  adapter destroys with `invalidate`), the four shots in
+  `public/images/work` and their seed entries went, and the names were
+  taken out of the code and this file. The whole of it is backed up
+  outside the repo, in `../Dev-Portfolio-backup/work-2026-10-05/`.
+  **`/work` holds placeholders until the owner adds work of their own** —
+  do not seed, upload or describe a client project here, and do not
+  restore one from that backup.
 - **Never invent biographical facts** — name, location, employers, clients.
 - **Never invent awards, metrics or credentials.** The source design shipped
   fake Awwwards/CSSDA/FWA claims and a "Numbers" column of em-dash
@@ -1219,7 +1231,7 @@ positions across the scroll, where ordinary motion gives 21.
 **27. A shot is shown at its own shape, and the shape arrives with the
 file.**
 Every shot used to be cropped to a declared `16 / 10` with `object-cover`.
-The real files are nothing like it — the two on `/work/soluis` are 1.749
+The real files are nothing like it — the two on one project page were 1.749
 and 1.743 — so `cover` matched their height and threw away **8.5% of the
 width**, 4.3% off each side. On a screenshot that is not a neutral crop:
 the edges are where the layout being shown off actually is, and both of
@@ -1584,7 +1596,7 @@ Two things found alongside it and worth keeping:
   fails open — text appears without its animation — but that one could fail
   closed, which is text that never appears. It is a plain derivation now.
 - **`Lines` re-splits when its `children` change.** Today Next keys every
-  dynamic segment by its param value, so `/work/hylix` to `/work/soluis`
+  dynamic segment by its param value, so `/work/sample-01` to `/work/sample-02`
   remounts rather than reuses and this is belt and braces. It is not belt
   and braces in development, where Fast Refresh preserves state and an
   edited paragraph would otherwise keep rendering the old lines.
@@ -1679,7 +1691,7 @@ perfectly.
   it is tall.** The readout's lines sit 110% apart in a 100% window, so
   pushing every line down by 100% to park them lands the line BEFORE the
   current one at -10% — dead centre. The arrival showed "08 Project Eight
-  2022" while the ring was on Hylix. There is no uniform offset that hides
+  2022" while the ring was on the first project. There is no uniform offset that hides
   all of them; the stack has to SPREAD as it goes, `away * (110 + up) + up`.
   Measured after: no line in the window on any frame of the arrival.
 - **`useViaRoute` cannot rely on the attribute when the cap fires.** The 3s
@@ -1731,7 +1743,7 @@ Verified independently at 320 / 360 / 375 / 414 / 600 / 768 / 900 / 1024 /
 not "within a pixel" — despite genuinely different sizes in row one (46.575px
 number against 55.89px name at 1440). No horizontal or vertical document
 overflow, the section fits the viewport exactly, and nothing is clipped: the
-tightest case is `Hylix`'s descender with 2.27px of clearance at 320.
+tightest case is the first project name's descender with 2.27px of clearance at 320.
 
 **And the controls were run, because a zero nobody has made fail is not a
 measurement.** Forcing `align-items: start` back on put row one's spread at
@@ -2142,7 +2154,7 @@ there on the way past.
 - **`sharp` still runs first, so trap 27 is untouched.** Payload reads width
   and height off the buffer before the storage adapter sees it, so a shot is
   still laid out at its own proportions before a byte is fetched. Verified
-  across the move: `/work/soluis` renders at **1.7483 and 1.7442**, the same
+  across the move: that project page renders at **1.7483 and 1.7442**, the same
   two numbers trap 27 recorded when the files were local, from intrinsics of
   3012x1722 and 3017x1731.
 - **One secret, in `CLOUDINARY_URL`.** The SDK reads that variable by itself
@@ -2587,7 +2599,7 @@ route handler that was deleted afterwards — if you do the same, check
 CMS decides whether it is.**
 The project page's spec sheet stuck at a fixed offset under the top chrome.
 With placeholder copy that always fit. With the real copy — a six-line
-paragraph, three roles and up to five stack items — Defiant's sheet ran
+paragraph, three roles and up to five stack items — the tallest sheet ran
 **23px** past the room at 1366x768 and **126px** at 1366x657, which is the
 viewport a 1366x768 screen actually leaves a browser. What sat in the
 overflow was the last row, `Visit the site`, parked under the bottom corner
@@ -2623,7 +2635,7 @@ The complaint was a flicker as the route curtain left, and it was the
 images. `reveal` used to start the uncover the moment the route committed,
 and on a production build with a cold image cache, at the instant the panel
 began to move: about to `/works`, **3 of 3** visible images not loaded; to
-`/work/soluis`, **6 of 7**; to `/work/mark-woodland`, **4 of 9**. The last
+a second project, **6 of 7**; to a third, **4 of 9**. The last
 of them landed up to **1566ms** after the uncover started, and the panel is
 gone in 640ms — so the reader watched the page arrive and then watched its
 pictures pop in, one at a time.
@@ -2871,7 +2883,7 @@ neither the cover nor the thumbnail is showing; covers at opacity 0 and
 thumbnails at 1 once landed, and still so after scrolling; 40 distinct
 cover poses across the flight; median frame 13.3ms and **0** over 20ms;
 every name at full ink; no text node on two lines; no horizontal overflow.
-A single tap on the fourth row at 375 goes to `/work/system-one`. Under
+A single tap on the fourth row at 375 goes to that row's project. Under
 `reduce` the covers and thumbnails take exactly **two** states across a
 switch there and back. At 768 and 1440 nothing changed: thumbnails
 `display: none`, the deck lands at **0.004 / 0.002px**, the names dim and
@@ -3171,7 +3183,7 @@ Other invariants:
   defect.** Until then a paper gradient behind each row (solid for 72%,
   fading out) kept body copy from sliding under them, and this line read
   "must stay opaque behind their own text". The owner asked for the band to
-  go. Measured on `/work/soluis` straight after, sampling every 20px of
+  go. Measured on a project page straight after, sampling every 20px of
   scroll: a mark's text sits over an image at **96%** of positions and over
   a line of text at **13%** at 1440x900, and **90% / 48%** at 375x667,
   where the marks span the same width as the column and the spec sheet's
@@ -3199,7 +3211,7 @@ Other invariants:
     same rows with the blend switched off in the same run: at most **1/255**
     on ~2,500 edge pixels, rest, focus ring and selection alike, with a
     control of **0**. These are derived numbers; trap 7 applies to them.
-  - **It is better, not solved.** Over content on `/work/soluis`, every
+  - **It is better, not solved.** Over content on a project page, every
     40px of scroll, ~330 text boxes per width: median contrast **5.16:1**
     at 1440 and **4.99:1** at 375, against **1.93 / 2.3** for plain ink with
     no band; the blend wins in 73–79% of cases. But **40% / 47%** are still

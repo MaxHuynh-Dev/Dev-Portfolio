@@ -180,7 +180,7 @@ export default function Lines({
   // same way a width change does: back to plain, then bump the counter.
   //
   // Today this is belt and braces on the route path — Next keys each
-  // dynamic segment by its param value, so `/work/hylix` to `/work/soluis`
+  // dynamic segment by its param value, so `/work/sample-01` to `/work/sample-02`
   // remounts the whole subtree rather than reusing it. It is not belt and
   // braces in development, where Fast Refresh preserves state and a paragraph
   // edited in `site.ts` would otherwise keep rendering the old lines.
