@@ -11,7 +11,7 @@ import { useEffect, useRef } from 'react';
  * for as long as the sheet is shorter than the screen and quietly wrong
  * after that: the head stays in view and the foot, where "Visit the site"
  * is, sits under the bottom corner marks for the whole length of the shot
- * stack. Measured with the real project copy: Defiant's sheet ran 23px
+ * stack. Measured with real project copy: the tallest sheet ran 23px
  * past the room at 1366x768 and up to 126px at 1366x657, the viewport a
  * 1366x768 screen actually leaves a browser. That copy lives in the CMS,
  * so the length is not something a build can hold down.
