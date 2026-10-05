@@ -1,4 +1,5 @@
 import { APP_KEYWORDS, APP_OG_IMAGE, APP_OG_IMAGE_ALT, DOMAIN_URL } from '@Constants/common';
+import { clip } from '@Utils/clip';
 import type { Metadata } from 'next';
 import { getFullName, getProfile } from '@/content/source';
 
@@ -10,21 +11,6 @@ const OG_IMAGE = {
   height: 630,
   alt: APP_OG_IMAGE_ALT
 };
-
-/** Past this, Google cuts a description off mid-word in the result. */
-const DESCRIPTION_MAX = 160;
-
-/**
- * A description that fits a search result: whitespace collapsed, and cut at
- * the last word that fits rather than mid-word. The copy is the CMS's, so the
- * length is not something any one page can promise.
- */
-export function clip(text: string, max = DESCRIPTION_MAX): string {
-  const flat = text.replace(/\s+/g, ' ').trim();
-  if (flat.length <= max) return flat;
-  const cut = flat.slice(0, max - 1);
-  return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[\s,;:.—–-]+$/, '')}…`;
-}
 
 /** The index's title, and the one a page with no title of its own takes. */
 const homeTitle = (fullName: string, role: string): string => `${fullName}, ${role}`;

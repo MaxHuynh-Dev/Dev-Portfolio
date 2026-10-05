@@ -91,26 +91,37 @@ and the tangent at that point. There is no canvas, and there is no easing
 at all under `reduce` (see the a11y invariants).
 
 **Typing** (`Typist`, the index). The owner's own illustration of himself
-at a MacBook, traced: a 5s loop. He types with his eyes on the screen, the
+at a MacBook, traced: a 5s file, played ONCE up to its frame 115 and held
+there (see below). He types with his eyes on the screen, the
 backs of his hands lifting and falling at the lid's corners out of step,
 his head bobbing with it, marks (`{ }`, `</>`, `>_`) rising off either
 side of him and steam drifting off the mug. Then he blinks, glances up at
-the reader for most of a second, and looks back down. The loop is the one
-motion on the index that answers nothing; it is furniture that breathes,
-which is why it is small, slow and ink-only. **Pressed, he waves** — the
+the reader for most of a second, and looks back down. **It stops on that
+glance — eyes up on the reader — 3.8s in, and does not loop.** It looped
+for as long as the page was open until an accessibility audit: motion that
+starts by itself and runs past five seconds with no control to stop it
+fails WCAG 2.2.2 (Pause, Stop, Hide), and `prefers-reduced-motion` is an OS
+setting, not a control on the page. One pass, ending on the illustration's
+own pose, is under the criterion's five seconds. **Pressed, he waves** — the
 figure is a button — from his second illustration: one hand up, waving
 about the wrist three times over 1.8s, the marks he drew beside his fingers
 flicking on at each swing out, and then back to the keys from the pose he
-left them in. See trap 50.
+left them in, and he settles back into the resting pose after. `wave.json`
+(~104KB) is fetched on INTENT — a pointer coming onto the figure, or focus
+reaching it — not on arrival, because most readers never press; a press
+that beats the fetch waits for it. See trap 50.
 
 **Waving** (`Waving`, `/about`). The same `wave.json`, played on its own
 in the picture column — the whole scene, laptop and mug, standing on the
 box's foot (the owner chose it over a crop to the head and hand, which
-filled the frame). It waves 700ms after the page is let go, holds the
-drawn pose for 2.6s, and waves again, for as long as the page is open: the
-site's second loop that answers nothing, and the owner asked for it to
-loop. Measured at 1440x900: the box 228x293 and the drawing filling it,
-waves of 1.76s exactly 2600ms apart, 416 poses across 9s, median frame
+filled the frame). It waves ONCE, 700ms after the page is let go — over by
+2.5s — and again whenever a pointer comes onto the picture. It used to
+wave every 2.6s for as long as the page was open, at the owner's request;
+that loop failed WCAG 2.2.2 for the reason the typing did (above), and the
+owner chose to fix it. Measured on `next start` at 1440x900: 9 distinct
+poses in the first 3s, ONE from 3.6s to 6s, 8 again on a hover. Measured
+when it looped: the box 228x293 and the drawing filling it,
+waves of 1.76s, median frame
 8.3ms, 0 over 20ms; the page still one screen at 375, 414, 768, 1440 and
 1920. On a phone the box is 98px wide, so the scene is small there — the
 cost of the whole scene in a column cut for a portrait. The CMS portrait
@@ -429,6 +440,9 @@ yarn seed:reset           # ...or replace what is there (SEED_RESET=1, NOT a fla
 yarn seed:experience      # the CV's positions, into an EMPTY experience collection
 yarn generate:types       # src/payload/payload-types.ts, after any field change
 yarn generate:importmap   # app/(payload)/admin/importMap.js, after a config change
+
+yarn test                 # Vitest: pure helpers + the env and boot logic (tests/unit)
+yarn test:e2e             # Playwright smoke spec on `next start` (tests/e2e) — build first
 ```
 
 Biome, not ESLint/Prettier. 2-space, single quotes, semicolons, width 100.
@@ -454,6 +468,9 @@ src/content/source.ts      the only thing that talks to the CMS. SERVER ONLY.
 src/content/structuredData.ts  the JSON-LD graph, from the CMS. SERVER ONLY — trap 51
 src/constants/metadata.ts  default metadata AND pageMetadata(), every page's head — trap 51
 app/manifest.ts | app/icon.png | app/apple-icon.png | app/favicon.ico  — trap 51
+app/(frontend)/not-found.tsx | app/global-not-found.tsx  the 404, both kinds — trap 52
+src/modules/NotFound/      the 404's one view
+tests/unit | tests/e2e     Vitest and the Playwright smoke spec — trap 52
 src/modules/Studio/
   index.tsx        reads the index's content and hands it to Open
   Open.tsx         the masthead, AND contact — see traps 38 and 41
@@ -1789,9 +1806,10 @@ anywhere in `src` or `app`.
   is optional in the config type, no field here is `richText`, and the
   three textareas are read by `Lines`, which measures PLAIN text — a rich
   text field would hand it markup to break on.
-- **`withPayload` goes outermost in `next.config.ts`**, around the PWA
-  wrapper rather than inside it, so the admin's server-only packages are
-  externalised after the plugin has finished rewriting the config.
+- **`withPayload` goes outermost in `next.config.ts`**, so the admin's
+  server-only packages are externalised after anything else has rewritten
+  the config. (There was a PWA wrapper inside it; it was a webpack plugin
+  that never ran under Turbopack, and it went with its dependency.)
 - **Two root layouts, no `app/layout.tsx`.** `app/(frontend)` and
   `app/(payload)` each render their own `<html>`, which Next supports as
   long as the home route lives inside one of the groups — it does. The cost
@@ -3080,9 +3098,10 @@ which it does at build, so only the production deployment is indexable and
 every preview stays shut with nothing to remember.
 
 - **Do not "fix" it by setting `NEXT_PUBLIC_APP_ENV=production` on
-  Vercel.** `next.config.ts` turns next-pwa on with that same variable — a
-  service worker with `skipWaiting`, shipped as a side effect of wanting to
-  be found. The two questions are separate on purpose.
+  Vercel.** It used to switch next-pwa on as well (that plugin has since
+  gone — it never worked under Turbopack); the point stands that "may this
+  be indexed" is a property of the deployment, and `VERCEL_ENV` is the
+  deployment's own answer.
 - **Every page's head goes through `pageMetadata()`**
   (`src/constants/metadata.ts`). Next merges metadata SHALLOWLY: a page
   that sets `openGraph` at all replaces the layout's whole object, and one
@@ -3130,6 +3149,73 @@ parses; `/manifest.json` is gone and `/manifest.webmanifest` carries the
 name. **What it cannot fix is content**: the five `Sample 0X` projects are
 in the CMS, so they are in the sitemap and `/works`'s description until
 they are deleted in `/admin`.
+
+**52. The audit batch: what a review of the whole site changed, and why.**
+A code, accessibility and UX review on 2026-10-05 (three agents, each
+finding re-checked) turned up the following, fixed together:
+
+- **The entry curtain had no way to let go without React.** `boot.ts` sets
+  `data-preloading` before any bundle loads and only the Preloader's
+  effect removed it, so a chunk that 404s after a deploy left blank paper
+  with scrolling locked for good. The boot script now arms an 8s give-up
+  (`PRELOADER_GIVE_UP_MS`, well past the slowest measured mount) unless the
+  effect has flagged `window.__preloaderMounted`; a Preloader that mounts
+  after the give-up stands down. Verified by aborting every
+  `/_next/static/chunks/**` request: released at 8.4s.
+- **ScrollTrigger is gone.** It was registered and updated on every scroll
+  on every route, ~18KB, and nothing used it — every scroll-driven piece
+  reads plain scroll events (trap 3).
+- **`useFittedText` refits on two things its width observer cannot see:**
+  a height-only resize when `maxViewportFraction` caps the size (masthead
+  247px at 1440x900, 207px at 1440x520, height alone), and a stylesheet
+  inserted into `<head>` — which is what a reader's text-spacing override
+  (WCAG 1.4.12) does. The probe also carries `word-spacing` now, which that
+  override sets. With the override, a project title had 274px clipped at
+  1440 and 97px at 375; now 0 at both, measured on the text node against
+  its mask. (Measure the TEXT NODE: a Range over the heading includes the
+  mask's 0.12em of padding each side, and reads as a phantom overflow.)
+  The internal function is `solve`, not `fit` — with Vitest installed,
+  Biome reads `fit()` as Jasmine's focused test.
+- **On `/works` the arrow keys move focus with the ring.** They turned it
+  while focus stayed behind, so Enter opened the project just turned away
+  from, and a screen reader (the readout is `aria-hidden`) heard nothing.
+- **Targets of 24px** (WCAG 2.5.8): the rail's thumbnails are `2.9rem`
+  wide, 25.4px tall at 16:9; `read the cv` under the invitation is padded
+  to 27px, the margin above giving back what the padding takes.
+- **A 404 in the site's own grammar**, twice over because of the two root
+  layouts: `(frontend)/not-found.tsx` for a `notFound()` (every unknown
+  slug) inside the site's chrome, and `global-not-found.tsx` with
+  `experimental.globalNotFound` for an address that matches no route.
+- **Template leftovers removed**: next-pwa (a webpack plugin under a
+  Turbopack build — `/sw.js` was a 404), 24 unused dependencies (knip, each
+  checked by hand), the dead `src/api`, eight unused components and
+  helpers, `envs/`, 11MB of `public/videos`, the starter's svgs and stock
+  images, the open `images.unsplash.com` and `127.0.0.1` image sources,
+  and the package name `nextjs-template-v2`. React Scan and the grid
+  overlay are keyed on `NODE_ENV` now: `NEXT_PUBLIC_APP_ENV` falls back to
+  `development` when unset, so one missing Vercel variable would have put
+  an unpinned unpkg script on the live site. **Removing `react-scan` also
+  removed `playwright`**, which only ever arrived as its dependency —
+  `@playwright/test` is a declared devDependency now.
+- **`images.minimumCacheTTL` is a month** (was an hour, under Next's own
+  default): every image URL carries a Cloudinary version and never changes.
+- **Tests exist.** `yarn test` (Vitest) covers `clip`, the ring's `wrap` /
+  `shortest`, `IS_INDEXABLE` and the boot script's give-up — and found a
+  real bug on its first run: `clip` dropped a whole word when the cut fell
+  exactly on a word boundary. The control was run: the old `IS_INDEXABLE`
+  fails its test. `yarn test:e2e` (Playwright, on `next start`) checks every
+  route answers, both 404s render the site's page, `/api` is 403, the entry
+  curtain always lets go, nothing scrolls sideways at 375 and 1440, there
+  are no console errors, and a route change lands at scrollY 0 with focus
+  on `#content`.
+
+**Not changed, and why: WCAG 1.4.4 (text to 200%).** At 200% zoom the
+`/about` prose reaches 1.6x, because the type is fluid — sized by `vw`
+and capped — and zooming narrows the CSS viewport, so the fluid term
+shrinks as the zoom grows. Passing it means a type scale that never
+shrinks as the viewport narrows, which is a redesign of every clamp on the
+site and of the one-screen budgets measured against them (traps 41, 43).
+It is a decision for the owner, not a fix.
 
 ## Accessibility invariants
 
@@ -3290,9 +3376,11 @@ Other invariants:
   click, the ring a wheel, a drag or an arrow key, a project page's
   thumbnail marker the reader's own scroll position, and the masthead's
   letters the pointer — which is also why they do nothing until the pointer
-  first moves. The two exceptions are loops the owner asked for, and both
-  are his own drawing in ink, small, and still under `reduce`: the typing
-  on the index and the wave on `/about`.
+  first moves. The two exceptions are the owner's own drawing in ink —
+  the typing on the index and the wave on `/about` — and both now play ONCE
+  on arrival and stop (3.8s and 2.5s, under WCAG 2.2.2's five seconds);
+  they used to loop. Anything that loops again needs a visible pause
+  control on the page, not just a `reduce` branch.
 - **A page that takes the wheel owes the reader a way out.** `/works` is
   exactly one screen tall in both views and the document never scrolls.
   That is defensible only because the `list` view is one click away, is

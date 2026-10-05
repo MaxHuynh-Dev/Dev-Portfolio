@@ -283,6 +283,18 @@ export function useCarousel({
       });
     };
 
+    // Focus follows the ring. The keys turned it while focus stayed on the
+    // cover it started from, so Enter opened the project that had just been
+    // turned AWAY from, and a screen reader — the readout is aria-hidden —
+    // heard nothing at all. Moving focus to the cover now in the middle
+    // fixes both: its link name is the announcement. Its `onFocus` asks the
+    // ring to go where it is already going, which `jump` resolves to no move.
+    const follow = (): void => {
+      if (links === null || !links.contains(document.activeElement)) return;
+      const anchors = links.querySelectorAll<HTMLAnchorElement>('a');
+      anchors[wrap(Math.round(target.current), count)]?.focus({ preventScroll: true });
+    };
+
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === 'ArrowRight') {
@@ -292,10 +304,12 @@ export function useCarousel({
       } else if (event.key === 'Home') {
         jump.current(0);
         event.preventDefault();
+        follow();
         return;
       } else if (event.key === 'End') {
         jump.current(count - 1);
         event.preventDefault();
+        follow();
         return;
       } else {
         return;
@@ -303,6 +317,7 @@ export function useCarousel({
       event.preventDefault();
       window.clearTimeout(settle.current);
       run();
+      follow();
     };
 
     surface.addEventListener('wheel', onWheel, { passive: false });

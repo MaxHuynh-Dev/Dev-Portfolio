@@ -4,7 +4,6 @@ import { PRELOADER_BOOT_SCRIPT } from '@Components/Preloader/boot';
 import { nippo, switzer } from '@Constants/fonts';
 import { buildDefaultMetadata } from '@Constants/metadata';
 import MainLayout from '@Layout/MainLayout';
-import { uiHelper } from '@Utils/uiHelper';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import type React from 'react';
@@ -44,8 +43,14 @@ export default function RootLayout({
             __html: PRELOADER_BOOT_SCRIPT
           }}
         />
-        {uiHelper.isDevelopment() && (
-          <Script src="https://unpkg.com/react-scan/dist/auto.global.js" />
+        {/* React Scan, while developing and never otherwise. NODE_ENV and
+            not NEXT_PUBLIC_APP_ENV: the latter defaults to `development`
+            when the variable is unset, so one missing setting on Vercel
+            would have put an unpinned third-party script, with the page's
+            full privileges, on the live site. Pinned to a version for the
+            same reason. */}
+        {process.env.NODE_ENV === 'development' && (
+          <Script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js" />
         )}
       </head>
       <body className={`${nippo.variable} ${switzer.variable}`}>
