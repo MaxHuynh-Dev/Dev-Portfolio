@@ -307,7 +307,7 @@ export default function ShotStack({
                   style={{
                     aspectRatio: shapeOf(shotSizes[index] ?? null, shot.tall === true)
                   }}
-                  className="relative block w-[2.4rem] bg-[var(--well)] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--ink)]"
+                  className="relative block w-[2.9rem] bg-[var(--well)] outline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--ink)]"
                 >
                   {shot.src !== null ? (
                     <Image src={shot.src} alt="" fill sizes="48px" className="object-cover" />

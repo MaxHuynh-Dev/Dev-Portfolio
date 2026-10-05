@@ -60,7 +60,7 @@ export function useFittedText(text: string, options: FitOptions = {}): Fitted {
     available: 0
   });
 
-  const fit = useCallback((): void => {
+  const solve = useCallback((): void => {
     const el = ref.current;
     const parent = el?.parentElement;
     if (!el || !parent) return;
@@ -94,6 +94,12 @@ export function useFittedText(text: string, options: FitOptions = {}): Fitted {
       style.letterSpacing === 'normal'
         ? 'normal'
         : `${parseFloat(style.letterSpacing) / currentPx}em`;
+    // Word spacing too, and for the same reason. The site never sets it,
+    // but a reader's text-spacing override (WCAG 1.4.12) does — 0.16em — and
+    // a probe without it fitted a two-word name 35px wider than its column.
+    const wordSpacing = parseFloat(style.wordSpacing);
+    probe.style.wordSpacing =
+      Number.isFinite(wordSpacing) && wordSpacing !== 0 ? `${wordSpacing / currentPx}em` : 'normal';
 
     document.body.appendChild(probe);
     const natural = probe.getBoundingClientRect().width;
@@ -116,7 +122,7 @@ export function useFittedText(text: string, options: FitOptions = {}): Fitted {
   }, [text, maxViewportFraction, lineHeight, maxPx, minPx]);
 
   useEffect(() => {
-    fit();
+    solve();
 
     const parent = ref.current?.parentElement;
     if (!parent) return;
@@ -129,21 +135,62 @@ export function useFittedText(text: string, options: FitOptions = {}): Fitted {
       const width = entries[0]?.contentRect.width ?? -1;
       if (width === lastWidth) return;
       lastWidth = width;
-      fit();
+      solve();
     });
     observer.observe(parent);
 
     // Webfont swap changes every measurement on the page.
     let cancelled = false;
     void document.fonts.ready.then(() => {
-      if (!cancelled) fit();
+      if (!cancelled) solve();
     });
+
+    // Two things the width observer cannot see, refitted on the next frame.
+    let frame = 0;
+    const refit = (): void => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(solve);
+    };
+
+    // A HEIGHT-only resize, when the size is capped by the viewport's height
+    // (`maxViewportFraction`): a phone turned on its side, devtools docked
+    // along the bottom. The cap reads `innerHeight`, which nothing this hook
+    // writes can change, so — unlike the observed box's height — it cannot
+    // feed back into a loop.
+    let lastHeight = window.innerHeight;
+    const onResize = (): void => {
+      if (maxViewportFraction === undefined || window.innerHeight === lastHeight) return;
+      lastHeight = window.innerHeight;
+      refit();
+    };
+    window.addEventListener('resize', onResize);
+
+    // A stylesheet arriving after the fit — what a reader's text-spacing
+    // override (WCAG 1.4.12) or a user-style extension does. It widens the
+    // tracking without widening the column, so the fitted line overran its
+    // mask and was clipped: 274px of a project's name lost at 1440. Only
+    // <style> and <link> insertions in <head> (or straight on <html>, where
+    // some extensions put them) count. Next adds a stylesheet link on some
+    // route changes too; the refit that costs is one idempotent measurement.
+    const sheets = new MutationObserver((records) => {
+      const added = records.some((record) =>
+        Array.from(record.addedNodes).some(
+          (node) => node.nodeName === 'STYLE' || node.nodeName === 'LINK'
+        )
+      );
+      if (added) refit();
+    });
+    sheets.observe(document.head, { childList: true });
+    sheets.observe(document.documentElement, { childList: true });
 
     return () => {
       cancelled = true;
       observer.disconnect();
+      sheets.disconnect();
+      window.removeEventListener('resize', onResize);
+      cancelAnimationFrame(frame);
     };
-  }, [fit]);
+  }, [solve, maxViewportFraction]);
 
   return { ref, size: state.size, available: state.available };
 }

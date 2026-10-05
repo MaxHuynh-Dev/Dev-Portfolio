@@ -6,27 +6,27 @@ import type { AnimationItem } from 'lottie-web';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-/** The first wave, once the box has washed in. */
+/** The wave, once the box has washed in. It is over by 2.5s. */
 const FIRST_MS = 700;
-/** The stillness between two waves — long enough to read as a greeting repeated, not a twitch. */
-const REST_MS = 2600;
 
 const REDUCE = '(prefers-reduced-motion: reduce)';
 
 /**
  * The owner waving, in `/about`'s picture column: the index's wave, the
- * whole scene, on a loop.
+ * whole scene.
  *
  * **It plays `wave.json` as it is** — laptop, mug and all, standing on the
  * box's foot by `xMidYMax meet`, the owner's pick over a crop to the head
  * and hand. So the drawing is the index's to the pixel, and both pages
  * share one cached file.
  *
- * **A loop, with a rest between.** The file waves for 1.8s and ends on the
- * pose it starts in — the drawing as drawn, hand up — so it holds that pose
- * for `REST_MS` and waves again. This is the second motion on the site
- * that answers nothing, beside the index's typing, and the owner asked for
- * it that way.
+ * **Once on its own, then on request.** The file waves for 1.8s and ends
+ * on the pose it starts in — the drawing as drawn, hand up. It used to wait
+ * 2.6s and wave again, forever, at the owner's request; a loop that starts
+ * by itself and cannot be stopped fails WCAG 2.2.2 (Pause, Stop, Hide), so
+ * it now waves once — done by 2.5s, under the criterion's five seconds —
+ * and again whenever a pointer comes onto the picture, which is motion the
+ * reader asked for.
  *
  * **The photograph is the fallback, not the picture.** When the player or
  * the file cannot be had, `fallback` renders instead — `/about` hands in
@@ -54,6 +54,7 @@ export default function Waving({
     let cancelled = false;
     let item: AnimationItem | null = null;
     let timer: number | undefined;
+    let unhook = (): void => {};
 
     void (async () => {
       const [lottie, data] = await Promise.all([
@@ -78,18 +79,24 @@ export default function Waving({
       hello.goToAndStop(0, true);
       if (window.matchMedia(REDUCE).matches) return;
 
+      let playing = false;
       const wave = () => {
+        if (playing) return;
+        playing = true;
         hello.goToAndPlay(0, true);
       };
       hello.addEventListener('complete', () => {
-        timer = window.setTimeout(wave, REST_MS);
+        playing = false;
       });
       timer = window.setTimeout(wave, FIRST_MS);
+      container.addEventListener('pointerenter', wave);
+      unhook = () => container.removeEventListener('pointerenter', wave);
     })();
 
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
+      unhook();
       item?.destroy();
     };
   }, [released]);

@@ -3,7 +3,6 @@ import PageTransition from '@Components/PageTransition';
 import Preloader from '@Components/Preloader';
 import SmoothScroll from '@Components/SmoothScroll';
 import Corners from '@Modules/Studio/Corners';
-import { uiHelper } from '@Utils/uiHelper';
 import type React from 'react';
 import type { PropsWithChildren } from 'react';
 import { getFullName, getProfile } from '@/content/source';
@@ -48,8 +47,11 @@ export default async function MainLayout({
       </main>
 
       {/* Dev-only: it registers a global keydown listener and writes to
-          localStorage — no reason to ship either. */}
-      {uiHelper.isDevelopment() && <GridDebug />}
+          localStorage — no reason to ship either. Keyed on NODE_ENV, which
+          the build replaces with a literal, so production drops the branch
+          AND the import. It was keyed on NEXT_PUBLIC_APP_ENV, which defaults
+          to `development` when unset, and the module shipped either way. */}
+      {process.env.NODE_ENV === 'development' && <GridDebug />}
 
       {/* The route curtain. Below the preloader in the DOM and in z-index,
           because the two never run at the same time and the preloader must

@@ -7,7 +7,11 @@ import type { AnimationItem } from 'lottie-web';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-/** The pose shown under reduced motion: hands down, eyes on the reader — the illustration's own. */
+/**
+ * The pose he rests in: hands down, eyes on the reader — the illustration's
+ * own. Under reduced motion it is the only pose; otherwise the typing plays
+ * up to it once and stops there.
+ */
 const STILL_FRAME = 115;
 /** Under reduced motion a click shows the wave's still pose — his drawing, hand up — for this long. */
 const WAVE_STILL_MS = 1600;
@@ -42,15 +46,28 @@ const REDUCE = '(prefers-reduced-motion: reduce)';
  * where the two files agree the paper-backed top layer is exactly what is
  * under it, at every opacity. Two transparent files faded against each
  * other would thin the laptop to three-quarter ink halfway through. The
- * typing loop is paused under the wave and picks up where it was.
+ * typing is paused under the wave and picks up where it was.
+ *
+ * **It types once, then rests — it does not loop.** A loop that starts on
+ * its own and never stops fails WCAG 2.2.2 (Pause, Stop, Hide) unless the
+ * page offers a control to stop it, and a reduced-motion setting is not
+ * one. So the file plays from its first frame to `STILL_FRAME` — 3.8s,
+ * under the criterion's five — and holds the pose the illustration was
+ * drawn in, eyes up on the reader. A press still waves, which is motion
+ * the reader asked for, and he settles back into the same pose after.
  *
  * **The player loads after the page is let go.** Lottie is ~150KB of
- * script, and the index's first job is the name; so the import and both
- * files are fetched once `useReleased` says the curtain is off, and the
- * picture washes in the way the portrait on `/about` does. The LIGHT
+ * script, and the index's first job is the name; so the import and the
+ * typing file are fetched once `useReleased` says the curtain is off, and
+ * the picture washes in the way the portrait on `/about` does. The LIGHT
  * player: SVG only, no expressions, which is all a drawn file needs.
  *
- * Under `prefers-reduced-motion` the typing is a still frame, never a loop,
+ * **The wave is fetched on intent, not on arrival.** `wave.json` is ~104KB
+ * and most readers never press; so it is asked for when a pointer comes
+ * onto the drawing or focus reaches it, which is well before a click lands,
+ * and a press that beats it simply waits for it.
+ *
+ * Under `prefers-reduced-motion` the typing is a still frame from the start,
  * and a press swaps in the wave's still pose for a moment instead of
  * playing it — a change of picture, not a movement.
  */
@@ -60,23 +77,54 @@ export default function Typist({ label }: { label: string }): React.ReactElement
   const typing = useRef<AnimationItem | null>(null);
   const wave = useRef<AnimationItem | null>(null);
   const still = useRef(false);
+  /** The one pass of typing has reached the resting pose. */
+  const rested = useRef(false);
   const holding = useRef<number | undefined>(undefined);
   const [waving, setWaving] = useState(false);
   const released = useReleased();
+  /** What the wave needs from the typing effect: the player and its settings. */
+  const player = useRef<{
+    lottie: Awaited<ReturnType<typeof loadPlayer>>;
+    settings: { preserveAspectRatio: string; progressiveLoad: boolean };
+  } | null>(null);
+  /** The wave's load, started once and shared by every caller. */
+  const waveLoad = useRef<Promise<AnimationItem | null> | null>(null);
+  const items = useRef<AnimationItem[]>([]);
+
+  const prepareWave = (): Promise<AnimationItem | null> => {
+    if (waveLoad.current !== null) return waveLoad.current;
+    const ready = player.current;
+    const container = waveBox.current;
+    if (ready === null || container === null) return Promise.resolve(null);
+    waveLoad.current = fetchJson(LOTTIE_WAVE).then((waveData) => {
+      if (waveData === null || player.current === null) return null;
+      const hello = ready.lottie.loadAnimation({
+        container,
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        animationData: waveData,
+        rendererSettings: ready.settings
+      });
+      hello.goToAndStop(0, true);
+      hello.addEventListener('complete', () => {
+        setWaving(false);
+      });
+      wave.current = hello;
+      items.current.push(hello);
+      return hello;
+    });
+    return waveLoad.current;
+  };
 
   useEffect(() => {
     if (!released || typingBox.current === null || waveBox.current === null) return;
     const typingContainer = typingBox.current;
-    const waveContainer = waveBox.current;
-    const items: AnimationItem[] = [];
+    const live = items.current;
     let cancelled = false;
 
     void (async () => {
-      const [lottie, typingData, waveData] = await Promise.all([
-        loadPlayer(),
-        fetchJson(LOTTIE_TYPING),
-        fetchJson(LOTTIE_WAVE)
-      ]);
+      const [lottie, typingData] = await Promise.all([loadPlayer(), fetchJson(LOTTIE_TYPING)]);
       if (cancelled || typingData === null) return;
 
       still.current = window.matchMedia(REDUCE).matches;
@@ -89,52 +137,53 @@ export default function Typist({ label }: { label: string }): React.ReactElement
       const loop = lottie.loadAnimation({
         container: typingContainer,
         renderer: 'svg',
-        loop: !still.current,
-        autoplay: !still.current,
+        loop: false,
+        autoplay: false,
         animationData: typingData,
         rendererSettings
       });
-      if (still.current) loop.goToAndStop(STILL_FRAME, true);
+      // Exactly on the pose, not wherever the last tick of the segment
+      // happened to land.
+      loop.addEventListener('complete', () => {
+        rested.current = true;
+        loop.goToAndStop(STILL_FRAME, true);
+      });
+      if (still.current) {
+        rested.current = true;
+        loop.goToAndStop(STILL_FRAME, true);
+      } else {
+        loop.playSegments([0, STILL_FRAME], true);
+      }
       typing.current = loop;
-      items.push(loop);
-
-      if (waveData === null) return;
-      const hello = lottie.loadAnimation({
-        container: waveContainer,
-        renderer: 'svg',
-        loop: false,
-        autoplay: false,
-        animationData: waveData,
-        rendererSettings
-      });
-      hello.goToAndStop(0, true);
-      hello.addEventListener('complete', () => {
-        setWaving(false);
-      });
-      wave.current = hello;
-      items.push(hello);
+      live.push(loop);
+      player.current = { lottie, settings: rendererSettings };
     })();
 
     return () => {
       cancelled = true;
       window.clearTimeout(holding.current);
-      for (const item of items) item.destroy();
+      for (const item of live) item.destroy();
+      live.length = 0;
       typing.current = null;
       wave.current = null;
+      player.current = null;
+      waveLoad.current = null;
     };
   }, [released]);
 
-  // The loop stands still under the wave, and carries on from that pose.
+  // The typing stands still under the wave and carries on from that pose —
+  // unless it had already come to rest, in which case it stays at rest.
   useEffect(() => {
     const loop = typing.current;
-    if (loop === null || still.current) return;
+    if (loop === null || still.current || rested.current) return;
     if (waving) loop.pause();
     else loop.play();
   }, [waving]);
 
-  const onPress = () => {
-    const hello = wave.current;
-    if (hello === null || waving) return;
+  const onPress = async () => {
+    if (waving) return;
+    const hello = wave.current ?? (await prepareWave());
+    if (hello === null) return;
     setWaving(true);
     if (still.current) {
       hello.goToAndStop(0, true);
@@ -156,7 +205,15 @@ export default function Typist({ label }: { label: string }): React.ReactElement
           does; the SVGs Lottie writes are left out of the tree beneath it. */}
       <button
         type="button"
-        onClick={onPress}
+        onClick={() => {
+          void onPress();
+        }}
+        onPointerEnter={() => {
+          void prepareWave();
+        }}
+        onFocus={() => {
+          void prepareWave();
+        }}
         aria-label={`${label}. Press to wave hello.`}
         className={`pointer-events-auto mx-auto mt-auto grid cursor-[var(--cursor-pointer)] grid-cols-1 grid-rows-1 ${CANVAS}`}
       >

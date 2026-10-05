@@ -64,10 +64,13 @@ export default function Invite({
       </p>
 
       {profile.cv !== null ? (
-        <p className="st-meta m-0 mt-[0.5rem]">
+        // The link is padded to a 24px target (WCAG 2.5.8): at 0.78rem it
+        // was 15px tall, 17px under `get in touch`. The margin above gives
+        // back what the padding takes, so the words do not move.
+        <p className="st-meta m-0 mt-[0.2rem]">
           <Row delay={120}>
             <a
-              className="st-link text-[var(--ink)]"
+              className="st-link inline-block py-[0.3rem] text-[var(--ink)]"
               href={profile.cv}
               rel="noreferrer noopener"
               target="_blank"

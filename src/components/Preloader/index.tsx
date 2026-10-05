@@ -4,7 +4,7 @@ import gsap from 'gsap';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { PRELOADING_ATTR } from './boot';
+import { PRELOADER_GAVE_UP, PRELOADER_MOUNTED, PRELOADING_ATTR } from './boot';
 
 /** The curtain holds at least this long so it reads as a deliberate
  *  gesture. The page is prerendered and small; on a warm cache every real
@@ -159,10 +159,22 @@ export default function Preloader({ fullName }: { fullName: string }): React.Rea
     const line = lineRef.current;
     const ref = refRef.current;
 
-    if (!shouldRun || !root || !mask || !line || !ref || !stage) {
+    // The boot script's cap already let go (boot.ts): the page has been in
+    // use without a curtain, and raising one now would be a late blank.
+    const flags = window as unknown as Record<string, boolean | undefined>;
+    if (
+      !shouldRun ||
+      flags[PRELOADER_GAVE_UP] === true ||
+      !root ||
+      !mask ||
+      !line ||
+      !ref ||
+      !stage
+    ) {
       setActive(false);
       return;
     }
+    flags[PRELOADER_MOUNTED] = true;
 
     // Asserted, not assumed. On a remount the cleanup below has already
     // released it, and the hold has to go back on before the first frame

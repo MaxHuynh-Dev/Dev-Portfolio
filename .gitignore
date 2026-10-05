@@ -49,3 +49,7 @@ next-env.d.ts
 
 # Playwright MCP scratch output
 /.playwright-mcp/
+
+# Playwright
+/test-results/
+/playwright-report/

@@ -20,9 +20,6 @@
  * over. See CLAUDE.md.
  * ─────────────────────────────────────────────────────────────────── */
 @import "tailwindcss";
-@import "tw-animate-css";
-
-@plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
 
