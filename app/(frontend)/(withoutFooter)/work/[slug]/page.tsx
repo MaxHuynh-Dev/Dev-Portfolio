@@ -1,8 +1,11 @@
+import JsonLd from '@Components/JsonLd';
+import { pageMetadata } from '@Constants/metadata';
 import ProjectView from '@Modules/Project';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type React from 'react';
-import { getProfile, getProjects } from '@/content/source';
+import { getFullName, getProfile, getProjects } from '@/content/source';
+import { personNode, projectNodes } from '@/content/structuredData';
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -28,27 +31,28 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const projects = await getProjects();
+  const [projects, fullName] = await Promise.all([getProjects(), getFullName()]);
   const project = projects.find((item) => item.slug === slug);
   if (project === undefined) return {};
 
-  return {
-    // The root layout's title template turns this into "Name | Role".
+  return pageMetadata({
+    // The template turns this into "Project | Name".
     title: project.name,
-    description: project.summary,
-    openGraph: {
-      title: project.name,
-      description: project.summary,
-      // Only when there is one. An openGraph entry pointing at a missing
-      // file renders worse in a share card than no entry at all.
-      ...(project.cover !== null ? { images: [{ url: project.cover }] } : {})
-    }
-  };
+    description: `${project.name} (${project.kind}, ${project.year}) by ${fullName}. ${project.summary} ${project.about}`,
+    path: `/work/${project.slug}`,
+    // The cover, when there is one. An openGraph entry pointing at a missing
+    // file renders worse in a share card than the site's own card.
+    image: project.cover
+  });
 }
 
 export default async function ProjectPage({ params }: Params): Promise<React.ReactElement> {
   const { slug } = await params;
-  const [projects, profile] = await Promise.all([getProjects(), getProfile()]);
+  const [projects, profile, person] = await Promise.all([
+    getProjects(),
+    getProfile(),
+    personNode()
+  ]);
   const index = projects.findIndex((item) => item.slug === slug);
   if (index === -1) notFound();
 
@@ -56,5 +60,10 @@ export default async function ProjectPage({ params }: Params): Promise<React.Rea
   // dead-ending the only way forward on the page.
   const next = projects[(index + 1) % projects.length];
 
-  return <ProjectView project={projects[index]} next={next} profile={profile} />;
+  return (
+    <>
+      <JsonLd graph={[...projectNodes(projects[index]), person]} />
+      <ProjectView project={projects[index]} next={next} profile={profile} />
+    </>
+  );
 }
