@@ -451,6 +451,9 @@ src/payload/hooks/revalidateSite.ts  a CMS save goes live — trap 45
 src/payload/payload-types.ts   GENERATED. Do not edit.
 src/content/site.ts        the SHAPES the site reads. Types only, no imports.
 src/content/source.ts      the only thing that talks to the CMS. SERVER ONLY.
+src/content/structuredData.ts  the JSON-LD graph, from the CMS. SERVER ONLY — trap 51
+src/constants/metadata.ts  default metadata AND pageMetadata(), every page's head — trap 51
+app/manifest.ts | app/icon.png | app/apple-icon.png | app/favicon.ico  — trap 51
 src/modules/Studio/
   index.tsx        reads the index's content and hands it to Open
   Open.tsx         the masthead, AND contact — see traps 38 and 41
@@ -3053,6 +3056,68 @@ Measured on `next dev` at 1440x900: the wave layer fully up 167ms after the
 press, the wave 1.77s, gone 167ms after it ends; 186 distinct wave poses,
 median frame 8.3ms, 0 over 20ms; both files destroyed on a route away (0
 SVGs on `/about`) and rebuilt on the way back, still waving.
+
+**51. The live site was invisible to search, and the switch for it was a
+variable nobody had set.**
+An SEO audit (Lighthouse SEO 63–66 on every page) found the production
+`robots.txt` was `Disallow: /` and `sitemap.xml` an empty `<urlset>`. Both
+files branched on `NEXT_PUBLIC_APP_ENV === 'production'`, which `.env` sets
+to `development` and Vercel never set at all. They branch on `IS_INDEXABLE`
+(`src/constants/envs.ts`) now: `VERCEL_ENV` when the platform provides it,
+which it does at build, so only the production deployment is indexable and
+every preview stays shut with nothing to remember.
+
+- **Do not "fix" it by setting `NEXT_PUBLIC_APP_ENV=production` on
+  Vercel.** `next.config.ts` turns next-pwa on with that same variable — a
+  service worker with `skipWaiting`, shipped as a side effect of wanting to
+  be found. The two questions are separate on purpose.
+- **Every page's head goes through `pageMetadata()`**
+  (`src/constants/metadata.ts`). Next merges metadata SHALLOWLY: a page
+  that sets `openGraph` at all replaces the layout's whole object, and one
+  that sets none inherits the index's. Measured before: no canonical on any
+  page, `og:url` the home page on `/about`, `/works` and `/experience`, and
+  project cards missing `type`, `url` and `siteName`. The helper writes the
+  title, a description clipped at a word to 160 characters, the canonical,
+  and complete Open Graph and Twitter entries. `twitter:image` stays the
+  site card on a project page, as trap 6 decided.
+- **The title template ends in the NAME**, `%s | Max Huynh`, not the role:
+  the name is what anyone looking for this site types, and no subpage title
+  carried it. The index takes the default, `Name, Role`, and exports no
+  `title` of its own for the reason it never did.
+- **Descriptions are composed from the CMS, never written for crawlers.**
+  Each page builds its own from fields the page already shows (the intro,
+  the statement and prose, the positions, a project's summary and about).
+  Edit the content and the description follows.
+- **JSON-LD is built from published facts only** — `structuredData.ts`
+  reads the same CMS fields the pages render, and invents nothing (the
+  content rules above). A `Person` with an `@id`, linked from a `WebSite`
+  on `/`, a `ProfilePage` on `/about`, a `WebPage` on `/experience`, a
+  `CollectionPage` + `ItemList` on `/works`, and `CreativeWork` +
+  `BreadcrumbList` on each project. `JsonLd.tsx` escapes `<` — the graph
+  carries CMS text. The `<script>` is the first child of `#content`,
+  `display: none`; nothing here selects by child position, and the
+  one-screen pages measured 0 overflow with it in.
+- **The manifest, the favicon and the PWA icons were the starter
+  template's**: `"name": "APP_NAME"`, `"url": "APP_DOMAIN"`, and Vercel's
+  triangle as the favicon Google shows beside the result. `app/manifest.ts`
+  builds the manifest from the CMS; the icons are the site's own mark — an
+  `M` in Nippo 700, ink on paper, no new colour. Replace the PNGs if a
+  designed mark arrives. **The favicon's PNGs must be RGBA**: Turbopack's ICO
+  decoder refuses RGB (`The PNG is not in RGBA format!`), and Chromium
+  writes an opaque screenshot as RGB, so they were drawn on a canvas and
+  encoded by hand.
+- **The sitemap has no `lastModified`**: `new Date()` stamped every URL
+  with the build time, which teaches a crawler to ignore the field.
+  `/admin` and `/api` are disallowed; `/private/` did not exist.
+
+Verified on `next start` with `VERCEL_ENV=production`: `robots.txt` allows
+`/` and disallows `/admin` and `/api`; the sitemap lists all four pages and
+every project; every page has its own title, a 114–159 character
+description, its own canonical and `og:url`, and a JSON-LD graph that
+parses; `/manifest.json` is gone and `/manifest.webmanifest` carries the
+name. **What it cannot fix is content**: the five `Sample 0X` projects are
+in the CMS, so they are in the sitemap and `/works`'s description until
+they are deleted in `/admin`.
 
 ## Accessibility invariants
 

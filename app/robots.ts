@@ -1,9 +1,9 @@
 import { DOMAIN_URL } from '@Constants/common';
-import { uiHelper } from '@Utils/uiHelper';
+import { IS_INDEXABLE } from '@Constants/envs';
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  if (!uiHelper.isProduction())
+  if (!IS_INDEXABLE)
     return {
       rules: {
         userAgent: '*',
@@ -15,7 +15,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/private/'
+      // Payload's admin and its REST + GraphQL routes. The admin already
+      // sends its own noindex; this keeps crawlers from spending the visit.
+      disallow: ['/admin', '/api']
     },
     sitemap: `${DOMAIN_URL}/sitemap.xml`
   };

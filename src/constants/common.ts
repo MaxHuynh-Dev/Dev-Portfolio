@@ -16,14 +16,19 @@
  * resolve against anything else. Change it here when a custom domain goes on.
  */
 export const DOMAIN_URL = 'https://max-dev-portfolio.vercel.app';
+/**
+ * What the site is about, in the words its own pages use. Search engines
+ * mostly ignore the keywords tag, which is no reason for it to be wrong:
+ * it used to list Three.js and WebGL, both rejected here (see CLAUDE.md).
+ */
 export const APP_KEYWORDS = [
-  'Front-End Developer',
-  'Creative Developer',
-  'UI Engineer',
+  'Front-end Engineer',
+  'Front-end Developer',
   'Next.js',
+  'TypeScript',
   'GSAP',
-  'Three.js',
-  'WebGL',
+  'Strapi',
+  'Ho Chi Minh',
   'Portfolio'
 ];
 /**
